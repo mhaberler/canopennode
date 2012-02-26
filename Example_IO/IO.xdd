@@ -1,0 +1,336 @@
+<?xml version="1.0"?>
+<ISO15745ProfileContainer xsi:noNamespaceSchemaLocation="CANopen_Main.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <ISO15745Profile>
+    <ProfileHeader>
+      <ProfileIdentification>CAN device profile</ProfileIdentification>
+      <ProfileRevision>1</ProfileRevision>
+      <ProfileName>CANopenNode</ProfileName>
+      <ProfileSource/>
+      <ProfileClassID>Device</ProfileClassID>
+      <ISO15745Reference>
+        <ISO15745Part>1</ISO15745Part>
+        <ISO15745Edition>1</ISO15745Edition>
+        <ProfileTechnology>CANopen</ProfileTechnology>
+      </ISO15745Reference>
+    </ProfileHeader>
+    <ProfileBody xsi:type="ProfileBody_Device_CANopen" fileName="IO" fileCreator="-" fileCreationDate="2011-08-31" fileCreationTime="12:22:27" fileVersion="3.0">
+      <DeviceIdentity>
+        <vendorName>Paternoster</vendorName>
+        <productName>CANopenNode</productName>
+        <productText>
+          <label lang="en">CANopenNode</label>
+          <description lang="en" URI="http://canopennode.sourceforge.net">CANopenNode is an open source software stack used for serial communication of multiple devices over the CAN/CANopen Network. It runs on different microcontrollers.</description>
+        </productText>
+        <version versionType="FW">3.00</version>
+      </DeviceIdentity>
+      <DeviceFunction>
+        <capabilities>
+          <characteristicsList>
+            <characteristic>
+              <characteristicName>
+                <label lang="en"/>
+              </characteristicName>
+              <characteristicContent>
+                <label lang="en"/>
+              </characteristicContent>
+            </characteristic>
+          </characteristicsList>
+        </capabilities>
+      </DeviceFunction>
+    </ProfileBody>
+  </ISO15745Profile>
+  <ISO15745Profile>
+    <ProfileHeader>
+      <ProfileIdentification>CAN comm net profile</ProfileIdentification>
+      <ProfileRevision>1</ProfileRevision>
+      <ProfileName>CANopenNode</ProfileName>
+      <ProfileSource/>
+      <ProfileClassID>CommunicationNetwork</ProfileClassID>
+      <ISO15745Reference>
+        <ISO15745Part>1</ISO15745Part>
+        <ISO15745Edition>1</ISO15745Edition>
+        <ProfileTechnology>CANopen</ProfileTechnology>
+      </ISO15745Reference>
+    </ProfileHeader>
+    <ProfileBody xsi:type="ProfileBody_CommunicationNetwork_CANopen" fileName="IO" fileCreator="-" fileCreationDate="2011-08-31" fileCreationTime="12:22:27" fileVersion="3.0">
+      <ApplicationLayers>
+        <CANopenObjectList>
+          <CANopenObject index="1000" name="Device type" objectType="7" dataType="07" accessType="ro" defaultValue="0x00000000" PDOmapping="no"/>
+          <CANopenObject index="1001" name="Error register" objectType="7" dataType="05" accessType="ro" defaultValue="0" PDOmapping="optional"/>
+          <CANopenObject index="1002" name="Manufacturer status register" objectType="7" dataType="07" accessType="ro" defaultValue="0" PDOmapping="optional"/>
+          <CANopenObject index="1003" name="Pre-defined error field" objectType="8" subNumber="9">
+            <CANopenSubObject subIndex="00" name="Number of errors" objectType="7" dataType="05" accessType="rw" PDOmapping="no" defaultValue="0"/>
+            <CANopenSubObject subIndex="01" name="Standard error field" objectType="7" dataType="07" accessType="ro" defaultValue="0" PDOmapping="no"/>
+            <CANopenSubObject subIndex="02" name="Standard error field" objectType="7" dataType="07" accessType="ro" defaultValue="0" PDOmapping="no"/>
+            <CANopenSubObject subIndex="03" name="Standard error field" objectType="7" dataType="07" accessType="ro" defaultValue="0" PDOmapping="no"/>
+            <CANopenSubObject subIndex="04" name="Standard error field" objectType="7" dataType="07" accessType="ro" defaultValue="0" PDOmapping="no"/>
+            <CANopenSubObject subIndex="05" name="Standard error field" objectType="7" dataType="07" accessType="ro" defaultValue="0" PDOmapping="no"/>
+            <CANopenSubObject subIndex="06" name="Standard error field" objectType="7" dataType="07" accessType="ro" defaultValue="0" PDOmapping="no"/>
+            <CANopenSubObject subIndex="07" name="Standard error field" objectType="7" dataType="07" accessType="ro" defaultValue="0" PDOmapping="no"/>
+            <CANopenSubObject subIndex="08" name="Standard error field" objectType="7" dataType="07" accessType="ro" defaultValue="0" PDOmapping="no"/>
+          </CANopenObject>
+          <CANopenObject index="1005" name="COB-ID SYNC message" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000080" PDOmapping="no"/>
+          <CANopenObject index="1006" name="Communication cycle period" objectType="7" dataType="07" accessType="rw" defaultValue="0" PDOmapping="no"/>
+          <CANopenObject index="1007" name="Synchronous window length" objectType="7" dataType="07" accessType="rw" defaultValue="0" PDOmapping="no"/>
+          <CANopenObject index="1008" name="Manufacturer device name" objectType="7" dataType="09" accessType="const" defaultValue="CANopenNode" PDOmapping="no"/>
+          <CANopenObject index="1009" name="Manufacturer hardware version" objectType="7" dataType="09" accessType="const" defaultValue="3.00" PDOmapping="no"/>
+          <CANopenObject index="100A" name="Manufacturer software version" objectType="7" dataType="09" accessType="const" defaultValue="3.00" PDOmapping="no"/>
+          <CANopenObject index="1010" name="Store parameters" objectType="8" subNumber="2">
+            <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" PDOmapping="no" defaultValue="1"/>
+            <CANopenSubObject subIndex="01" name="save all parameters" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000003" PDOmapping="no"/>
+          </CANopenObject>
+          <CANopenObject index="1011" name="Restore default parameters" objectType="8" subNumber="2">
+            <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" PDOmapping="no" defaultValue="1"/>
+            <CANopenSubObject subIndex="01" name="restore all default parameters" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000001" PDOmapping="no"/>
+          </CANopenObject>
+          <CANopenObject index="1014" name="COB-ID EMCY" objectType="7" dataType="07" accessType="ro" defaultValue="$NODEID+0x80" PDOmapping="no"/>
+          <CANopenObject index="1015" name="inhibit time EMCY" objectType="7" dataType="06" accessType="rw" defaultValue="100" PDOmapping="no"/>
+          <CANopenObject index="1016" name="Consumer heartbeat time" objectType="8" subNumber="5">
+            <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" PDOmapping="no" defaultValue="4"/>
+            <CANopenSubObject subIndex="01" name="Consumer heartbeat time" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="02" name="Consumer heartbeat time" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="03" name="Consumer heartbeat time" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="04" name="Consumer heartbeat time" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+          </CANopenObject>
+          <CANopenObject index="1017" name="Producer heartbeat time" objectType="7" dataType="06" accessType="rw" defaultValue="1000" PDOmapping="no"/>
+          <CANopenObject index="1018" name="Identity" objectType="9" subNumber="5">
+            <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" defaultValue="4" PDOmapping="no"/>
+            <CANopenSubObject subIndex="01" name="Vendor-ID" objectType="7" dataType="07" accessType="ro" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="02" name="Product code" objectType="7" dataType="07" accessType="ro" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="03" name="Revision number" objectType="7" dataType="07" accessType="ro" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="04" name="Serial number" objectType="7" dataType="07" accessType="ro" defaultValue="0x00000000" PDOmapping="no"/>
+          </CANopenObject>
+          <CANopenObject index="1019" name="Synchronous counter overflow value" objectType="7" dataType="05" accessType="rw" defaultValue="0" PDOmapping="no"/>
+          <CANopenObject index="1029" name="Error behavior" objectType="8" subNumber="7">
+            <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" PDOmapping="no" defaultValue="6"/>
+            <CANopenSubObject subIndex="01" name="Communication" objectType="7" dataType="05" accessType="rw" defaultValue="0x00" PDOmapping="no"/>
+            <CANopenSubObject subIndex="02" name="Communication other" objectType="7" dataType="05" accessType="rw" defaultValue="0x00" PDOmapping="no"/>
+            <CANopenSubObject subIndex="03" name="Communication passive" objectType="7" dataType="05" accessType="rw" defaultValue="0x01" PDOmapping="no"/>
+            <CANopenSubObject subIndex="04" name="Generic" objectType="7" dataType="05" accessType="rw" defaultValue="0x00" PDOmapping="no"/>
+            <CANopenSubObject subIndex="05" name="Device profile" objectType="7" dataType="05" accessType="rw" defaultValue="0x00" PDOmapping="no"/>
+            <CANopenSubObject subIndex="06" name="Manufacturer specific" objectType="7" dataType="05" accessType="rw" defaultValue="0x00" PDOmapping="no"/>
+          </CANopenObject>
+          <CANopenObject index="1200" name="SDO server parameter" objectType="9" subNumber="3">
+            <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" defaultValue="2" PDOmapping="no"/>
+            <CANopenSubObject subIndex="01" name="COB-ID client to server" objectType="7" dataType="07" accessType="ro" defaultValue="$NODEID+0x600" PDOmapping="no"/>
+            <CANopenSubObject subIndex="02" name="COB-ID server to client" objectType="7" dataType="07" accessType="ro" defaultValue="$NODEID+0x580" PDOmapping="no"/>
+          </CANopenObject>
+          <CANopenObject index="1400" name="RPDO communication parameter" objectType="9" subNumber="3">
+            <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" defaultValue="2" PDOmapping="no"/>
+            <CANopenSubObject subIndex="01" name="COB-ID used by RPDO" objectType="7" dataType="07" accessType="rw" defaultValue="$NODEID+0x200" PDOmapping="no"/>
+            <CANopenSubObject subIndex="02" name="transmission type" objectType="7" dataType="05" accessType="rw" defaultValue="255" PDOmapping="no"/>
+          </CANopenObject>
+          <CANopenObject index="1401" name="RPDO communication parameter" objectType="9" subNumber="3">
+            <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" defaultValue="2" PDOmapping="no"/>
+            <CANopenSubObject subIndex="01" name="COB-ID used by RPDO" objectType="7" dataType="07" accessType="rw" defaultValue="$NODEID+0x300" PDOmapping="no"/>
+            <CANopenSubObject subIndex="02" name="transmission type" objectType="7" dataType="05" accessType="rw" defaultValue="254" PDOmapping="no"/>
+          </CANopenObject>
+          <CANopenObject index="1402" name="RPDO communication parameter" objectType="9" subNumber="3">
+            <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" defaultValue="2" PDOmapping="no"/>
+            <CANopenSubObject subIndex="01" name="COB-ID used by RPDO" objectType="7" dataType="07" accessType="rw" defaultValue="$NODEID+0x400" PDOmapping="no"/>
+            <CANopenSubObject subIndex="02" name="transmission type" objectType="7" dataType="05" accessType="rw" defaultValue="254" PDOmapping="no"/>
+          </CANopenObject>
+          <CANopenObject index="1403" name="RPDO communication parameter" objectType="9" subNumber="3">
+            <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" defaultValue="2" PDOmapping="no"/>
+            <CANopenSubObject subIndex="01" name="COB-ID used by RPDO" objectType="7" dataType="07" accessType="rw" defaultValue="$NODEID+0x500" PDOmapping="no"/>
+            <CANopenSubObject subIndex="02" name="transmission type" objectType="7" dataType="05" accessType="rw" defaultValue="254" PDOmapping="no"/>
+          </CANopenObject>
+          <CANopenObject index="1600" name="RPDO mapping parameter" objectType="9" subNumber="9">
+            <CANopenSubObject subIndex="00" name="Number of mapped objects" objectType="7" dataType="05" accessType="rw" defaultValue="2" PDOmapping="no"/>
+            <CANopenSubObject subIndex="01" name="mapped object 1" objectType="7" dataType="07" accessType="rw" defaultValue="0x62000108" PDOmapping="no"/>
+            <CANopenSubObject subIndex="02" name="mapped object 2" objectType="7" dataType="07" accessType="rw" defaultValue="0x62000208" PDOmapping="no"/>
+            <CANopenSubObject subIndex="03" name="mapped object 3" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="04" name="mapped object 4" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="05" name="mapped object 5" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="06" name="mapped object 6" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="07" name="mapped object 7" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="08" name="mapped object 8" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+          </CANopenObject>
+          <CANopenObject index="1601" name="RPDO mapping parameter" objectType="9" subNumber="9">
+            <CANopenSubObject subIndex="00" name="Number of mapped objects" objectType="7" dataType="05" accessType="rw" defaultValue="0" PDOmapping="no"/>
+            <CANopenSubObject subIndex="01" name="mapped object 1" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="02" name="mapped object 2" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="03" name="mapped object 3" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="04" name="mapped object 4" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="05" name="mapped object 5" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="06" name="mapped object 6" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="07" name="mapped object 7" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="08" name="mapped object 8" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+          </CANopenObject>
+          <CANopenObject index="1602" name="RPDO mapping parameter" objectType="9" subNumber="9">
+            <CANopenSubObject subIndex="00" name="Number of mapped objects" objectType="7" dataType="05" accessType="rw" defaultValue="0" PDOmapping="no"/>
+            <CANopenSubObject subIndex="01" name="mapped object 1" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="02" name="mapped object 2" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="03" name="mapped object 3" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="04" name="mapped object 4" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="05" name="mapped object 5" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="06" name="mapped object 6" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="07" name="mapped object 7" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="08" name="mapped object 8" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+          </CANopenObject>
+          <CANopenObject index="1603" name="RPDO mapping parameter" objectType="9" subNumber="9">
+            <CANopenSubObject subIndex="00" name="Number of mapped objects" objectType="7" dataType="05" accessType="rw" defaultValue="0" PDOmapping="no"/>
+            <CANopenSubObject subIndex="01" name="mapped object 1" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="02" name="mapped object 2" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="03" name="mapped object 3" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="04" name="mapped object 4" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="05" name="mapped object 5" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="06" name="mapped object 6" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="07" name="mapped object 7" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="08" name="mapped object 8" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+          </CANopenObject>
+          <CANopenObject index="1800" name="TPDO communication parameter" objectType="9" subNumber="7">
+            <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" defaultValue="6" PDOmapping="no"/>
+            <CANopenSubObject subIndex="01" name="COB-ID used by TPDO" objectType="7" dataType="07" accessType="rw" defaultValue="$NODEID+0x180" PDOmapping="no"/>
+            <CANopenSubObject subIndex="02" name="transmission type" objectType="7" dataType="05" accessType="rw" defaultValue="255" PDOmapping="no"/>
+            <CANopenSubObject subIndex="03" name="inhibit time" objectType="7" dataType="06" accessType="rw" defaultValue="100" PDOmapping="no"/>
+            <CANopenSubObject subIndex="04" name="compatibility entry" objectType="7" dataType="05" accessType="rw" defaultValue="0" PDOmapping="no"/>
+            <CANopenSubObject subIndex="05" name="event timer" objectType="7" dataType="06" accessType="rw" defaultValue="0" PDOmapping="no"/>
+            <CANopenSubObject subIndex="06" name="SYNC start value" objectType="7" dataType="05" accessType="rw" defaultValue="0" PDOmapping="no"/>
+          </CANopenObject>
+          <CANopenObject index="1801" name="TPDO communication parameter" objectType="9" subNumber="7">
+            <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" defaultValue="6" PDOmapping="no"/>
+            <CANopenSubObject subIndex="01" name="COB-ID used by TPDO" objectType="7" dataType="07" accessType="rw" defaultValue="$NODEID+0x280" PDOmapping="no"/>
+            <CANopenSubObject subIndex="02" name="transmission type" objectType="7" dataType="05" accessType="rw" defaultValue="254" PDOmapping="no"/>
+            <CANopenSubObject subIndex="03" name="inhibit time" objectType="7" dataType="06" accessType="rw" defaultValue="0" PDOmapping="no"/>
+            <CANopenSubObject subIndex="04" name="compatibility entry" objectType="7" dataType="05" accessType="rw" defaultValue="0" PDOmapping="no"/>
+            <CANopenSubObject subIndex="05" name="event timer" objectType="7" dataType="06" accessType="rw" defaultValue="0" PDOmapping="no"/>
+            <CANopenSubObject subIndex="06" name="SYNC start value" objectType="7" dataType="05" accessType="rw" defaultValue="0" PDOmapping="no"/>
+          </CANopenObject>
+          <CANopenObject index="1802" name="TPDO communication parameter" objectType="9" subNumber="7">
+            <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" defaultValue="6" PDOmapping="no"/>
+            <CANopenSubObject subIndex="01" name="COB-ID used by TPDO" objectType="7" dataType="07" accessType="rw" defaultValue="$NODEID+0x380" PDOmapping="no"/>
+            <CANopenSubObject subIndex="02" name="transmission type" objectType="7" dataType="05" accessType="rw" defaultValue="254" PDOmapping="no"/>
+            <CANopenSubObject subIndex="03" name="inhibit time" objectType="7" dataType="06" accessType="rw" defaultValue="0" PDOmapping="no"/>
+            <CANopenSubObject subIndex="04" name="compatibility entry" objectType="7" dataType="05" accessType="rw" defaultValue="0" PDOmapping="no"/>
+            <CANopenSubObject subIndex="05" name="event timer" objectType="7" dataType="06" accessType="rw" defaultValue="0" PDOmapping="no"/>
+            <CANopenSubObject subIndex="06" name="SYNC start value" objectType="7" dataType="05" accessType="rw" defaultValue="0" PDOmapping="no"/>
+          </CANopenObject>
+          <CANopenObject index="1803" name="TPDO communication parameter" objectType="9" subNumber="7">
+            <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" defaultValue="6" PDOmapping="no"/>
+            <CANopenSubObject subIndex="01" name="COB-ID used by TPDO" objectType="7" dataType="07" accessType="rw" defaultValue="$NODEID+0x480" PDOmapping="no"/>
+            <CANopenSubObject subIndex="02" name="transmission type" objectType="7" dataType="05" accessType="rw" defaultValue="254" PDOmapping="no"/>
+            <CANopenSubObject subIndex="03" name="inhibit time" objectType="7" dataType="06" accessType="rw" defaultValue="0" PDOmapping="no"/>
+            <CANopenSubObject subIndex="04" name="compatibility entry" objectType="7" dataType="05" accessType="rw" defaultValue="0" PDOmapping="no"/>
+            <CANopenSubObject subIndex="05" name="event timer" objectType="7" dataType="06" accessType="rw" defaultValue="0" PDOmapping="no"/>
+            <CANopenSubObject subIndex="06" name="SYNC start value" objectType="7" dataType="05" accessType="rw" defaultValue="0" PDOmapping="no"/>
+          </CANopenObject>
+          <CANopenObject index="1A00" name="TPDO mapping parameter" objectType="9" subNumber="9">
+            <CANopenSubObject subIndex="00" name="Number of mapped objects" objectType="7" dataType="05" accessType="rw" defaultValue="2" PDOmapping="no"/>
+            <CANopenSubObject subIndex="01" name="mapped object 1" objectType="7" dataType="07" accessType="rw" defaultValue="0x60000108" PDOmapping="no"/>
+            <CANopenSubObject subIndex="02" name="mapped object 2" objectType="7" dataType="07" accessType="rw" defaultValue="0x60000208" PDOmapping="no"/>
+            <CANopenSubObject subIndex="03" name="mapped object 3" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="04" name="mapped object 4" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="05" name="mapped object 5" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="06" name="mapped object 6" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="07" name="mapped object 7" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="08" name="mapped object 8" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+          </CANopenObject>
+          <CANopenObject index="1A01" name="TPDO mapping parameter" objectType="9" subNumber="9">
+            <CANopenSubObject subIndex="00" name="Number of mapped objects" objectType="7" dataType="05" accessType="rw" defaultValue="0" PDOmapping="no"/>
+            <CANopenSubObject subIndex="01" name="mapped object 1" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="02" name="mapped object 2" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="03" name="mapped object 3" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="04" name="mapped object 4" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="05" name="mapped object 5" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="06" name="mapped object 6" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="07" name="mapped object 7" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="08" name="mapped object 8" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+          </CANopenObject>
+          <CANopenObject index="1A02" name="TPDO mapping parameter" objectType="9" subNumber="9">
+            <CANopenSubObject subIndex="00" name="Number of mapped objects" objectType="7" dataType="05" accessType="rw" defaultValue="0" PDOmapping="no"/>
+            <CANopenSubObject subIndex="01" name="mapped object 1" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="02" name="mapped object 2" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="03" name="mapped object 3" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="04" name="mapped object 4" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="05" name="mapped object 5" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="06" name="mapped object 6" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="07" name="mapped object 7" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="08" name="mapped object 8" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+          </CANopenObject>
+          <CANopenObject index="1A03" name="TPDO mapping parameter" objectType="9" subNumber="9">
+            <CANopenSubObject subIndex="00" name="Number of mapped objects" objectType="7" dataType="05" accessType="rw" defaultValue="0" PDOmapping="no"/>
+            <CANopenSubObject subIndex="01" name="mapped object 1" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="02" name="mapped object 2" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="03" name="mapped object 3" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="04" name="mapped object 4" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="05" name="mapped object 5" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="06" name="mapped object 6" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="07" name="mapped object 7" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+            <CANopenSubObject subIndex="08" name="mapped object 8" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+          </CANopenObject>
+          <CANopenObject index="1F80" name="NMT startup" objectType="7" dataType="07" accessType="rw" defaultValue="0x00000000" PDOmapping="no"/>
+          <CANopenObject index="2100" name="Error status bits" objectType="7" dataType="0A" accessType="ro" defaultValue="00 00 00 00 00 00 00 00 00 00" PDOmapping="optional"/>
+          <CANopenObject index="2101" name="CAN node ID" objectType="7" dataType="05" accessType="rw" defaultValue="0x30" PDOmapping="no"/>
+          <CANopenObject index="2102" name="CAN bit rate" objectType="7" dataType="06" accessType="rw" defaultValue="250" PDOmapping="no"/>
+          <CANopenObject index="2103" name="SYNC counter" objectType="7" dataType="06" accessType="rw" defaultValue="0" PDOmapping="no"/>
+          <CANopenObject index="2104" name="SYNC time" objectType="7" dataType="06" accessType="ro" defaultValue="0" PDOmapping="no"/>
+          <CANopenObject index="2106" name="Power-on counter" objectType="7" dataType="07" accessType="ro" defaultValue="0" PDOmapping="no"/>
+          <CANopenObject index="2107" name="Performance" objectType="8" subNumber="6">
+            <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" PDOmapping="no" defaultValue="5"/>
+            <CANopenSubObject subIndex="01" name="cycles per second" objectType="7" dataType="06" accessType="rw" defaultValue="1000" PDOmapping="optional"/>
+            <CANopenSubObject subIndex="02" name="timer cycle time" objectType="7" dataType="06" accessType="rw" defaultValue="0" PDOmapping="optional"/>
+            <CANopenSubObject subIndex="03" name="timer cycle max time" objectType="7" dataType="06" accessType="rw" defaultValue="0" PDOmapping="optional"/>
+            <CANopenSubObject subIndex="04" name="main cycle time" objectType="7" dataType="06" accessType="rw" defaultValue="0" PDOmapping="optional"/>
+            <CANopenSubObject subIndex="05" name="main cycle max time" objectType="7" dataType="06" accessType="rw" defaultValue="0" PDOmapping="optional"/>
+          </CANopenObject>
+          <CANopenObject index="2108" name="Temperature" objectType="8" subNumber="2">
+            <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" PDOmapping="no" defaultValue="1"/>
+            <CANopenSubObject subIndex="01" name="main PCB" objectType="7" dataType="03" accessType="ro" defaultValue="0" PDOmapping="optional"/>
+          </CANopenObject>
+          <CANopenObject index="2109" name="Voltage" objectType="8" subNumber="2">
+            <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" PDOmapping="no" defaultValue="1"/>
+            <CANopenSubObject subIndex="01" name="main PCB supply" objectType="7" dataType="03" accessType="ro" defaultValue="0" PDOmapping="optional"/>
+          </CANopenObject>
+          <CANopenObject index="2110" name="Variable Int32" objectType="8" subNumber="3">
+            <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" PDOmapping="no" defaultValue="2"/>
+            <CANopenSubObject subIndex="01" name="int32" objectType="7" dataType="04" accessType="rw" defaultValue="0" PDOmapping="optional"/>
+            <CANopenSubObject subIndex="02" name="int32" objectType="7" dataType="04" accessType="rw" defaultValue="0" PDOmapping="optional"/>
+          </CANopenObject>
+          <CANopenObject index="2111" name="Variable ROM Int32" objectType="8" subNumber="3">
+            <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" PDOmapping="no" defaultValue="2"/>
+            <CANopenSubObject subIndex="01" name="int32" objectType="7" dataType="04" accessType="rw" defaultValue="1" PDOmapping="optional"/>
+            <CANopenSubObject subIndex="02" name="int32" objectType="7" dataType="04" accessType="rw" defaultValue="0" PDOmapping="optional"/>
+          </CANopenObject>
+          <CANopenObject index="6000" name="Read input 8 bit" objectType="8" subNumber="5">
+            <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" PDOmapping="no" defaultValue="4"/>
+            <CANopenSubObject subIndex="01" name="Input" objectType="7" dataType="05" accessType="ro" defaultValue="0" PDOmapping="optional"/>
+            <CANopenSubObject subIndex="02" name="Input" objectType="7" dataType="05" accessType="ro" defaultValue="0" PDOmapping="optional"/>
+            <CANopenSubObject subIndex="03" name="Input" objectType="7" dataType="05" accessType="ro" defaultValue="0" PDOmapping="optional"/>
+            <CANopenSubObject subIndex="04" name="Input" objectType="7" dataType="05" accessType="ro" defaultValue="0" PDOmapping="optional"/>
+          </CANopenObject>
+          <CANopenObject index="6200" name="Write output 8 bit" objectType="8" subNumber="5">
+            <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" PDOmapping="no" defaultValue="4"/>
+            <CANopenSubObject subIndex="01" name="Output" objectType="7" dataType="05" accessType="rw" defaultValue="0" PDOmapping="optional"/>
+            <CANopenSubObject subIndex="02" name="Output" objectType="7" dataType="05" accessType="rw" defaultValue="0" PDOmapping="optional"/>
+            <CANopenSubObject subIndex="03" name="Output" objectType="7" dataType="05" accessType="rw" defaultValue="0" PDOmapping="optional"/>
+            <CANopenSubObject subIndex="04" name="Output" objectType="7" dataType="05" accessType="rw" defaultValue="0" PDOmapping="optional"/>
+          </CANopenObject>
+        </CANopenObjectList>
+        <dummyUsage>
+          <dummy entry="Dummy0001=0"/>
+          <dummy entry="Dummy0002=1"/>
+          <dummy entry="Dummy0003=1"/>
+          <dummy entry="Dummy0004=1"/>
+          <dummy entry="Dummy0005=1"/>
+          <dummy entry="Dummy0006=1"/>
+          <dummy entry="Dummy0007=1"/>
+        </dummyUsage>
+      </ApplicationLayers>
+      <TransportLayers>
+        <PhysicalLayer>
+          <baudRate>
+            <supportedBaudRate value="10 Kbps"/>
+            <supportedBaudRate value="20 Kbps"/>
+            <supportedBaudRate value="50 Kbps"/>
+            <supportedBaudRate value="125 Kbps"/>
+            <supportedBaudRate value="250 Kbps"/>
+            <supportedBaudRate value="500 Kbps"/>
+            <supportedBaudRate value="800 Kbps"/>
+            <supportedBaudRate value="1000 Kbps"/>
+          </baudRate>
+        </PhysicalLayer>
+      </TransportLayers>
+    </ProfileBody>
+  </ISO15745Profile>
+</ISO15745ProfileContainer>

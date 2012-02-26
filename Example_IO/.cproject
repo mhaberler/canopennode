@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?fileVersion 4.0.0?>
+
+<cproject>
+<storageModule moduleId="org.eclipse.cdt.core.settings">
+<cconfiguration id="com.beck-ipc.powerpcide.debugConfiguration.883018999">
+<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="com.beck-ipc.powerpcide.debugConfiguration.883018999" moduleId="org.eclipse.cdt.core.settings" name="debug">
+<externalSettings/>
+<extensions>
+<extension id="com.beck_ipc.powerpcide.wizards.BeckIPC" point="org.eclipse.cdt.core.BinaryParser"/>
+<extension id="org.eclipse.cdt.core.MakeErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+<extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+<extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+<extension id="org.eclipse.cdt.core.GLDErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+</extensions>
+</storageModule>
+<storageModule moduleId="cdtBuildSystem" version="4.0.0">
+<configuration artifactExtension="bex" artifactName="Example_IO" buildProperties="com.beck-ipc.powerpcide.buildType=com.beck-ipc.powerpcide.buildType.debug" cleanCommand="${eclipse_home}/tc-sc2x3/bin/clean-bex" description="debug configuration" errorParsers="org.eclipse.cdt.core.MakeErrorParser;org.eclipse.cdt.core.GCCErrorParser" id="com.beck-ipc.powerpcide.debugConfiguration.883018999" name="debug" parent="com.beck-ipc.powerpcide.debugConfiguration">
+<folderInfo id="com.beck-ipc.powerpcide.debugConfiguration.883018999." name="/" resourcePath="">
+<toolChain id="com.beck-ipc.powerpcide.wizards.debugToolChain.957131268" name="SC2x3 Toolchain" superClass="com.beck-ipc.powerpcide.wizards.debugToolChain">
+<targetPlatform id="com.beck-ipc.powerpcide.wizards.targetPlatform.1199269454" isAbstract="false" name="Target Platform" superClass="com.beck-ipc.powerpcide.wizards.targetPlatform"/>
+<builder buildPath="${workspace_loc:/Example_IO/debug}" id="com.beck-ipc.powerpcide.wizards.builder.167256502" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="SC2x3 Builder" superClass="com.beck-ipc.powerpcide.wizards.builder">
+<outputEntries/>
+</builder>
+<tool id="com.beck-ipc.powerpcide.wizards.cCompiler.52142329" name="SC2x3 C Compiler" superClass="com.beck-ipc.powerpcide.wizards.cCompiler">
+<option defaultValue="beck-ipc.c.optimization.level.none" id="com.beck-ipc.powerpcide.cCompiler.option.optimization.level.1712496502" name="Optimization Level" superClass="com.beck-ipc.powerpcide.cCompiler.option.optimization.level" valueType="enumerated"/>
+<option id="com.beck-ipc.powerpcide.cCompiler.option.debugging.level.1742513590" name="Debug Level" superClass="com.beck-ipc.powerpcide.cCompiler.option.debugging.level" value="beck-ipc.c.debugging.level.default" valueType="enumerated"/>
+<option id="com.beck-ipc.powerpcide.cCompiler.option.include.userPaths.537360408" name="Include paths (-I)" superClass="com.beck-ipc.powerpcide.cCompiler.option.include.userPaths" valueType="includePath">
+<listOptionValue builtIn="false" value="&quot;${eclipse_home}/tc-sc2x3/powerpc-e300-eabi/include/c++/4.3.1/&quot;"/>
+<listOptionValue builtIn="false" value="&quot;${eclipse_home}/tc-sc2x3/powerpc-e300-eabi/include/beck/&quot;"/>
+<listOptionValue builtIn="false" value="&quot;${eclipse_home}/tc-sc2x3/powerpc-e300-eabi/include/&quot;"/>
+<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Example_IO/CANopen_stack}&quot;"/>
+<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Example_IO/CANopen_stack/BECK_SC2x3}&quot;"/>
+<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Example_IO}&quot;"/>
+</option>
+<inputType id="com.beck-ipc.powerpcide.compiler.cInputType.159513094" name="Compiler Input" superClass="com.beck-ipc.powerpcide.compiler.cInputType"/>
+</tool>
+<tool id="com.beck-ipc.powerpcide.wizards.cLinker.1909749875" name="SC2x3 C Linker" superClass="com.beck-ipc.powerpcide.wizards.cLinker">
+<inputType id="com.beck-ipc.powerpcide.linker.cInputType.1927588603" name="Linker Input" superClass="com.beck-ipc.powerpcide.linker.cInputType"/>
+</tool>
+<tool id="com.beck-ipc.powerpcide.wizards.cppLinker.983894057" name="SC2x3 C++ Linker" superClass="com.beck-ipc.powerpcide.wizards.cppLinker"/>
+<tool id="com.beck-ipc.powerpcide.wizards.cppCompiler.465296871" name="SC2x3 C++ Compiler" superClass="com.beck-ipc.powerpcide.wizards.cppCompiler">
+<option defaultValue="com.beck-ipc.powerpcide.cppCompiler.optimization.level.none" id="com.beck-ipc.powerpcide.cppCompiler.option.optimization.level.346421402" name="Optimization Level" superClass="com.beck-ipc.powerpcide.cppCompiler.option.optimization.level" valueType="enumerated"/>
+<option id="com.beck-ipc.powerpcide.cppCompiler.option.debugging.level.381056868" name="Debug Level" superClass="com.beck-ipc.powerpcide.cppCompiler.option.debugging.level" value="com.beck-ipc.powerpcide.cppCompiler.debugging.level.default" valueType="enumerated"/>
+</tool>
+<tool id="com.beck-ipc.powerpcide.wizards.assembler.555174111" name="SC2x3 Assembler" superClass="com.beck-ipc.powerpcide.wizards.assembler"/>
+</toolChain>
+</folderInfo>
+<sourceEntries>
+<entry excluding="CANopen_stack/PIC32|CANopen_stack/PIC24H_dsPIC33F|CANopen_stack/dsPIC30F|main_PIC32.c|CANopen_stack/temp|CANopen_stack/_doc|application.c|main_dsPIC33F.c|main_dsPIC30F.c|CANopen_stack/PIC24H_dsPIC33F_with_Microchip_C30|CANopen_stack/dsPIC30F_with_Microchip_C30" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+</sourceEntries>
+</configuration>
+</storageModule>
+<storageModule moduleId="scannerConfiguration">
+<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.make.core.GCCStandardMakePerProjectProfile"/>
+<profile id="org.eclipse.cdt.make.core.GCCStandardMakePerProjectProfile">
+<buildOutputProvider>
+<openAction enabled="true" filePath=""/>
+<parser enabled="true"/>
+</buildOutputProvider>
+<scannerInfoProvider id="specsFile">
+<runAction arguments="-E -P -v -dD ${plugin_state_location}/${specs_file}" command="gcc" useDefault="true"/>
+<parser enabled="true"/>
+</scannerInfoProvider>
+</profile>
+<profile id="org.eclipse.cdt.make.core.GCCStandardMakePerFileProfile">
+<buildOutputProvider>
+<openAction enabled="true" filePath=""/>
+<parser enabled="true"/>
+</buildOutputProvider>
+<scannerInfoProvider id="makefileGenerator">
+<runAction arguments="-f ${project_name}_scd.mk" command="make" useDefault="true"/>
+<parser enabled="true"/>
+</scannerInfoProvider>
+</profile>
+<profile id="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfile">
+<buildOutputProvider>
+<openAction enabled="true" filePath=""/>
+<parser enabled="true"/>
+</buildOutputProvider>
+<scannerInfoProvider id="specsFile">
+<runAction arguments="-E -P -v -dD ${plugin_state_location}/${specs_file}" command="gcc" useDefault="true"/>
+<parser enabled="true"/>
+</scannerInfoProvider>
+</profile>
+<profile id="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfileCPP">
+<buildOutputProvider>
+<openAction enabled="true" filePath=""/>
+<parser enabled="true"/>
+</buildOutputProvider>
+<scannerInfoProvider id="specsFile">
+<runAction arguments="-E -P -v -dD ${plugin_state_location}/specs.cpp" command="g++" useDefault="true"/>
+<parser enabled="true"/>
+</scannerInfoProvider>
+</profile>
+<profile id="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfileC">
+<buildOutputProvider>
+<openAction enabled="true" filePath=""/>
+<parser enabled="true"/>
+</buildOutputProvider>
+<scannerInfoProvider id="specsFile">
+<runAction arguments="-E -P -v -dD ${plugin_state_location}/specs.c" command="gcc" useDefault="true"/>
+<parser enabled="true"/>
+</scannerInfoProvider>
+</profile>
+<profile id="org.eclipse.cdt.managedbuilder.core.GCCWinManagedMakePerProjectProfile">
+<buildOutputProvider>
+<openAction enabled="true" filePath=""/>
+<parser enabled="true"/>
+</buildOutputProvider>
+<scannerInfoProvider id="specsFile">
+<runAction arguments="-E -P -v -dD ${plugin_state_location}/${specs_file}" command="gcc" useDefault="true"/>
+<parser enabled="true"/>
+</scannerInfoProvider>
+</profile>
+<profile id="org.eclipse.cdt.managedbuilder.core.GCCWinManagedMakePerProjectProfileCPP">
+<buildOutputProvider>
+<openAction enabled="true" filePath=""/>
+<parser enabled="true"/>
+</buildOutputProvider>
+<scannerInfoProvider id="specsFile">
+<runAction arguments="-E -P -v -dD ${plugin_state_location}/specs.cpp" command="g++" useDefault="true"/>
+<parser enabled="true"/>
+</scannerInfoProvider>
+</profile>
+<profile id="org.eclipse.cdt.managedbuilder.core.GCCWinManagedMakePerProjectProfileC">
+<buildOutputProvider>
+<openAction enabled="true" filePath=""/>
+<parser enabled="true"/>
+</buildOutputProvider>
+<scannerInfoProvider id="specsFile">
+<runAction arguments="-E -P -v -dD ${plugin_state_location}/specs.c" command="gcc" useDefault="true"/>
+<parser enabled="true"/>
+</scannerInfoProvider>
+</profile>
+</storageModule>
+<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
+<storageModule moduleId="org.eclipse.cdt.core.language.mapping"/>
+<storageModule moduleId="org.eclipse.cdt.internal.ui.text.commentOwnerProjectMappings"/>
+</cconfiguration>
+<cconfiguration id="com.beck-ipc.powerpcide.releaseConfiguration.21681399">
+<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="com.beck-ipc.powerpcide.releaseConfiguration.21681399" moduleId="org.eclipse.cdt.core.settings" name="release">
+<externalSettings/>
+<extensions>
+<extension id="com.beck_ipc.powerpcide.wizards.BeckIPC" point="org.eclipse.cdt.core.BinaryParser"/>
+<extension id="org.eclipse.cdt.core.MakeErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+<extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+<extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+<extension id="org.eclipse.cdt.core.GLDErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+</extensions>
+</storageModule>
+<storageModule moduleId="cdtBuildSystem" version="4.0.0">
+<configuration artifactExtension="bex" artifactName="Example_IO" buildProperties="com.beck-ipc.powerpcide.buildType=com.beck-ipc.powerpcide.buildType.release" cleanCommand="${eclipse_home}/tc-sc2x3/bin/clean-bex" description="release configuration" errorParsers="org.eclipse.cdt.core.MakeErrorParser;org.eclipse.cdt.core.GCCErrorParser" id="com.beck-ipc.powerpcide.releaseConfiguration.21681399" name="release" parent="com.beck-ipc.powerpcide.releaseConfiguration">
+<folderInfo id="com.beck-ipc.powerpcide.releaseConfiguration.21681399." name="/" resourcePath="">
+<toolChain id="com.beck-ipc.powerpcide.wizards.releaseToolChain.644519459" name="SC2x3 Toolchain" superClass="com.beck-ipc.powerpcide.wizards.releaseToolChain">
+<targetPlatform id="com.beck-ipc.powerpcide.wizards.targetPlatform.739603611" isAbstract="false" name="Target Platform" superClass="com.beck-ipc.powerpcide.wizards.targetPlatform"/>
+<builder buildPath="${workspace_loc:/Example_IO/release}" id="com.beck-ipc.powerpcide.wizards.builder.1775746487" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="SC2x3 Builder" superClass="com.beck-ipc.powerpcide.wizards.builder"/>
+<tool id="com.beck-ipc.powerpcide.wizards.cCompiler.455119994" name="SC2x3 C Compiler" superClass="com.beck-ipc.powerpcide.wizards.cCompiler">
+<option defaultValue="beck-ipc.c.optimization.level.more" id="com.beck-ipc.powerpcide.cCompiler.option.optimization.level.250503956" name="Optimization Level" superClass="com.beck-ipc.powerpcide.cCompiler.option.optimization.level" valueType="enumerated"/>
+<option id="com.beck-ipc.powerpcide.cCompiler.option.debugging.level.1166538411" name="Debug Level" superClass="com.beck-ipc.powerpcide.cCompiler.option.debugging.level"/>
+<option id="com.beck-ipc.powerpcide.cCompiler.option.include.userPaths.1261691533" name="Include paths (-I)" superClass="com.beck-ipc.powerpcide.cCompiler.option.include.userPaths" valueType="includePath">
+<listOptionValue builtIn="false" value="&quot;${eclipse_home}/tc-sc2x3/powerpc-e300-eabi/include/c++/4.3.1/&quot;"/>
+<listOptionValue builtIn="false" value="&quot;${eclipse_home}/tc-sc2x3/powerpc-e300-eabi/include/beck/&quot;"/>
+<listOptionValue builtIn="false" value="&quot;${eclipse_home}/tc-sc2x3/powerpc-e300-eabi/include/&quot;"/>
+<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Example_IO/CANopen_stack}&quot;"/>
+<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Example_IO/CANopen_stack/BECK_SC2x3}&quot;"/>
+<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Example_IO}&quot;"/>
+</option>
+<inputType id="com.beck-ipc.powerpcide.compiler.cInputType.459928224" name="Compiler Input" superClass="com.beck-ipc.powerpcide.compiler.cInputType"/>
+</tool>
+<tool id="com.beck-ipc.powerpcide.wizards.cLinker.1701239113" name="SC2x3 C Linker" superClass="com.beck-ipc.powerpcide.wizards.cLinker">
+<inputType id="com.beck-ipc.powerpcide.linker.cInputType.1320542840" name="Linker Input" superClass="com.beck-ipc.powerpcide.linker.cInputType"/>
+</tool>
+<tool id="com.beck-ipc.powerpcide.wizards.cppLinker.1571707323" name="SC2x3 C++ Linker" superClass="com.beck-ipc.powerpcide.wizards.cppLinker"/>
+<tool id="com.beck-ipc.powerpcide.wizards.cppCompiler.717077082" name="SC2x3 C++ Compiler" superClass="com.beck-ipc.powerpcide.wizards.cppCompiler">
+<option defaultValue="com.beck-ipc.powerpcide.cppCompiler.optimization.level.more" id="com.beck-ipc.powerpcide.cppCompiler.option.optimization.level.1198683544" name="Optimization Level" superClass="com.beck-ipc.powerpcide.cppCompiler.option.optimization.level" valueType="enumerated"/>
+<option id="com.beck-ipc.powerpcide.cppCompiler.option.debugging.level.1253246076" name="Debug Level" superClass="com.beck-ipc.powerpcide.cppCompiler.option.debugging.level"/>
+</tool>
+<tool id="com.beck-ipc.powerpcide.wizards.assembler.482280694" name="SC2x3 Assembler" superClass="com.beck-ipc.powerpcide.wizards.assembler"/>
+</toolChain>
+</folderInfo>
+<sourceEntries>
+<entry excluding="main_PIC32.c|dsPIC30F_with_Microchip_C30|application.c|main_dsPIC33F.c|main_dsPIC30F.c|CANopen_stack" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+<entry excluding="PIC32|PIC24H_dsPIC33F|dsPIC30F|temp|_doc|PIC24H_dsPIC33F_with_Microchip_C30|dsPIC30F_with_Microchip_C30" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="CANopen_stack"/>
+</sourceEntries>
+</configuration>
+</storageModule>
+<storageModule moduleId="scannerConfiguration">
+<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.make.core.GCCStandardMakePerProjectProfile"/>
+<profile id="org.eclipse.cdt.make.core.GCCStandardMakePerProjectProfile">
+<buildOutputProvider>
+<openAction enabled="true" filePath=""/>
+<parser enabled="true"/>
+</buildOutputProvider>
+<scannerInfoProvider id="specsFile">
+<runAction arguments="-E -P -v -dD ${plugin_state_location}/${specs_file}" command="gcc" useDefault="true"/>
+<parser enabled="true"/>
+</scannerInfoProvider>
+</profile>
+<profile id="org.eclipse.cdt.make.core.GCCStandardMakePerFileProfile">
+<buildOutputProvider>
+<openAction enabled="true" filePath=""/>
+<parser enabled="true"/>
+</buildOutputProvider>
+<scannerInfoProvider id="makefileGenerator">
+<runAction arguments="-f ${project_name}_scd.mk" command="make" useDefault="true"/>
+<parser enabled="true"/>
+</scannerInfoProvider>
+</profile>
+<profile id="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfile">
+<buildOutputProvider>
+<openAction enabled="true" filePath=""/>
+<parser enabled="true"/>
+</buildOutputProvider>
+<scannerInfoProvider id="specsFile">
+<runAction arguments="-E -P -v -dD ${plugin_state_location}/${specs_file}" command="gcc" useDefault="true"/>
+<parser enabled="true"/>
+</scannerInfoProvider>
+</profile>
+<profile id="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfileCPP">
+<buildOutputProvider>
+<openAction enabled="true" filePath=""/>
+<parser enabled="true"/>
+</buildOutputProvider>
+<scannerInfoProvider id="specsFile">
+<runAction arguments="-E -P -v -dD ${plugin_state_location}/specs.cpp" command="g++" useDefault="true"/>
+<parser enabled="true"/>
+</scannerInfoProvider>
+</profile>
+<profile id="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfileC">
+<buildOutputProvider>
+<openAction enabled="true" filePath=""/>
+<parser enabled="true"/>
+</buildOutputProvider>
+<scannerInfoProvider id="specsFile">
+<runAction arguments="-E -P -v -dD ${plugin_state_location}/specs.c" command="gcc" useDefault="true"/>
+<parser enabled="true"/>
+</scannerInfoProvider>
+</profile>
+<profile id="org.eclipse.cdt.managedbuilder.core.GCCWinManagedMakePerProjectProfile">
+<buildOutputProvider>
+<openAction enabled="true" filePath=""/>
+<parser enabled="true"/>
+</buildOutputProvider>
+<scannerInfoProvider id="specsFile">
+<runAction arguments="-E -P -v -dD ${plugin_state_location}/${specs_file}" command="gcc" useDefault="true"/>
+<parser enabled="true"/>
+</scannerInfoProvider>
+</profile>
+<profile id="org.eclipse.cdt.managedbuilder.core.GCCWinManagedMakePerProjectProfileCPP">
+<buildOutputProvider>
+<openAction enabled="true" filePath=""/>
+<parser enabled="true"/>
+</buildOutputProvider>
+<scannerInfoProvider id="specsFile">
+<runAction arguments="-E -P -v -dD ${plugin_state_location}/specs.cpp" command="g++" useDefault="true"/>
+<parser enabled="true"/>
+</scannerInfoProvider>
+</profile>
+<profile id="org.eclipse.cdt.managedbuilder.core.GCCWinManagedMakePerProjectProfileC">
+<buildOutputProvider>
+<openAction enabled="true" filePath=""/>
+<parser enabled="true"/>
+</buildOutputProvider>
+<scannerInfoProvider id="specsFile">
+<runAction arguments="-E -P -v -dD ${plugin_state_location}/specs.c" command="gcc" useDefault="true"/>
+<parser enabled="true"/>
+</scannerInfoProvider>
+</profile>
+</storageModule>
+<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
+<storageModule moduleId="org.eclipse.cdt.core.language.mapping"/>
+<storageModule moduleId="org.eclipse.cdt.internal.ui.text.commentOwnerProjectMappings"/>
+</cconfiguration>
+</storageModule>
+<storageModule moduleId="cdtBuildSystem" version="4.0.0">
+<project id="Example_IO.com.beck-ipc.powerpcide.wizards.IPCatCHIPProject.1224444074" name="IPC@CHIP Application" projectType="com.beck-ipc.powerpcide.wizards.IPCatCHIPProject"/>
+</storageModule>
+</cproject>
