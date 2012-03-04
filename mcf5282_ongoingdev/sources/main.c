@@ -39,6 +39,7 @@
 
 #define CO_FSYS 64000	/* system clock : 64MHz */
 #include "CANopen.h"
+#include "IO_support.h"
 //(not implemented) #include "eeprom.h"
 
 
@@ -99,20 +100,21 @@ int main (void){
 
    //Initialize led diodes. Two LSB bits are CANopen standard diodes.
    //Six MSB bits are for RPDO.
-   /* TO DO */
-   #define CAN_RUN_LED_ON()    	asm(nop);
-   #define CAN_RUN_LED_OFF()   	asm(nop);
-   #define CAN_ERROR_LED_ON()  	asm(nop);
-   #define CAN_ERROR_LED_OFF() 	asm(nop);
-   #define WRITE_LEDS(val) 		asm(nop);
-   /*#define WRITE_LEDS(val)                                                     \
-      {                                                                        \
-         gBaseAddr[OFFSET_LED_WRITE] = gBaseAddr[OFFSET_LED_READ] & 0x03;      \
-         gBaseAddr[OFFSET_LED_WRITE] = gBaseAddr[OFFSET_LED_READ] | (val&0xFC);\
-      }*/
+   IO_portTC_out_init(); // port TC is for CANopen status diodes
+   IO_portTD_out_init(); // port TD is for tests
+   
+   // RUN_LED is port TC3
+   #define CAN_RUN_LED_ON()     {MCF_GPIO_PORTTC |= 0x08;}
+   #define CAN_RUN_LED_OFF()   	{MCF_GPIO_PORTTC &= ~0x08;}
+   // ERROR_LED is port TC2
+   #define CAN_ERROR_LED_ON()  	{MCF_GPIO_PORTTC |= 0x04;}
+   #define CAN_ERROR_LED_OFF() 	{MCF_GPIO_PORTTC &= ~0x04;}
+   // TEST_LEDS are port TD[0..3]
+   #define WRITE_LEDS(val)    	{ MCF_GPIO_PORTTD = (UNSIGNED8) (0x0F & ((UNSIGNED8)(val)));}
 
-
-
+   //Initialize input ports
+   IO_portQS_out_init();
+   #define READ_input_port() MCF_GPIO_SETQS //QS port is used as input port
 
    //Verify, if OD structures have proper alignment of initial values
    if(CO_OD_RAM.FirstWord != CO_OD_RAM.LastWord) printf(("\nError in CO_OD_RAM."));
@@ -246,20 +248,11 @@ CO_TIMER_ISR(){
 
 
    //read RPDO and show it on example LEDS on Explorer16
-   /*UNSIGNED8 leds = OD_writeOutput8Bit[0];
-   LATAbits.LATA2 = (leds&0x04) ? 1 : 0;
-   LATAbits.LATA3 = (leds&0x08) ? 1 : 0;
-   LATAbits.LATA4 = (leds&0x10) ? 1 : 0;
-   LATAbits.LATA5 = (leds&0x20) ? 1 : 0;
-   LATAbits.LATA6 = (leds&0x40) ? 1 : 0;
-   LATAbits.LATA7 = (leds&0x80) ? 1 : 0;*/
+   WRITE_LEDS(OD_writeOutput8Bit[0]);
+
 
    //prepare TPDO from example buttons on Explorer16
-   /*UNSIGNED8 but = 0;
-   if(!PORTDbits.RD6)  but |= 0x08;
-   if(!PORTDbits.RD7)  but |= 0x04;
-   if(!PORTDbits.RD13) but |= 0x01;
-   OD_readInput8Bit[0] = but;*/
+   OD_readInput8Bit[0] = READ_input_port();
 
 
    CO_process_TPDO(CO);
