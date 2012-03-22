@@ -149,6 +149,10 @@ extern const sCO_OD_object CO_OD[CO_OD_NoOfElements];  //Object Dictionary array
 INTEGER16 CO_init(CO_t **ppCO){
 
    INTEGER16 i;
+   CO_t *CO;
+   UNSIGNED8 nodeId;
+   UNSIGNED16 CANBitRate;	
+   enum CO_ReturnError err;
 
    //Initialize CANopen global variables if set so
    #ifdef CO_GLOBAL_FOR_DEBUG
@@ -181,17 +185,15 @@ INTEGER16 CO_init(CO_t **ppCO){
       if(((*ppCO) = (CO_t *) calloc(1, sizeof(CO_t))) == NULL){return CO_ERROR_OUT_OF_MEMORY;}
    }
 
-   CO_t *CO = *ppCO; //pointer to (newly created) object
+   CO = *ppCO; //pointer to (newly created) object
 
 
    CO_CANsetConfigurationMode(ADDR_CAN1);
 
    //Read CANopen Node-ID and CAN bit-rate from object dictionary
-   UNSIGNED8 nodeId = OD_CANNodeID; if(nodeId<1 || nodeId>127) nodeId = 0x10;
-   UNSIGNED16 CANBitRate = OD_CANBitRate;//in kbps
+   nodeId = OD_CANNodeID; if(nodeId<1 || nodeId>127) nodeId = 0x10;
+   CANBitRate = OD_CANBitRate;//in kbps
 
-
-   enum CO_ReturnError err;
 
    err = CO_CANmodule_init(
                        &CO->CANmodule[0],

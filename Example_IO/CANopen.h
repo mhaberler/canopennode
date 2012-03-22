@@ -96,7 +96,6 @@ typedef struct{
       0                           - Operation completed successfully.
       other                       - same as <CO_CANsend>.
 *******************************************************************************/
-   #define CO_NO_NMT_MASTER 0 //0 or 1 - example of very simple CAN TX object
 #if CO_NO_NMT_MASTER == 1
    UNSIGNED8 CO_sendNMTcommand(CO_t *CO, UNSIGNED8 command, UNSIGNED8 nodeID);
 #endif

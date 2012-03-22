@@ -52,6 +52,10 @@ Permissible value for TPDO is 0 to 16. For larger value Max Index must be change
       <associatedObject index="1800" indexMax="180F" indexStep="1"/>
       <associatedObject index="1A00" indexMax="1A0F" indexStep="1"/>
     </feature>
+    <feature name="NMT master" value="0">
+      <label lang="en">NMT master</label>
+      <description lang="en">NMT master can send CANopen NMT command, which can start, stop or reset nodes.</description>
+    </feature>
   </features>
   <CANopenObjectList>
     <CANopenObject index="1000" name="Device type" objectType="7" memoryType="ROM" dataType="07" accessType="ro" PDOmapping="no" defaultValue="0x00000000">
@@ -185,7 +189,7 @@ bit 0-31: Manufacturer specific</description>
       <label lang="en">Synchronous counter overflow value</label>
       <description lang="en">If value is zero, then SYNC message is transmitted with data length 0.
 
-If Value is from 2 to 240, then SYNC message has one data byte, which contains the counter. 
+If Value is from 2 to 240, then SYNC message has one data byte, which contains the counter.
 
 Other values are reserved.</description>
     </CANopenObject>
@@ -630,7 +634,8 @@ Valid values are from 1 to 127:</description>
     </CANopenObject>
     <CANopenObject index="2102" name="CAN bit rate" objectType="7" memoryType="ROM" dataType="06" accessType="rw" PDOmapping="no" defaultValue="250">
       <accessFunctionPreCode>if(WRITING){
-  UNSIGNED16 var = *((UNSIGNED16*)dataBuff);
+  UNSIGNED16 var;
+  memcpySwap2((UNSIGNED8*)&amp;var, (UNSIGNED8*)dataBuff);
   if(!(var == 10 || var == 20 || var == 50 || var == 125 || var == 250 || var == 500 || var == 800 || var == 1000)) return 0x06090030L;  //Invalid value for the parameter
 }</accessFunctionPreCode>
       <label lang="en">CAN Bit-Rate</label>
@@ -653,13 +658,15 @@ Valid values are in [kbps]:
     </CANopenObject>
     <CANopenObject index="2107" name="Performance" objectType="8" subNumber="6" memoryType="RAM" dataType="06" accessType="rw" PDOmapping="optional">
       <accessFunctionPreCode>if(WRITING){
-  if(!((subIndex == 3 || subIndex == 5) &amp;&amp; *((UNSIGNED8*)dataBuff) == 0))
+  UNSIGNED16 var;
+  memcpySwap2((UNSIGNED8*)&amp;var, (UNSIGNED8*)dataBuff);
+  if(!((subIndex == 3 || subIndex == 5) &amp;&amp; var == 0))
     return 0x06090030; //Invalid value for parameter
 }</accessFunctionPreCode>
       <label lang="en">Performance</label>
       <description lang="en">Internal performance of the microcontroller.
 
-cycles per second - cycle frequency of internal timer. 
+cycles per second - cycle frequency of internal timer.
 timer cycle time - current timer cycle time in percent of timer period.
 timer cycle max time - maximum timer cycle time in percent of timer period.
 main cycle time - current mainline function cycle time in percent of timer period.
@@ -697,45 +704,9 @@ main cycle max time - maximum mainline function cycle time in percent of timer p
       <CANopenSubObject subIndex="01" name="int32" objectType="7" defaultValue="1"/>
       <CANopenSubObject subIndex="02" name="int32" objectType="7" defaultValue="0"/>
     </CANopenObject>
-    <CANopenObject index="6000" name="Read input 8 bit" objectType="8" subNumber="5" memoryType="RAM" dataType="05" accessType="ro" PDOmapping="optional" TPDOdetectCOS="true" disabled="false">
+    <CANopenObject index="6000" name="Read input 8 bit" objectType="8" subNumber="9" memoryType="RAM" dataType="05" accessType="ro" PDOmapping="optional" TPDOdetectCOS="true">
       <label lang="en">Read input 8 bit</label>
       <description lang="en">Digital inputs from hardware.</description>
-      <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" PDOmapping="no" defaultValue="4"/>
-      <CANopenSubObject subIndex="01" name="Input" objectType="7" defaultValue="0"/>
-      <CANopenSubObject subIndex="02" name="Input" objectType="7" defaultValue="0"/>
-      <CANopenSubObject subIndex="03" name="Input" objectType="7" defaultValue="0"/>
-      <CANopenSubObject subIndex="04" name="Input" objectType="7" defaultValue="0"/>
-    </CANopenObject>
-    <CANopenObject index="6002" name="Polarity input 8 bit" objectType="8" subNumber="5" memoryType="ROM" dataType="05" accessType="rw" PDOmapping="no" disabled="true">
-      <label lang="en">Polarity input 8 bit</label>
-      <description lang="en">If specific bit is 1 then 'Read input 8 bit' (index 6000) is inverted.</description>
-      <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" PDOmapping="no" defaultValue="4"/>
-      <CANopenSubObject subIndex="01" name="Polarity" objectType="7" defaultValue="0"/>
-      <CANopenSubObject subIndex="02" name="Polarity" objectType="7" defaultValue="0"/>
-      <CANopenSubObject subIndex="03" name="Polarity" objectType="7" defaultValue="0"/>
-      <CANopenSubObject subIndex="04" name="Polarity" objectType="7" defaultValue="0"/>
-    </CANopenObject>
-    <CANopenObject index="6200" name="Write output 8 bit" objectType="8" subNumber="5" memoryType="RAM" dataType="05" accessType="rw" PDOmapping="optional" disabled="false">
-      <label lang="en">Write output 8 bit</label>
-      <description lang="en">Digital outputs on hardware.</description>
-      <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" PDOmapping="no" defaultValue="4"/>
-      <CANopenSubObject subIndex="01" name="Output" objectType="7" defaultValue="0"/>
-      <CANopenSubObject subIndex="02" name="Output" objectType="7" defaultValue="0"/>
-      <CANopenSubObject subIndex="03" name="Output" objectType="7" defaultValue="0"/>
-      <CANopenSubObject subIndex="04" name="Output" objectType="7" defaultValue="0"/>
-    </CANopenObject>
-    <CANopenObject index="6202" name="Polarity output 8 bit" objectType="8" subNumber="5" memoryType="ROM" dataType="05" accessType="rw" PDOmapping="no" disabled="true">
-      <label lang="en">Polarity output 8 bit</label>
-      <description lang="en">If specific bit is 1 then 'Write output 8 bit' (index 6200) is inverted.</description>
-      <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" PDOmapping="no" defaultValue="4"/>
-      <CANopenSubObject subIndex="01" name="Polarity" objectType="7" defaultValue="0"/>
-      <CANopenSubObject subIndex="02" name="Polarity" objectType="7" defaultValue="0"/>
-      <CANopenSubObject subIndex="03" name="Polarity" objectType="7" defaultValue="0"/>
-      <CANopenSubObject subIndex="04" name="Polarity" objectType="7" defaultValue="0"/>
-    </CANopenObject>
-    <CANopenObject index="6401" name="Read analogue input 16 bit" objectType="8" subNumber="9" memoryType="RAM" dataType="03" accessType="ro" PDOmapping="optional" disabled="true">
-      <label lang="en">Read analogue input 16 bit</label>
-      <description lang="en">Analogue inputs from hardware. The integer value is left adjusted.</description>
       <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" PDOmapping="no" defaultValue="8"/>
       <CANopenSubObject subIndex="01" name="Input" objectType="7" defaultValue="0"/>
       <CANopenSubObject subIndex="02" name="Input" objectType="7" defaultValue="0"/>
@@ -746,76 +717,58 @@ main cycle max time - maximum mainline function cycle time in percent of timer p
       <CANopenSubObject subIndex="07" name="Input" objectType="7" defaultValue="0"/>
       <CANopenSubObject subIndex="08" name="Input" objectType="7" defaultValue="0"/>
     </CANopenObject>
-    <CANopenObject index="6411" name="Write analogue output 16 bit" objectType="8" subNumber="3" memoryType="RAM" dataType="03" accessType="rw" PDOmapping="optional" disabled="true">
-      <label lang="en">Write analogue output 16 bit</label>
-      <description lang="en">Analogue outputs on hardware. The integer value is left adjusted.</description>
-      <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" PDOmapping="no" defaultValue="2"/>
+    <CANopenObject index="6200" name="Write output 8 bit" objectType="8" subNumber="9" memoryType="RAM" dataType="05" accessType="rw" PDOmapping="optional">
+      <label lang="en">Write output 8 bit</label>
+      <description lang="en">Digital outputs on hardware.</description>
+      <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" PDOmapping="no" defaultValue="8"/>
       <CANopenSubObject subIndex="01" name="Output" objectType="7" defaultValue="0"/>
       <CANopenSubObject subIndex="02" name="Output" objectType="7" defaultValue="0"/>
       <CANopenSubObject subIndex="03" name="Output" objectType="7" defaultValue="0"/>
       <CANopenSubObject subIndex="04" name="Output" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="05" name="Output" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="06" name="Output" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="07" name="Output" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="08" name="Output" objectType="7" defaultValue="0"/>
     </CANopenObject>
-    <CANopenObject index="6431" name="Analogue input offset integer" objectType="8" subNumber="9" memoryType="ROM" dataType="04" accessType="rw" PDOmapping="no" disabled="true">
-      <label lang="en">Analogue input offset integer</label>
-      <description lang="en">Offset of analogue inputs.</description>
+    <CANopenObject index="6401" name="Read analogue input 16 bit" objectType="8" subNumber="13" memoryType="RAM" dataType="03" accessType="ro" PDOmapping="optional">
+      <label lang="en">Read analogue input 16 bit</label>
+      <description lang="en">Analogue inputs from hardware. The integer value is left adjusted.</description>
+      <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" PDOmapping="no" defaultValue="12"/>
+      <CANopenSubObject subIndex="01" name="Input" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="02" name="Input" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="03" name="Input" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="04" name="Input" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="05" name="Input" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="06" name="Input" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="07" name="Input" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="08" name="Input" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="09" name="Input" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="0A" name="Input" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="0B" name="Input" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="0C" name="Input" objectType="7" defaultValue="0"/>
+    </CANopenObject>
+    <CANopenObject index="6411" name="Write analogue output 16 bit" objectType="8" subNumber="9" memoryType="RAM" dataType="03" accessType="rw" PDOmapping="optional">
+      <label lang="en">Write analogue output 16 bit</label>
+      <description lang="en">Analogue outputs on hardware. The integer value is left adjusted.</description>
       <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" PDOmapping="no" defaultValue="8"/>
-      <CANopenSubObject subIndex="01" name="Offset" objectType="7" defaultValue="0"/>
-      <CANopenSubObject subIndex="02" name="Offset" objectType="7" defaultValue="0"/>
-      <CANopenSubObject subIndex="03" name="Offset" objectType="7" defaultValue="0"/>
-      <CANopenSubObject subIndex="04" name="Offset" objectType="7" defaultValue="0"/>
-      <CANopenSubObject subIndex="05" name="Offset" objectType="7" defaultValue="0"/>
-      <CANopenSubObject subIndex="06" name="Offset" objectType="7" defaultValue="0"/>
-      <CANopenSubObject subIndex="07" name="Offset" objectType="7" defaultValue="0"/>
-      <CANopenSubObject subIndex="08" name="Offset" objectType="7" defaultValue="0"/>
-    </CANopenObject>
-    <CANopenObject index="6432" name="Analogue input scaling integer" objectType="8" subNumber="9" memoryType="ROM" dataType="04" accessType="rw" PDOmapping="no" disabled="true">
-      <label lang="en">Analogue input scaling integer</label>
-      <description lang="en">Prescale of analogue inputs.</description>
-      <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" PDOmapping="no" defaultValue="8"/>
-      <CANopenSubObject subIndex="01" name="Scale" objectType="7" defaultValue="1"/>
-      <CANopenSubObject subIndex="02" name="Scale" objectType="7" defaultValue="1"/>
-      <CANopenSubObject subIndex="03" name="Scale" objectType="7" defaultValue="1"/>
-      <CANopenSubObject subIndex="04" name="Scale" objectType="7" defaultValue="1"/>
-      <CANopenSubObject subIndex="05" name="Scale" objectType="7" defaultValue="1"/>
-      <CANopenSubObject subIndex="06" name="Scale" objectType="7" defaultValue="1"/>
-      <CANopenSubObject subIndex="07" name="Scale" objectType="7" defaultValue="1"/>
-      <CANopenSubObject subIndex="08" name="Scale" objectType="7" defaultValue="1"/>
-    </CANopenObject>
-    <CANopenObject index="6446" name="Analogue output offset integer" objectType="8" subNumber="3" memoryType="ROM" dataType="04" accessType="rw" PDOmapping="no" disabled="true">
-      <label lang="en">Analogue output offset integer</label>
-      <description lang="en">Offset of analogue output.</description>
-      <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" PDOmapping="no" defaultValue="2"/>
-      <CANopenSubObject subIndex="01" name="Offset" objectType="7" defaultValue="0"/>
-      <CANopenSubObject subIndex="02" name="Offset" objectType="7" defaultValue="0"/>
-      <CANopenSubObject subIndex="03" name="Offset" objectType="7" defaultValue="0"/>
-      <CANopenSubObject subIndex="04" name="Offset" objectType="7" defaultValue="0"/>
-      <CANopenSubObject subIndex="05" name="Offset" objectType="7" defaultValue="0"/>
-      <CANopenSubObject subIndex="06" name="Offset" objectType="7" defaultValue="0"/>
-      <CANopenSubObject subIndex="07" name="Offset" objectType="7" defaultValue="0"/>
-      <CANopenSubObject subIndex="08" name="Offset" objectType="7" defaultValue="0"/>
-    </CANopenObject>
-    <CANopenObject index="6447" name="Analogue output scaling integer" objectType="8" subNumber="3" memoryType="ROM" dataType="04" accessType="rw" PDOmapping="no" disabled="true">
-      <label lang="en">Analogue output scaling integer</label>
-      <description lang="en">Prescale of analogue output.</description>
-      <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" PDOmapping="no" defaultValue="2"/>
-      <CANopenSubObject subIndex="01" name="Scale" objectType="7" defaultValue="1"/>
-      <CANopenSubObject subIndex="02" name="Scale" objectType="7" defaultValue="1"/>
-      <CANopenSubObject subIndex="03" name="Scale" objectType="7" defaultValue="1"/>
-      <CANopenSubObject subIndex="04" name="Scale" objectType="7" defaultValue="1"/>
-      <CANopenSubObject subIndex="05" name="Scale" objectType="7" defaultValue="1"/>
-      <CANopenSubObject subIndex="06" name="Scale" objectType="7" defaultValue="1"/>
-      <CANopenSubObject subIndex="07" name="Scale" objectType="7" defaultValue="1"/>
-      <CANopenSubObject subIndex="08" name="Scale" objectType="7" defaultValue="1"/>
+      <CANopenSubObject subIndex="01" name="Output" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="02" name="Output" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="03" name="Output" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="04" name="Output" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="05" name="Output" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="06" name="Output" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="07" name="Output" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="08" name="Output" objectType="7" defaultValue="0"/>
     </CANopenObject>
   </CANopenObjectList>
   <other>
-    <file fileName="IO" fileCreator="-" fileCreationDate="2011-08-31" fileCreationTime="12:22:27" fileVersion="3.0"/>
+    <file fileName="IO" fileCreator="-" fileCreationDate="2012-03-17" fileCreationTime="09:03:50" fileVersion="3.0"/>
     <DeviceIdentity>
       <vendorName>Paternoster</vendorName>
       <productName>CANopenNode</productName>
       <productText>
         <label lang="en">CANopenNode</label>
-        <description lang="en" URI="http://canopennode.sourceforge.net">CANopenNode is an open source software stack used for serial communication of multiple devices over the CAN/CANopen Network. It runs on different microcontrollers.</description>
+        <description lang="en" URI="http://canopennode.sourceforge.net">CANopenNode is an open source software stack used for serial communication of multiple devices over the CAN/CANopen Network.</description>
       </productText>
       <version versionType="FW">3.00</version>
     </DeviceIdentity>

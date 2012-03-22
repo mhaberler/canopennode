@@ -85,6 +85,7 @@ typedef struct{
 
    Variables:
       ppEE                    - Pointer to address of eeprom object <EE_t>.
+      SRAMAddress             - Address of battery powered SRAM memory.
       OD_EEPROMAddress        - Address of OD_EEPROM structure from object dictionary.
       OD_EEPROMSize           - Size of OD_EEPROM structure from object dictionary.
       OD_ROMAddress           - Address of OD_ROM structure from object dictionary.
@@ -98,6 +99,7 @@ typedef struct{
 *******************************************************************************/
 INTEGER16 EE_init_1(
       EE_t            **ppEE,
+      UNSIGNED8        *SRAMAddress,
       UNSIGNED8        *OD_EEPROMAddress,
       UNSIGNED32        OD_EEPROMSize,
       UNSIGNED8        *OD_ROMAddress,

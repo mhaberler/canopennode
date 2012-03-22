@@ -247,6 +247,11 @@ INTEGER16 CO_CANsend(   CO_CANmodule_t   *CANmodule,
       CANmodule->CANtxCount++;
    }
 
+#ifdef CO_LOG_CAN_MESSAGES
+   void CO_logMessage(const CanMsg *msg);
+   CO_logMessage((const CanMsg*) buffer);
+#endif
+
    return CO_ERROR_NO;
 }
 
@@ -341,6 +346,11 @@ int CO_CANinterrupt(CO_CANmodule_t *CANmodule, CanEvent event, const CanMsg *msg
 
       //Call specific function, which will process the message
       if(msgMatched) msgBuff->pFunct(msgBuff->object, rcvMsg);
+
+#ifdef CO_LOG_CAN_MESSAGES
+      void CO_logMessage(const CanMsg *msg);
+      CO_logMessage(msg);
+#endif
 
       return 0;
    }

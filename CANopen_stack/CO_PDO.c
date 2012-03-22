@@ -141,7 +141,8 @@ UNSIGNED32 CO_PDOfindMap(  CO_SDO_t      *SDO,
                            UNSIGNED8      R_T,
                            UNSIGNED8    **ppData,
                            UNSIGNED8     *pLength,
-                           UNSIGNED8     *pSendIfCOSFlags){
+                           UNSIGNED8     *pSendIfCOSFlags,
+                           UNSIGNED8     *pIsMultibyteVar){
    UNSIGNED16 index;
    UNSIGNED8 subIndex;
    UNSIGNED8 dataLen;
@@ -206,6 +207,9 @@ UNSIGNED32 CO_PDOfindMap(  CO_SDO_t      *SDO,
       }
    }
 
+   //mark multibyte variable
+   *pIsMultibyteVar = (attr&CO_ODA_MB_VALUE) ? 1 : 0;
+
    return 0;
 }
 
@@ -220,10 +224,11 @@ UNSIGNED8 CO_RPDOconfigMap(   CO_RPDO_t* RPDO,
    const UNSIGNED32* pMap = &ObjDict_RPDOMappingParameter->mappedObject1;
 
    for(i=ObjDict_RPDOMappingParameter->numberOfMappedObjects; i>0; i--){
-      UNSIGNED8 j;
+      INTEGER8 j;
       UNSIGNED8* pData;
       UNSIGNED8 dummy = 0;
       UNSIGNED8 prevLength = length;
+      UNSIGNED8 MBvar;
 
       //function do much checking of errors in map
       ret = CO_PDOfindMap( RPDO->SDO,
@@ -231,16 +236,30 @@ UNSIGNED8 CO_RPDOconfigMap(   CO_RPDO_t* RPDO,
                            0,
                            &pData,
                            &length,
-                           &dummy);
+                           &dummy,
+                           &MBvar);
       if(ret){
          length = 0;
          CO_errorReport(RPDO->EM, ERROR_PDO_WRONG_MAPPING, ret);
          break;
       }
+
       //write PDO data pointers
+#ifdef BIG_ENDIAN
+      if(MBvar){
+         for(j=length-1; j>=prevLength; j--)
+            RPDO->mapPointer[j] = pData++;
+      }
+      else{
+         for(j=prevLength; j<length; j++)
+            RPDO->mapPointer[j] = pData++;
+      }
+#else
       for(j=prevLength; j<length; j++){
          RPDO->mapPointer[j] = pData++;
       }
+#endif
+
    }
 
    RPDO->dataLength = length;
@@ -261,9 +280,10 @@ UNSIGNED8 CO_TPDOconfigMap(   CO_TPDO_t* TPDO,
    TPDO->sendIfCOSFlags = 0;
 
    for(i=ObjDict_TPDOMappingParameter->numberOfMappedObjects; i>0; i--){
-      UNSIGNED8 j;
+      INTEGER8 j;
       UNSIGNED8* pData;
       UNSIGNED8 prevLength = length;
+      UNSIGNED8 MBvar;
 
       //function do much checking of errors in map
       ret = CO_PDOfindMap( TPDO->SDO,
@@ -271,16 +291,30 @@ UNSIGNED8 CO_TPDOconfigMap(   CO_TPDO_t* TPDO,
                            1,
                            &pData,
                            &length,
-                           &TPDO->sendIfCOSFlags);
+                           &TPDO->sendIfCOSFlags,
+                           &MBvar);
       if(ret){
          length = 0;
          CO_errorReport(TPDO->EM, ERROR_PDO_WRONG_MAPPING, ret);
          break;
       }
+
       //write PDO data pointers
+#ifdef BIG_ENDIAN
+      if(MBvar){
+         for(j=length-1; j>=prevLength; j--)
+            TPDO->mapPointer[j] = pData++;
+      }
+      else{
+         for(j=prevLength; j<length; j++)
+            TPDO->mapPointer[j] = pData++;
+      }
+#else
       for(j=prevLength; j<length; j++){
          TPDO->mapPointer[j] = pData++;
       }
+#endif
+
    }
 
    TPDO->dataLength = length;
@@ -501,6 +535,7 @@ UNSIGNED32 CO_ODF_RPDOmap( void       *object,
 {
    CO_RPDO_t *RPDO;
    UNSIGNED32 abortCode;
+   UNSIGNED32 dataBuffCopy;
 
    RPDO = (CO_RPDO_t*)object;   //this is the correct pointer type of the first argument
 
@@ -533,20 +568,21 @@ UNSIGNED32 CO_ODF_RPDOmap( void       *object,
       UNSIGNED8* pData;
       UNSIGNED8 length = 0;
       UNSIGNED8 dummy = 0;
+      UNSIGNED8 MBvar;
       UNSIGNED32 ret;
 
       if(RPDO->dataLength)
          return 0x06090030L;  //Invalid value for parameter (download only).
 
       //verify if mapping is correct
-      UNSIGNED32 dataBuffCopy;
       memcpySwap4((UNSIGNED8*)&dataBuffCopy, (UNSIGNED8*)dataBuff);
       ret = CO_PDOfindMap( RPDO->SDO,
                            dataBuffCopy,
                            0,
                            &pData,
                            &length,
-                           &dummy);
+                           &dummy,
+                           &MBvar);
       if(ret) return ret;
    }
 
@@ -574,6 +610,7 @@ UNSIGNED32 CO_ODF_TPDOmap( void       *object,
 {
    CO_TPDO_t *TPDO;
    UNSIGNED32 abortCode;
+   UNSIGNED32 dataBuffCopy;
 
    TPDO = (CO_TPDO_t*)object;   //this is the correct pointer type of the first argument
 
@@ -606,20 +643,21 @@ UNSIGNED32 CO_ODF_TPDOmap( void       *object,
       UNSIGNED8* pData;
       UNSIGNED8 length = 0;
       UNSIGNED8 dummy = 0;
+      UNSIGNED8 MBvar;
       UNSIGNED32 ret;
 
       if(TPDO->dataLength)
          return 0x06090030L;  //Invalid value for parameter (download only).
 
       //verify if mapping is correct
-      UNSIGNED32 dataBuffCopy;
       memcpySwap4((UNSIGNED8*)&dataBuffCopy, (UNSIGNED8*)dataBuff);
       ret = CO_PDOfindMap( TPDO->SDO,
                            dataBuffCopy,
                            1,
                            &pData,
                            &length,
-                           &dummy);
+                           &dummy,
+                           &MBvar);
       if(ret) return ret;
    }
 
@@ -650,13 +688,14 @@ const OD_RPDOMappingParameter_t       *ObjDict_RPDOMappingParameter,
       UNSIGNED16                       ObjDictIndex_RPDOMappingParameter,
       CO_CANmodule_t *CANdevRx, UNSIGNED16 CANdevRxIdx)
 {
+   CO_RPDO_t *RPDO;
 
    //allocate memory if not already allocated
    if((*ppRPDO) == NULL){
       if(((*ppRPDO) = (CO_RPDO_t*) malloc(sizeof(CO_RPDO_t))) == NULL){ return CO_ERROR_OUT_OF_MEMORY;}
    }
 
-   CO_RPDO_t *RPDO = *ppRPDO; //pointer to (newly created) object
+   RPDO = *ppRPDO; //pointer to (newly created) object
 
    //Configure object variables
    RPDO->EM = EM;
@@ -706,13 +745,14 @@ const OD_TPDOMappingParameter_t       *ObjDict_TPDOMappingParameter,
       UNSIGNED16                       ObjDictIndex_TPDOMappingParameter,
       CO_CANmodule_t *CANdevTx, UNSIGNED16 CANdevTxIdx)
 {
+   CO_TPDO_t *TPDO;
 
    //allocate memory if not already allocated
    if((*ppTPDO) == NULL){
       if(((*ppTPDO) = (CO_TPDO_t*) malloc(sizeof(CO_TPDO_t))) == NULL){return CO_ERROR_OUT_OF_MEMORY;}
    }
 
-   CO_TPDO_t *TPDO = *ppTPDO; //pointer to (newly created) object
+   TPDO = *ppTPDO; //pointer to (newly created) object
 
    //Configure object variables
    TPDO->EM = EM;

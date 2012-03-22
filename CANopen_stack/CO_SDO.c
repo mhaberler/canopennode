@@ -116,6 +116,7 @@ const sCO_OD_object                *ObjectDictionary,
       CO_CANmodule_t *CANdevRx, UNSIGNED16 CANdevRxIdx,
       CO_CANmodule_t *CANdevTx, UNSIGNED16 CANdevTxIdx)
 {
+   CO_SDO_t *SDO;
 
    //allocate memory if not already allocated
    if((*ppSDO) == NULL){
@@ -124,7 +125,7 @@ const sCO_OD_object                *ObjectDictionary,
    }
    else if((*ppSDO)->ObjectDictionaryPointers == NULL) return CO_ERROR_ILLEGAL_ARGUMENT;
 
-   CO_SDO_t *SDO = *ppSDO; //pointer to (newly created) object
+   SDO = *ppSDO; //pointer to (newly created) object
 
    //Configure object variables
    SDO->state = 0;
@@ -462,11 +463,12 @@ void CO_SDO_process( CO_SDO_t            *SDO,
                break;
 #else
                else{
+                  UNSIGNED32 len;
                   SDO->bufferOffset = 0;  //indicates pointer to next data to be send
                   SDO->timeoutTimer = 0;
                   SDO->state = 0x04;
                   SDO->CANtxBuff->data[0] = 0x41;
-                  UNSIGNED32 len = SDO->dataLength;
+                  len = SDO->dataLength;
                   memcpySwap4(&SDO->CANtxBuff->data[4], (UNSIGNED8*)&len);
                   CO_CANsend(SDO->CANdevTx, SDO->CANtxBuff);
                }

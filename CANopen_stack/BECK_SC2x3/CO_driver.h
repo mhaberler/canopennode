@@ -292,7 +292,7 @@ typedef struct{
 
    Copy N data bytes from source to destination. Swap bytes if necessary.
    CANopen uses little endian. SC2x3 uses big endian. Functions copy bytes with
-   inversion.
+   inversion. BIG_ENDIAN is also defined.
 
    Parameters:
       dest        - Destination location.
@@ -300,6 +300,7 @@ typedef struct{
 *******************************************************************************/
 void memcpySwap2(UNSIGNED8* dest, UNSIGNED8* src);
 void memcpySwap4(UNSIGNED8* dest, UNSIGNED8* src);
+#define BIG_ENDIAN
 
 
 /*******************************************************************************

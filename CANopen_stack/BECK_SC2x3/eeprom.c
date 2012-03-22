@@ -128,6 +128,7 @@ UNSIGNED32 CO_ODF_1011( void       *object,
 /******************************************************************************/
 INTEGER16 EE_init_1(
       EE_t            **ppEE,
+      UNSIGNED8        *SRAMAddress,
       UNSIGNED8        *OD_EEPROMAddress,
       UNSIGNED32        OD_EEPROMSize,
       UNSIGNED8        *OD_ROMAddress,
@@ -141,18 +142,15 @@ INTEGER16 EE_init_1(
    EE_t *EE = *ppEE; //pointer to (newly created) object
 
    //configure object variables
+   EE->pSRAM = (UNSIGNED32*)SRAMAddress;
    EE->OD_EEPROMAddress = (UNSIGNED32*) OD_EEPROMAddress;
    EE->OD_EEPROMSize = OD_EEPROMSize / 4;
    EE->OD_ROMAddress = OD_ROMAddress;
    EE->OD_ROMSize = OD_ROMSize;
    EE->OD_EEPROMCurrentIndex = 0;
 
-   //initialize SRAM
-   if(RTX_MemWindow(gSysPublicData.sramAddr, gSysPublicData.sramSize))
-      return CO_ERROR_OUT_OF_MEMORY;
-   EE->pSRAM = gSysPublicData.sramAddr;
-
    //read the CO_OD_EEPROM from SRAM, first verify, if data are OK
+   if(EE->pSRAM == 0) return CO_ERROR_OUT_OF_MEMORY;
    UNSIGNED32 firstWordRAM = *(EE->OD_EEPROMAddress);
    UNSIGNED32 firstWordEE = *(EE->pSRAM);
    UNSIGNED32 lastWordEE = *(EE->pSRAM + EE->OD_EEPROMSize - 1);

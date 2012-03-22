@@ -222,13 +222,14 @@ INTEGER16 CO_SYNC_init(
       CO_CANmodule_t *CANdevTx, UNSIGNED16 CANdevTxIdx)
 {
    UNSIGNED8 len = 0;
+   CO_SYNC_t *SYNC;
 
    //allocate memory if not already allocated
    if((*ppSYNC) == NULL){
       if(((*ppSYNC) = (CO_SYNC_t*) malloc(sizeof(CO_SYNC_t))) == NULL){ return CO_ERROR_OUT_OF_MEMORY;}
    }
 
-   CO_SYNC_t *SYNC = *ppSYNC; //pointer to (newly created) object
+   SYNC = *ppSYNC; //pointer to (newly created) object
 
    //Configure object variables
    SYNC->isProducer = (ObjDict_COB_ID_SYNCMessage&0x40000000L) ? 1 : 0;

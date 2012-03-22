@@ -75,13 +75,14 @@ INTEGER16 CO_NMT_init(
       CO_CANmodule_t *NMT_CANdev, UNSIGNED16 NMT_rxIdx, UNSIGNED16 CANidRxNMT,
       CO_CANmodule_t *HB_CANdev,  UNSIGNED16 HB_txIdx,  UNSIGNED16 CANidTxHB)
 {
+   CO_NMT_t *NMT;
 
    //allocate memory if not already allocated
    if((*ppNMT) == NULL){
       if(((*ppNMT) = (CO_NMT_t*) malloc(sizeof(CO_NMT_t))) == NULL){ return CO_ERROR_OUT_OF_MEMORY;}
    }
 
-   CO_NMT_t *NMT = *ppNMT; //pointer to (newly created) object
+   NMT = *ppNMT; //pointer to (newly created) object
 
    //blinking bytes
    NMT->LEDflickering      = 0;
@@ -176,6 +177,7 @@ UNSIGNED8 CO_NMT_process(  CO_NMT_t         *NMT,
                            UNSIGNED8         errReg,
                            const UNSIGNED8  *errBehavior)
 {
+   UNSIGNED8 CANpassive;
 
    if(NMT->HBproducerTimer < HBtime) NMT->HBproducerTimer += timeDifference_ms;
 
@@ -197,7 +199,7 @@ UNSIGNED8 CO_NMT_process(  CO_NMT_t         *NMT,
 
 
    //CAN passive flag
-   UNSIGNED8 CANpassive = 0;
+   CANpassive = 0;
    if(CO_isError(NMT->EMpr->reportBuffer, ERROR_CAN_TX_BUS_PASSIVE) || CO_isError(NMT->EMpr->reportBuffer, ERROR_CAN_RX_BUS_PASSIVE))
       CANpassive = 1;
 

@@ -60,8 +60,10 @@ struct sCO_OD_RAM CO_OD_RAM = {
 /*2108*/ {0},
 /*2109*/ {0},
 /*2110*/ {0L, 0L},
-/*6000*/ {0x0, 0x0, 0x0, 0x0},
-/*6200*/ {0x0, 0x0, 0x0, 0x0},
+/*6000*/ {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0},
+/*6200*/ {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0},
+/*6401*/ {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+/*6411*/ {0, 0, 0, 0, 0, 0, 0, 0},
 
            CO_OD_FIRST_LAST_WORD,
 };
@@ -313,7 +315,8 @@ UNSIGNED32 CO_ODF_2102(void *object, UNSIGNED16 index, UNSIGNED8 subIndex, UNSIG
                        UNSIGNED16 attribute, UNSIGNED8 dir, void* dataBuff, const void* pData){
   UNSIGNED32 abortCode;
   if(WRITING){
-    UNSIGNED16 var = *((UNSIGNED16*)dataBuff);
+    UNSIGNED16 var;
+    memcpySwap2((UNSIGNED8*)&var, (UNSIGNED8*)dataBuff);
     if(!(var == 10 || var == 20 || var == 50 || var == 125 || var == 250 || var == 500 || var == 800 || var == 1000)) return 0x06090030L;  //Invalid value for the parameter
   }
   abortCode = CO_ODF(object, index, subIndex, length, attribute, dir, dataBuff, pData);
@@ -324,7 +327,9 @@ UNSIGNED32 CO_ODF_2107(void *object, UNSIGNED16 index, UNSIGNED8 subIndex, UNSIG
                        UNSIGNED16 attribute, UNSIGNED8 dir, void* dataBuff, const void* pData){
   UNSIGNED32 abortCode;
   if(WRITING){
-    if(!((subIndex == 3 || subIndex == 5) && *((UNSIGNED8*)dataBuff) == 0))
+    UNSIGNED16 var;
+    memcpySwap2((UNSIGNED8*)&var, (UNSIGNED8*)dataBuff);
+    if(!((subIndex == 3 || subIndex == 5) && var == 0))
       return 0x06090030; //Invalid value for parameter
   }
   abortCode = CO_ODF(object, index, subIndex, length, attribute, dir, dataBuff, pData);
@@ -384,6 +389,8 @@ const sCO_OD_object CO_OD[CO_OD_NoOfElements] = {
 {0x2109, 0x01, 0xB6,  2, (const void*)&CO_OD_RAM.voltage[0],                            CO_ODF},
 {0x2110, 0x02, 0xFE,  4, (const void*)&CO_OD_RAM.variableInt32[0],                      CO_ODF},
 {0x2111, 0x02, 0xFD,  4, (const void*)&CO_OD_ROM.variableROMInt32[0],                   CO_ODF},
-{0x6000, 0x04, 0x76,  1, (const void*)&CO_OD_RAM.readInput8Bit[0],                      CO_ODF},
-{0x6200, 0x04, 0x3E,  1, (const void*)&CO_OD_RAM.writeOutput8Bit[0],                    CO_ODF},
+{0x6000, 0x08, 0x76,  1, (const void*)&CO_OD_RAM.readInput8Bit[0],                      CO_ODF},
+{0x6200, 0x08, 0x3E,  1, (const void*)&CO_OD_RAM.writeOutput8Bit[0],                    CO_ODF},
+{0x6401, 0x0C, 0xB6,  2, (const void*)&CO_OD_RAM.readAnalogueInput16Bit[0],             CO_ODF},
+{0x6411, 0x08, 0xBE,  2, (const void*)&CO_OD_RAM.writeAnalogueOutput16Bit[0],           CO_ODF},
 };

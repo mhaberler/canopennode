@@ -102,6 +102,8 @@
     <a href="#object_2111" title="Variable ROM Int32">2111</a>
     <a href="#object_6000" title="Read input 8 bit">6000</a>
     <a href="#object_6200" title="Write output 8 bit">6200</a>
+    <a href="#object_6401" title="Read analogue input 16 bit">6401</a>
+    <a href="#object_6411" title="Write analogue output 16 bit">6411</a>
   </div>
   <div id="contents" class="main_chapters">
     <h2>Contents</h2>
@@ -355,6 +357,14 @@
             <a href="#object_6200">6200</a>
             - Write output 8 bit
           </li>
+          <li>
+            <a href="#object_6401">6401</a>
+            - Read analogue input 16 bit
+          </li>
+          <li>
+            <a href="#object_6411">6411</a>
+            - Write analogue output 16 bit
+          </li>
         </ul>
       </ul>
     </ul>
@@ -375,11 +385,11 @@
         </tr>
         <tr>
           <th>Creation Time</th>
-          <td>12:22:27</td>
+          <td>10:39:00</td>
         </tr>
         <tr>
           <th>Creation Date</th>
-          <td>2011-08-31</td>
+          <td>2012-03-22</td>
         </tr>
         <tr>
           <th>Created By</th>
@@ -409,7 +419,7 @@
         <td>
           <div class="description lang_en">
             <h4>en: CANopenNode</h4>
-            <div>CANopenNode is an open source software stack used for serial communication of multiple devices over the CAN/CANopen Network. It runs on different microcontrollers.</div>
+            <div>CANopenNode is an open source software stack used for serial communication of multiple devices over the CAN/CANopen Network.</div>
             <a href="http://canopennode.sourceforge.net" target="infoWindow">More...</a>
           </div>
         </td>
@@ -3659,7 +3669,8 @@
                        UNSIGNED16 attribute, UNSIGNED8 dir, void* dataBuff, const void* pData){
   UNSIGNED32 abortCode;
   if(WRITING){
-    UNSIGNED16 var = *((UNSIGNED16*)dataBuff);
+    UNSIGNED16 var;
+    memcpySwap2((UNSIGNED8*)&amp;var, (UNSIGNED8*)dataBuff);
     if(!(var == 10 || var == 20 || var == 50 || var == 125 || var == 250 || var == 500 || var == 800 || var == 1000)) return 0x06090030L;  //Invalid value for the parameter
   }
   abortCode = CO_ODF(object, index, subIndex, length, attribute, dir, dataBuff, pData);
@@ -3838,7 +3849,9 @@
                        UNSIGNED16 attribute, UNSIGNED8 dir, void* dataBuff, const void* pData){
   UNSIGNED32 abortCode;
   if(WRITING){
-    if(!((subIndex == 3 || subIndex == 5) &amp;&amp; *((UNSIGNED8*)dataBuff) == 0))
+    UNSIGNED16 var;
+    memcpySwap2((UNSIGNED8*)&amp;var, (UNSIGNED8*)dataBuff);
+    if(!((subIndex == 3 || subIndex == 5) &amp;&amp; var == 0))
       return 0x06090030; //Invalid value for parameter
   }
   abortCode = CO_ODF(object, index, subIndex, length, attribute, dir, dataBuff, pData);
@@ -4084,7 +4097,7 @@
           </tr>
           <tr>
             <td>Array</td>
-            <td>5</td>
+            <td>9</td>
             <td>RAM</td>
             <td>UNSIGNED8</td>
             <td>ro</td>
@@ -4103,7 +4116,7 @@
           <tr>
             <td>00</td>
             <td>max sub-index</td>
-            <td>4</td>
+            <td>8</td>
             <td/>
           </tr>
           <tr>
@@ -4126,6 +4139,30 @@
           </tr>
           <tr>
             <td>04</td>
+            <td>Input</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>05</td>
+            <td>Input</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>06</td>
+            <td>Input</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>07</td>
+            <td>Input</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>08</td>
             <td>Input</td>
             <td>0</td>
             <td/>
@@ -4150,7 +4187,7 @@
           </tr>
           <tr>
             <td>Array</td>
-            <td>5</td>
+            <td>9</td>
             <td>RAM</td>
             <td>UNSIGNED8</td>
             <td>rw</td>
@@ -4169,7 +4206,7 @@
           <tr>
             <td>00</td>
             <td>max sub-index</td>
-            <td>4</td>
+            <td>8</td>
             <td/>
           </tr>
           <tr>
@@ -4196,10 +4233,238 @@
             <td>0</td>
             <td/>
           </tr>
+          <tr>
+            <td>05</td>
+            <td>Output</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>06</td>
+            <td>Output</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>07</td>
+            <td>Output</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>08</td>
+            <td>Output</td>
+            <td>0</td>
+            <td/>
+          </tr>
         </table>
         <div class="description lang_en">
           <h4>en: Write output 8 bit</h4>
           <div>Digital outputs on hardware.</div>
+        </div>
+      </div>
+      <div id="object_6401" class="elements">
+        <h3>6401 - Read analogue input 16 bit</h3>
+        <table>
+          <tr>
+            <th>Object Type</th>
+            <th>Sub Number</th>
+            <th>Memory Type</th>
+            <th>Data Type</th>
+            <th>Access Type</th>
+            <th>PDO Mapping</th>
+            <th>TPDO detects COS</th>
+          </tr>
+          <tr>
+            <td>Array</td>
+            <td>13</td>
+            <td>RAM</td>
+            <td>INTEGER16</td>
+            <td>ro</td>
+            <td>optional</td>
+            <td>no</td>
+          </tr>
+        </table>
+        <br/>
+        <table>
+          <tr>
+            <th>Subindex</th>
+            <th>Name</th>
+            <th>Default value</th>
+            <th>Actual value</th>
+          </tr>
+          <tr>
+            <td>00</td>
+            <td>max sub-index</td>
+            <td>12</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>01</td>
+            <td>Input</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>02</td>
+            <td>Input</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>03</td>
+            <td>Input</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>04</td>
+            <td>Input</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>05</td>
+            <td>Input</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>06</td>
+            <td>Input</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>07</td>
+            <td>Input</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>08</td>
+            <td>Input</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>09</td>
+            <td>Input</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>0A</td>
+            <td>Input</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>0B</td>
+            <td>Input</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>0C</td>
+            <td>Input</td>
+            <td>0</td>
+            <td/>
+          </tr>
+        </table>
+        <div class="description lang_en">
+          <h4>en: Read analogue input 16 bit</h4>
+          <div>Analogue inputs from hardware. The integer value is left adjusted.</div>
+        </div>
+      </div>
+      <div id="object_6411" class="elements">
+        <h3>6411 - Write analogue output 16 bit</h3>
+        <table>
+          <tr>
+            <th>Object Type</th>
+            <th>Sub Number</th>
+            <th>Memory Type</th>
+            <th>Data Type</th>
+            <th>Access Type</th>
+            <th>PDO Mapping</th>
+            <th>TPDO detects COS</th>
+          </tr>
+          <tr>
+            <td>Array</td>
+            <td>9</td>
+            <td>RAM</td>
+            <td>INTEGER16</td>
+            <td>rw</td>
+            <td>optional</td>
+            <td>no</td>
+          </tr>
+        </table>
+        <br/>
+        <table>
+          <tr>
+            <th>Subindex</th>
+            <th>Name</th>
+            <th>Default value</th>
+            <th>Actual value</th>
+          </tr>
+          <tr>
+            <td>00</td>
+            <td>max sub-index</td>
+            <td>8</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>01</td>
+            <td>Output</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>02</td>
+            <td>Output</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>03</td>
+            <td>Output</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>04</td>
+            <td>Output</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>05</td>
+            <td>Output</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>06</td>
+            <td>Output</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>07</td>
+            <td>Output</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>08</td>
+            <td>Output</td>
+            <td>0</td>
+            <td/>
+          </tr>
+        </table>
+        <div class="description lang_en">
+          <h4>en: Write analogue output 16 bit</h4>
+          <div>Analogue outputs on hardware. The integer value is left adjusted.</div>
         </div>
       </div>
     </div>

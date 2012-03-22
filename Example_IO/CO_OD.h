@@ -41,8 +41,8 @@
    FILE INFO:
       FileName:     IO
       FileVersion:  3.0
-      CreationTime: 12:22:27
-      CreationDate: 2011-08-31
+      CreationTime: 10:39:00
+      CreationDate: 2012-03-22
       CreatedBy:    -
 *******************************************************************************/
 
@@ -65,12 +65,13 @@
    #define CO_NO_SDO_CLIENT               0   
    #define CO_NO_RPDO                     4   //Associated objects: 1400, 1401, 1402, 1403, 1600, 1601, 1602, 1603
    #define CO_NO_TPDO                     4   //Associated objects: 1800, 1801, 1802, 1803, 1A00, 1A01, 1A02, 1A03
+   #define CO_NO_NMT_MASTER               0   
 
 
 /*******************************************************************************
    OBJECT DICTIONARY
 *******************************************************************************/
-   #define CO_OD_NoOfElements             50
+   #define CO_OD_NoOfElements             52
 
 
 /*******************************************************************************
@@ -152,8 +153,10 @@ struct sCO_OD_RAM{
 /*2108      */ INTEGER16      temperature[1];
 /*2109      */ INTEGER16      voltage[1];
 /*2110      */ INTEGER32      variableInt32[2];
-/*6000      */ UNSIGNED8      readInput8Bit[4];
-/*6200      */ UNSIGNED8      writeOutput8Bit[4];
+/*6000      */ UNSIGNED8      readInput8Bit[8];
+/*6200      */ UNSIGNED8      writeOutput8Bit[8];
+/*6401      */ INTEGER16      readAnalogueInput16Bit[12];
+/*6411      */ INTEGER16      writeAnalogueOutput16Bit[8];
 
                UNSIGNED32     LastWord;
 };
@@ -348,13 +351,21 @@ extern CO_OD_ROM_IDENT struct sCO_OD_ROM CO_OD_ROM;
       #define OD_variableROMInt32                        CO_OD_ROM.variableROMInt32
       #define ODL_variableROMInt32_arrayLength           2
 
-/*6000, Data Type: UNSIGNED8, Array[4] */
+/*6000, Data Type: UNSIGNED8, Array[8] */
       #define OD_readInput8Bit                           CO_OD_RAM.readInput8Bit
-      #define ODL_readInput8Bit_arrayLength              4
+      #define ODL_readInput8Bit_arrayLength              8
 
-/*6200, Data Type: UNSIGNED8, Array[4] */
+/*6200, Data Type: UNSIGNED8, Array[8] */
       #define OD_writeOutput8Bit                         CO_OD_RAM.writeOutput8Bit
-      #define ODL_writeOutput8Bit_arrayLength            4
+      #define ODL_writeOutput8Bit_arrayLength            8
+
+/*6401, Data Type: INTEGER16, Array[12] */
+      #define OD_readAnalogueInput16Bit                  CO_OD_RAM.readAnalogueInput16Bit
+      #define ODL_readAnalogueInput16Bit_arrayLength     12
+
+/*6411, Data Type: INTEGER16, Array[8] */
+      #define OD_writeAnalogueOutput16Bit                CO_OD_RAM.writeAnalogueOutput16Bit
+      #define ODL_writeAnalogueOutput16Bit_arrayLength   8
 
 
 #endif

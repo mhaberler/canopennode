@@ -568,6 +568,7 @@ typedef struct{
 *******************************************************************************/
 void memcpySwap2(UNSIGNED8* dest, UNSIGNED8* src);
 void memcpySwap4(UNSIGNED8* dest, UNSIGNED8* src);
+//#define BIG_ENDIAN
 
 
 /*******************************************************************************

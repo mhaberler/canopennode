@@ -366,8 +366,9 @@ void CO_TPDOconfigCom(CO_TPDO_t* TPDO, UNSIGNED32 COB_IDUsedByTPDO, UNSIGNED8 sy
       map             - PDO mapping parameter.
       R_T             - 0 for RPDO map, 1 for TPDO map.
       ppData          - Pointer to returning parameter: pointer to data of mapped variable.
-      pLength         - Pointer to returning parameter: *add* length of maped variable.
+      pLength         - Pointer to returning parameter: *add* length of mapped variable.
       pSendIfCOSFlags - Pointer to returning parameter: sendIfCOSFlags variable.
+      pIsMultibyteVar - Pointer to returning parameter: true for multibyte variable.
 
    Return:
       0 on success, otherwise <SDO abort code>.
@@ -377,7 +378,8 @@ UNSIGNED32 CO_PDOfindMap(  CO_SDO_t      *SDO,
                            UNSIGNED8      R_T,
                            UNSIGNED8    **ppData,
                            UNSIGNED8     *pLength,
-                           UNSIGNED8     *pSendIfCOSFlags);
+                           UNSIGNED8     *pSendIfCOSFlags,
+                           UNSIGNED8     *pIsMultibyteVar);
 
 
 /*******************************************************************************
@@ -385,7 +387,7 @@ UNSIGNED32 CO_PDOfindMap(  CO_SDO_t      *SDO,
 
    Configure RPDO Mapping parameter.
 
-   Function is called from commuincation reset or when parameter changes.
+   Function is called from communication reset or when parameter changes.
 
    Function configures following variables from <CO_RPDO_t>: _dataLength_ and
    _mapPointer_.
@@ -407,7 +409,7 @@ UNSIGNED8 CO_RPDOconfigMap(   CO_RPDO_t* RPDO,
 
    Configure TPDO Mapping parameter.
 
-   Function is called from commuincation reset or when parameter changes.
+   Function is called from communication reset or when parameter changes.
 
    Function configures following variables from <CO_TPDO_t>: _dataLength_,
    _mapPointer_ and _sendIfCOSFlags_.

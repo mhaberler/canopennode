@@ -13,13 +13,13 @@
         <ProfileTechnology>CANopen</ProfileTechnology>
       </ISO15745Reference>
     </ProfileHeader>
-    <ProfileBody xsi:type="ProfileBody_Device_CANopen" fileName="IO" fileCreator="-" fileCreationDate="2011-08-31" fileCreationTime="12:22:27" fileVersion="3.0">
+    <ProfileBody xsi:type="ProfileBody_Device_CANopen" fileName="IO" fileCreator="-" fileCreationDate="2012-03-22" fileCreationTime="10:39:00" fileVersion="3.0">
       <DeviceIdentity>
         <vendorName>Paternoster</vendorName>
         <productName>CANopenNode</productName>
         <productText>
           <label lang="en">CANopenNode</label>
-          <description lang="en" URI="http://canopennode.sourceforge.net">CANopenNode is an open source software stack used for serial communication of multiple devices over the CAN/CANopen Network. It runs on different microcontrollers.</description>
+          <description lang="en" URI="http://canopennode.sourceforge.net">CANopenNode is an open source software stack used for serial communication of multiple devices over the CAN/CANopen Network.</description>
         </productText>
         <version versionType="FW">3.00</version>
       </DeviceIdentity>
@@ -52,7 +52,7 @@
         <ProfileTechnology>CANopen</ProfileTechnology>
       </ISO15745Reference>
     </ProfileHeader>
-    <ProfileBody xsi:type="ProfileBody_CommunicationNetwork_CANopen" fileName="IO" fileCreator="-" fileCreationDate="2011-08-31" fileCreationTime="12:22:27" fileVersion="3.0">
+    <ProfileBody xsi:type="ProfileBody_CommunicationNetwork_CANopen" fileName="IO" fileCreator="-" fileCreationDate="2012-03-22" fileCreationTime="10:39:00" fileVersion="3.0">
       <ApplicationLayers>
         <CANopenObjectList>
           <CANopenObject index="1000" name="Device type" objectType="7" dataType="07" accessType="ro" defaultValue="0x00000000" PDOmapping="no"/>
@@ -292,19 +292,53 @@
             <CANopenSubObject subIndex="01" name="int32" objectType="7" dataType="04" accessType="rw" defaultValue="1" PDOmapping="optional"/>
             <CANopenSubObject subIndex="02" name="int32" objectType="7" dataType="04" accessType="rw" defaultValue="0" PDOmapping="optional"/>
           </CANopenObject>
-          <CANopenObject index="6000" name="Read input 8 bit" objectType="8" subNumber="5">
-            <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" PDOmapping="no" defaultValue="4"/>
+          <CANopenObject index="6000" name="Read input 8 bit" objectType="8" subNumber="9">
+            <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" PDOmapping="no" defaultValue="8"/>
             <CANopenSubObject subIndex="01" name="Input" objectType="7" dataType="05" accessType="ro" defaultValue="0" PDOmapping="optional"/>
             <CANopenSubObject subIndex="02" name="Input" objectType="7" dataType="05" accessType="ro" defaultValue="0" PDOmapping="optional"/>
             <CANopenSubObject subIndex="03" name="Input" objectType="7" dataType="05" accessType="ro" defaultValue="0" PDOmapping="optional"/>
             <CANopenSubObject subIndex="04" name="Input" objectType="7" dataType="05" accessType="ro" defaultValue="0" PDOmapping="optional"/>
+            <CANopenSubObject subIndex="05" name="Input" objectType="7" dataType="05" accessType="ro" defaultValue="0" PDOmapping="optional"/>
+            <CANopenSubObject subIndex="06" name="Input" objectType="7" dataType="05" accessType="ro" defaultValue="0" PDOmapping="optional"/>
+            <CANopenSubObject subIndex="07" name="Input" objectType="7" dataType="05" accessType="ro" defaultValue="0" PDOmapping="optional"/>
+            <CANopenSubObject subIndex="08" name="Input" objectType="7" dataType="05" accessType="ro" defaultValue="0" PDOmapping="optional"/>
           </CANopenObject>
-          <CANopenObject index="6200" name="Write output 8 bit" objectType="8" subNumber="5">
-            <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" PDOmapping="no" defaultValue="4"/>
+          <CANopenObject index="6200" name="Write output 8 bit" objectType="8" subNumber="9">
+            <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" PDOmapping="no" defaultValue="8"/>
             <CANopenSubObject subIndex="01" name="Output" objectType="7" dataType="05" accessType="rw" defaultValue="0" PDOmapping="optional"/>
             <CANopenSubObject subIndex="02" name="Output" objectType="7" dataType="05" accessType="rw" defaultValue="0" PDOmapping="optional"/>
             <CANopenSubObject subIndex="03" name="Output" objectType="7" dataType="05" accessType="rw" defaultValue="0" PDOmapping="optional"/>
             <CANopenSubObject subIndex="04" name="Output" objectType="7" dataType="05" accessType="rw" defaultValue="0" PDOmapping="optional"/>
+            <CANopenSubObject subIndex="05" name="Output" objectType="7" dataType="05" accessType="rw" defaultValue="0" PDOmapping="optional"/>
+            <CANopenSubObject subIndex="06" name="Output" objectType="7" dataType="05" accessType="rw" defaultValue="0" PDOmapping="optional"/>
+            <CANopenSubObject subIndex="07" name="Output" objectType="7" dataType="05" accessType="rw" defaultValue="0" PDOmapping="optional"/>
+            <CANopenSubObject subIndex="08" name="Output" objectType="7" dataType="05" accessType="rw" defaultValue="0" PDOmapping="optional"/>
+          </CANopenObject>
+          <CANopenObject index="6401" name="Read analogue input 16 bit" objectType="8" subNumber="13">
+            <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" PDOmapping="no" defaultValue="12"/>
+            <CANopenSubObject subIndex="01" name="Input" objectType="7" dataType="03" accessType="ro" defaultValue="0" PDOmapping="optional"/>
+            <CANopenSubObject subIndex="02" name="Input" objectType="7" dataType="03" accessType="ro" defaultValue="0" PDOmapping="optional"/>
+            <CANopenSubObject subIndex="03" name="Input" objectType="7" dataType="03" accessType="ro" defaultValue="0" PDOmapping="optional"/>
+            <CANopenSubObject subIndex="04" name="Input" objectType="7" dataType="03" accessType="ro" defaultValue="0" PDOmapping="optional"/>
+            <CANopenSubObject subIndex="05" name="Input" objectType="7" dataType="03" accessType="ro" defaultValue="0" PDOmapping="optional"/>
+            <CANopenSubObject subIndex="06" name="Input" objectType="7" dataType="03" accessType="ro" defaultValue="0" PDOmapping="optional"/>
+            <CANopenSubObject subIndex="07" name="Input" objectType="7" dataType="03" accessType="ro" defaultValue="0" PDOmapping="optional"/>
+            <CANopenSubObject subIndex="08" name="Input" objectType="7" dataType="03" accessType="ro" defaultValue="0" PDOmapping="optional"/>
+            <CANopenSubObject subIndex="09" name="Input" objectType="7" dataType="03" accessType="ro" defaultValue="0" PDOmapping="optional"/>
+            <CANopenSubObject subIndex="0A" name="Input" objectType="7" dataType="03" accessType="ro" defaultValue="0" PDOmapping="optional"/>
+            <CANopenSubObject subIndex="0B" name="Input" objectType="7" dataType="03" accessType="ro" defaultValue="0" PDOmapping="optional"/>
+            <CANopenSubObject subIndex="0C" name="Input" objectType="7" dataType="03" accessType="ro" defaultValue="0" PDOmapping="optional"/>
+          </CANopenObject>
+          <CANopenObject index="6411" name="Write analogue output 16 bit" objectType="8" subNumber="9">
+            <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" PDOmapping="no" defaultValue="8"/>
+            <CANopenSubObject subIndex="01" name="Output" objectType="7" dataType="03" accessType="rw" defaultValue="0" PDOmapping="optional"/>
+            <CANopenSubObject subIndex="02" name="Output" objectType="7" dataType="03" accessType="rw" defaultValue="0" PDOmapping="optional"/>
+            <CANopenSubObject subIndex="03" name="Output" objectType="7" dataType="03" accessType="rw" defaultValue="0" PDOmapping="optional"/>
+            <CANopenSubObject subIndex="04" name="Output" objectType="7" dataType="03" accessType="rw" defaultValue="0" PDOmapping="optional"/>
+            <CANopenSubObject subIndex="05" name="Output" objectType="7" dataType="03" accessType="rw" defaultValue="0" PDOmapping="optional"/>
+            <CANopenSubObject subIndex="06" name="Output" objectType="7" dataType="03" accessType="rw" defaultValue="0" PDOmapping="optional"/>
+            <CANopenSubObject subIndex="07" name="Output" objectType="7" dataType="03" accessType="rw" defaultValue="0" PDOmapping="optional"/>
+            <CANopenSubObject subIndex="08" name="Output" objectType="7" dataType="03" accessType="rw" defaultValue="0" PDOmapping="optional"/>
           </CANopenObject>
         </CANopenObjectList>
         <dummyUsage>

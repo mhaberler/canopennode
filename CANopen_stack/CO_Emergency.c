@@ -108,6 +108,8 @@ INTEGER16 CO_emergency_init(
       CO_CANmodule_t *CANdev, UNSIGNED16 CANdevTxIdx, UNSIGNED16 CANidTxEM)
 {
    UNSIGNED8 i;
+   CO_emergencyProcess_t *EMpr;
+   CO_emergencyReport_t  *EM;
 
    if(msgBufferSize < 2) msgBufferSize = 2;
 
@@ -119,8 +121,8 @@ INTEGER16 CO_emergency_init(
    }
    else if((*ppEmergencyReport) == NULL || (*ppEmergencyReport)->msgBuffer == NULL) return CO_ERROR_ILLEGAL_ARGUMENT;
 
-   CO_emergencyProcess_t *EMpr = *ppEmergencyProcess; //pointer to (newly created) object
-   CO_emergencyReport_t  *EM = *ppEmergencyReport;
+   EMpr = *ppEmergencyProcess; //pointer to (newly created) object
+   EM = *ppEmergencyReport;
    EMpr->reportBuffer = EM;
 
    //Configure object variables
@@ -186,6 +188,7 @@ void CO_emergency_process( CO_emergencyProcess_t  *EMpr,
 {
 
    CO_emergencyReport_t *EM = EMpr->reportBuffer;
+   UNSIGNED8 errorRegister;
 
    //verify errors from driver and other
    CO_CANverifyErrors(EMpr->CANdev);
@@ -200,7 +203,7 @@ void CO_emergency_process( CO_emergencyProcess_t  *EMpr,
 
 
    //calculate Error register
-   UNSIGNED8 errorRegister = 0;
+   errorRegister = 0;
    //generic error
    if(EM->errorStatusBits[5])
       errorRegister |= 0x01;
@@ -267,6 +270,7 @@ INTEGER8 CO_errorReport(CO_emergencyReport_t *EM, UNSIGNED8 errorBit, UNSIGNED16
    UNSIGNED8 index = errorBit >> 3;
    UNSIGNED8 bitmask = 1 << (errorBit & 0x7);
    UNSIGNED8 *errorStatusBits = &EM->errorStatusBits[index];
+   UNSIGNED8 *msgBufferWritePtrCopy;
 
    //if error was allready reported, return
    if((*errorStatusBits & bitmask) != 0) return 0;
@@ -300,7 +304,7 @@ INTEGER8 CO_errorReport(CO_emergencyReport_t *EM, UNSIGNED8 errorBit, UNSIGNED16
    }
 
    //copy data for emergency message
-   UNSIGNED8 *msgBufferWritePtrCopy = EM->msgBufferWritePtr;
+   msgBufferWritePtrCopy = EM->msgBufferWritePtr;
    memcpySwap2(msgBufferWritePtrCopy, (UNSIGNED8*)&errorCode);
    msgBufferWritePtrCopy += 3;   //third bit is Error register - written later
    *(msgBufferWritePtrCopy++) = errorBit;
@@ -323,6 +327,7 @@ INTEGER8 CO_errorReset(CO_emergencyReport_t *EM, UNSIGNED8 errorBit, UNSIGNED16 
    UNSIGNED8 index = errorBit >> 3;
    UNSIGNED8 bitmask = 1 << (errorBit & 0x7);
    UNSIGNED8 *errorStatusBits = &EM->errorStatusBits[index];
+   UNSIGNED8 *msgBufferWritePtrCopy;
 
    //if error is allready cleared, return
    if((*errorStatusBits & bitmask) == 0) return 0;
@@ -355,7 +360,7 @@ INTEGER8 CO_errorReset(CO_emergencyReport_t *EM, UNSIGNED8 errorBit, UNSIGNED16 
    }
 
    //copy data for emergency message
-   UNSIGNED8 *msgBufferWritePtrCopy = EM->msgBufferWritePtr;
+   msgBufferWritePtrCopy = EM->msgBufferWritePtr;
    *(msgBufferWritePtrCopy++) = 0;
    *(msgBufferWritePtrCopy++) = 0;
    *(msgBufferWritePtrCopy++) = 0;

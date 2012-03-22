@@ -71,6 +71,8 @@ INTEGER16 CO_SDOclient_init(
       CO_CANmodule_t *CANdevRx, UNSIGNED16 CANdevRxIdx,
       CO_CANmodule_t *CANdevTx, UNSIGNED16 CANdevTxIdx)
 {
+   CO_SDOclient_t *SDO_C;
+
    //verify parameters
    if(ObjDict_SDOClientParameter->maxSubIndex!=3) return CO_ERROR_ILLEGAL_ARGUMENT;
 
@@ -79,7 +81,7 @@ INTEGER16 CO_SDOclient_init(
       if(((*ppSDOclient) = (CO_SDOclient_t*) malloc(sizeof(CO_SDOclient_t))) == NULL){return CO_ERROR_OUT_OF_MEMORY;}
    }
 
-   CO_SDOclient_t *SDO_C = *ppSDOclient; //pointer to (newly created) object
+   SDO_C = *ppSDOclient; //pointer to (newly created) object
 
    //Configure object variables
    SDO_C->state = 0;
@@ -199,9 +201,10 @@ INTEGER8 CO_SDOclientDownloadInitiate( CO_SDOclient_t   *SDO_C,
       for(i=dataSize+3; i>=4; i--) SDO_C->CANtxBuff->data[i] = dataTx[i-4];
    }
    else{
+      UNSIGNED32 len;
       //segmented transfer
       SDO_C->CANtxBuff->data[0] = 0x21;
-      UNSIGNED32 len = dataSize;
+      len = dataSize;
       memcpySwap4(&SDO_C->CANtxBuff->data[4], (UNSIGNED8*)&len);
    }
 

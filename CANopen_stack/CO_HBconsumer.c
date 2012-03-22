@@ -71,9 +71,12 @@ UNSIGNED32 CO_ODF_1016( void       *object,
       CO_HBconsumer_t *HBcons;
       UNSIGNED8 i;
       UNSIGNED32 dataBuffCopy;
+      UNSIGNED8 NodeID;
+      UNSIGNED16 HBconsTime;
+
       memcpySwap4((UNSIGNED8*)&dataBuffCopy, (UNSIGNED8*)dataBuff);
-      UNSIGNED8 NodeID = (dataBuffCopy>>16) & 0xFF;
-      UNSIGNED16 HBconsTime = dataBuffCopy & 0xFFFF;
+      NodeID = (dataBuffCopy>>16) & 0xFF;
+      HBconsTime = dataBuffCopy & 0xFFFF;
 
       HBcons = (CO_HBconsumer_t*) object; //this is the correct pointer type of the first argument
 
@@ -107,6 +110,7 @@ const UNSIGNED32             *ObjDict_consumerHeartbeatTime,
 {
    UNSIGNED8 i;
    CO_HBconsNode_t *monitoredNode;
+   CO_HBconsumer_t *HBcons;
 
    //allocate memory if not already allocated
    if((*ppHBcons) == NULL){
@@ -115,7 +119,7 @@ const UNSIGNED32             *ObjDict_consumerHeartbeatTime,
    }
    else if((*ppHBcons)->monitoredNodes == NULL) return CO_ERROR_ILLEGAL_ARGUMENT;
 
-   CO_HBconsumer_t *HBcons = *ppHBcons; //pointer to (newly created) object
+   HBcons = *ppHBcons; //pointer to (newly created) object
 
    //Configure object variables
    HBcons->EM = EM;
