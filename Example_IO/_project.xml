@@ -690,20 +690,77 @@ main cycle max time - maximum mainline function cycle time in percent of timer p
       <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" PDOmapping="no" defaultValue="1"/>
       <CANopenSubObject subIndex="01" name="main PCB supply" objectType="7" defaultValue="0"/>
     </CANopenObject>
-    <CANopenObject index="2110" name="Variable Int32" objectType="8" subNumber="3" memoryType="RAM" dataType="04" accessType="rw" PDOmapping="optional" TPDOdetectCOS="true">
+    <CANopenObject index="2110" name="Variable Int32" objectType="8" subNumber="17" memoryType="RAM" dataType="04" accessType="rw" PDOmapping="optional" TPDOdetectCOS="true">
       <label lang="en">Variable Integer 32bit</label>
       <description lang="en">Vartiable is free to use by application.</description>
-      <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" PDOmapping="no" defaultValue="2"/>
+      <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" PDOmapping="no" defaultValue="16"/>
       <CANopenSubObject subIndex="01" name="int32" objectType="7" defaultValue="0"/>
       <CANopenSubObject subIndex="02" name="int32" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="03" name="int32" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="04" name="int32" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="05" name="int32" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="06" name="int32" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="07" name="int32" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="08" name="int32" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="09" name="int32" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="0A" name="int32" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="0B" name="int32" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="0C" name="int32" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="0D" name="int32" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="0E" name="int32" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="0F" name="int32" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="10" name="int32" objectType="7" defaultValue="0"/>
     </CANopenObject>
-    <CANopenObject index="2111" name="Variable ROM Int32" objectType="8" subNumber="3" memoryType="ROM" dataType="04" accessType="rw" PDOmapping="optional" TPDOdetectCOS="true">
-      <label lang="en">Variable Integer 32bit</label>
+    <CANopenObject index="2111" name="Variable ROM Int32" objectType="8" subNumber="17" memoryType="ROM" dataType="04" accessType="rw" PDOmapping="optional" TPDOdetectCOS="true">
+      <label lang="en">Variable ROM Integer 32bit</label>
       <description lang="en">Vartiable is free to use by application.</description>
-      <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" PDOmapping="no" defaultValue="2"/>
+      <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" PDOmapping="no" defaultValue="16"/>
       <CANopenSubObject subIndex="01" name="int32" objectType="7" defaultValue="1"/>
       <CANopenSubObject subIndex="02" name="int32" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="03" name="int32" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="04" name="int32" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="05" name="int32" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="06" name="int32" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="07" name="int32" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="08" name="int32" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="09" name="int32" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="0A" name="int32" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="0B" name="int32" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="0C" name="int32" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="0D" name="int32" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="0E" name="int32" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="0F" name="int32" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="10" name="int32" objectType="7" defaultValue="0"/>
     </CANopenObject>
+    <CANopenObject index="2112" name="Variable NV Int32" objectType="8" subNumber="17" memoryType="EEPROM" dataType="04" accessType="rw" PDOmapping="optional" TPDOdetectCOS="true">
+      <label lang="en">Variable nonvolatile Integer 32bit</label>
+      <description lang="en">Vartiable is free to use by application. Variable is stored to internal baterry powered SRAM.</description>
+      <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" PDOmapping="no" defaultValue="16"/>
+      <CANopenSubObject subIndex="01" name="int32" objectType="7" defaultValue="1"/>
+      <CANopenSubObject subIndex="02" name="int32" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="03" name="int32" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="04" name="int32" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="05" name="int32" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="06" name="int32" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="07" name="int32" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="08" name="int32" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="09" name="int32" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="0A" name="int32" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="0B" name="int32" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="0C" name="int32" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="0D" name="int32" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="0E" name="int32" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="0F" name="int32" objectType="7" defaultValue="0"/>
+      <CANopenSubObject subIndex="10" name="int32" objectType="7" defaultValue="0"/>
+    </CANopenObject>
+    <CANopenObject index="2120" name="test var" objectType="9" subNumber="5" memoryType="RAM">
+      <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" PDOmapping="no" defaultValue="4"/>
+      <CANopenSubObject subIndex="01" name="I64" objectType="7" dataType="15" accessType="rw" PDOmapping="optional" defaultValue="0x1234567890ABCDEFLL"/>
+      <CANopenSubObject subIndex="02" name="U64" objectType="7" dataType="1B" accessType="rw" PDOmapping="optional" defaultValue="0x234567890ABCDEF1LL"/>
+      <CANopenSubObject subIndex="03" name="R32" objectType="7" dataType="08" accessType="rw" PDOmapping="optional" defaultValue="12.345"/>
+      <CANopenSubObject subIndex="04" name="R64" objectType="7" dataType="11" accessType="rw" PDOmapping="optional" defaultValue="456.789"/>
+    </CANopenObject>
+    <CANopenObject index="2121" name="test domain" objectType="7" memoryType="RAM" dataType="0F" accessType="rw" PDOmapping="optional" defaultValue="0" accessFunctionName="ODF_testDomain"/>
     <CANopenObject index="6000" name="Read input 8 bit" objectType="8" subNumber="9" memoryType="RAM" dataType="05" accessType="ro" PDOmapping="optional" TPDOdetectCOS="true">
       <label lang="en">Read input 8 bit</label>
       <description lang="en">Digital inputs from hardware.</description>
@@ -762,7 +819,7 @@ main cycle max time - maximum mainline function cycle time in percent of timer p
     </CANopenObject>
   </CANopenObjectList>
   <other>
-    <file fileName="IO" fileCreator="-" fileCreationDate="2012-03-17" fileCreationTime="09:03:50" fileVersion="3.0"/>
+    <file fileName="IO" fileCreator="-" fileCreationDate="2012-09-14" fileCreationTime="11:24:37" fileVersion="3.0"/>
     <DeviceIdentity>
       <vendorName>Paternoster</vendorName>
       <productName>CANopenNode</productName>

@@ -3,8 +3,8 @@
 
 <cproject>
 <storageModule moduleId="org.eclipse.cdt.core.settings">
-<cconfiguration id="com.beck-ipc.powerpcide.debugConfiguration.1275575703">
-<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="com.beck-ipc.powerpcide.debugConfiguration.1275575703" moduleId="org.eclipse.cdt.core.settings" name="debug">
+<cconfiguration id="com.beck-ipc.powerpcide.debugConfiguration.835279690">
+<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="com.beck-ipc.powerpcide.debugConfiguration.835279690" moduleId="org.eclipse.cdt.core.settings" name="debug">
 <externalSettings/>
 <extensions>
 <extension id="com.beck_ipc.powerpcide.wizards.BeckIPC" point="org.eclipse.cdt.core.BinaryParser"/>
@@ -15,38 +15,40 @@
 </extensions>
 </storageModule>
 <storageModule moduleId="cdtBuildSystem" version="4.0.0">
-<configuration artifactExtension="bex" artifactName="Example_IO" buildProperties="com.beck-ipc.powerpcide.buildType=com.beck-ipc.powerpcide.buildType.debug" cleanCommand="${eclipse_home}/tc-sc2x3/bin/clean-bex" description="debug configuration" errorParsers="org.eclipse.cdt.core.MakeErrorParser;org.eclipse.cdt.core.GCCErrorParser" id="com.beck-ipc.powerpcide.debugConfiguration.1275575703" name="debug" parent="com.beck-ipc.powerpcide.debugConfiguration">
-<folderInfo id="com.beck-ipc.powerpcide.debugConfiguration.1275575703." name="/" resourcePath="">
-<toolChain id="com.beck-ipc.powerpcide.wizards.debugToolChain.990476549" name="SC2x3 Toolchain" superClass="com.beck-ipc.powerpcide.wizards.debugToolChain">
-<targetPlatform id="com.beck-ipc.powerpcide.wizards.targetPlatform.1192166527" isAbstract="false" name="Target Platform" superClass="com.beck-ipc.powerpcide.wizards.targetPlatform"/>
-<builder buildPath="${workspace_loc:/Example_IO/debug}" id="com.beck-ipc.powerpcide.wizards.builder.1501506668" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="SC2x3 Builder" superClass="com.beck-ipc.powerpcide.wizards.builder">
+<configuration artifactExtension="bex" artifactName="Master" buildProperties="com.beck-ipc.powerpcide.buildType=com.beck-ipc.powerpcide.buildType.debug" cleanCommand="${eclipse_home}/tc-sc2x3/bin/clean-bex" description="debug configuration" errorParsers="org.eclipse.cdt.core.MakeErrorParser;org.eclipse.cdt.core.GCCErrorParser" id="com.beck-ipc.powerpcide.debugConfiguration.835279690" name="debug" parent="com.beck-ipc.powerpcide.debugConfiguration">
+<folderInfo id="com.beck-ipc.powerpcide.debugConfiguration.835279690." name="/" resourcePath="">
+<toolChain id="com.beck-ipc.powerpcide.wizards.debugToolChain.1630980657" name="SC2x3 Toolchain" superClass="com.beck-ipc.powerpcide.wizards.debugToolChain">
+<targetPlatform id="com.beck-ipc.powerpcide.wizards.targetPlatform.567464423" isAbstract="false" name="Target Platform" superClass="com.beck-ipc.powerpcide.wizards.targetPlatform"/>
+<builder buildPath="${workspace_loc:/Master/debug}" id="com.beck-ipc.powerpcide.wizards.builder.1264935073" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="SC2x3 Builder" superClass="com.beck-ipc.powerpcide.wizards.builder">
 <outputEntries/>
 </builder>
-<tool id="com.beck-ipc.powerpcide.wizards.cCompiler.461016348" name="SC2x3 C Compiler" superClass="com.beck-ipc.powerpcide.wizards.cCompiler">
-<option defaultValue="beck-ipc.c.optimization.level.none" id="com.beck-ipc.powerpcide.cCompiler.option.optimization.level.1243150537" name="Optimization Level" superClass="com.beck-ipc.powerpcide.cCompiler.option.optimization.level" valueType="enumerated"/>
-<option id="com.beck-ipc.powerpcide.cCompiler.option.debugging.level.2128977872" name="Debug Level" superClass="com.beck-ipc.powerpcide.cCompiler.option.debugging.level" value="beck-ipc.c.debugging.level.default" valueType="enumerated"/>
-<option id="com.beck-ipc.powerpcide.cCompiler.option.include.userPaths.1362037962" name="Include paths (-I)" superClass="com.beck-ipc.powerpcide.cCompiler.option.include.userPaths" valueType="includePath">
+<tool id="com.beck-ipc.powerpcide.wizards.cCompiler.756384901" name="SC2x3 C Compiler" superClass="com.beck-ipc.powerpcide.wizards.cCompiler">
+<option defaultValue="beck-ipc.c.optimization.level.none" id="com.beck-ipc.powerpcide.cCompiler.option.optimization.level.677639639" name="Optimization Level" superClass="com.beck-ipc.powerpcide.cCompiler.option.optimization.level" valueType="enumerated"/>
+<option id="com.beck-ipc.powerpcide.cCompiler.option.debugging.level.1613785261" name="Debug Level" superClass="com.beck-ipc.powerpcide.cCompiler.option.debugging.level" value="beck-ipc.c.debugging.level.default" valueType="enumerated"/>
+<option id="com.beck-ipc.powerpcide.cCompiler.option.include.userPaths.152237970" name="Include paths (-I)" superClass="com.beck-ipc.powerpcide.cCompiler.option.include.userPaths" valueType="includePath">
 <listOptionValue builtIn="false" value="&quot;${eclipse_home}/tc-sc2x3/powerpc-e300-eabi/include/c++/4.3.1/&quot;"/>
 <listOptionValue builtIn="false" value="&quot;${eclipse_home}/tc-sc2x3/powerpc-e300-eabi/include/beck/&quot;"/>
 <listOptionValue builtIn="false" value="&quot;${eclipse_home}/tc-sc2x3/powerpc-e300-eabi/include/&quot;"/>
-<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Example_IO/CANopen_stack}&quot;"/>
-<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Example_IO/CANopen_stack/BECK_SC2x3}&quot;"/>
+<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Master/src/CANopen_stack}&quot;"/>
+<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Master/src/CANopen_stack/BECK_SC2x3}&quot;"/>
+<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Master/src}&quot;"/>
 </option>
-<inputType id="com.beck-ipc.powerpcide.compiler.cInputType.604800315" name="Compiler Input" superClass="com.beck-ipc.powerpcide.compiler.cInputType"/>
+<option id="com.beck-ipc.powerpcide.cCompiler.option.preprocessor.def.symbols.15709575" name="Defined symbols (-D)" superClass="com.beck-ipc.powerpcide.cCompiler.option.preprocessor.def.symbols"/>
+<inputType id="com.beck-ipc.powerpcide.compiler.cInputType.8757855" name="Compiler Input" superClass="com.beck-ipc.powerpcide.compiler.cInputType"/>
 </tool>
-<tool id="com.beck-ipc.powerpcide.wizards.cLinker.2134325998" name="SC2x3 C Linker" superClass="com.beck-ipc.powerpcide.wizards.cLinker">
-<inputType id="com.beck-ipc.powerpcide.linker.cInputType.199095819" name="Linker Input" superClass="com.beck-ipc.powerpcide.linker.cInputType"/>
+<tool id="com.beck-ipc.powerpcide.wizards.cLinker.1522646231" name="SC2x3 C Linker" superClass="com.beck-ipc.powerpcide.wizards.cLinker">
+<inputType id="com.beck-ipc.powerpcide.linker.cInputType.525140036" name="Linker Input" superClass="com.beck-ipc.powerpcide.linker.cInputType"/>
 </tool>
-<tool id="com.beck-ipc.powerpcide.wizards.cppLinker.983064775" name="SC2x3 C++ Linker" superClass="com.beck-ipc.powerpcide.wizards.cppLinker"/>
-<tool id="com.beck-ipc.powerpcide.wizards.cppCompiler.627163726" name="SC2x3 C++ Compiler" superClass="com.beck-ipc.powerpcide.wizards.cppCompiler">
-<option defaultValue="com.beck-ipc.powerpcide.cppCompiler.optimization.level.none" id="com.beck-ipc.powerpcide.cppCompiler.option.optimization.level.1044288290" name="Optimization Level" superClass="com.beck-ipc.powerpcide.cppCompiler.option.optimization.level" valueType="enumerated"/>
-<option id="com.beck-ipc.powerpcide.cppCompiler.option.debugging.level.286896537" name="Debug Level" superClass="com.beck-ipc.powerpcide.cppCompiler.option.debugging.level" value="com.beck-ipc.powerpcide.cppCompiler.debugging.level.default" valueType="enumerated"/>
+<tool id="com.beck-ipc.powerpcide.wizards.cppLinker.1189810867" name="SC2x3 C++ Linker" superClass="com.beck-ipc.powerpcide.wizards.cppLinker"/>
+<tool id="com.beck-ipc.powerpcide.wizards.cppCompiler.1342893455" name="SC2x3 C++ Compiler" superClass="com.beck-ipc.powerpcide.wizards.cppCompiler">
+<option defaultValue="com.beck-ipc.powerpcide.cppCompiler.optimization.level.none" id="com.beck-ipc.powerpcide.cppCompiler.option.optimization.level.231729191" name="Optimization Level" superClass="com.beck-ipc.powerpcide.cppCompiler.option.optimization.level" valueType="enumerated"/>
+<option id="com.beck-ipc.powerpcide.cppCompiler.option.debugging.level.13376425" name="Debug Level" superClass="com.beck-ipc.powerpcide.cppCompiler.option.debugging.level" value="com.beck-ipc.powerpcide.cppCompiler.debugging.level.default" valueType="enumerated"/>
 </tool>
-<tool id="com.beck-ipc.powerpcide.wizards.assembler.107755791" name="SC2x3 Assembler" superClass="com.beck-ipc.powerpcide.wizards.assembler"/>
+<tool id="com.beck-ipc.powerpcide.wizards.assembler.6099368" name="SC2x3 Assembler" superClass="com.beck-ipc.powerpcide.wizards.assembler"/>
 </toolChain>
 </folderInfo>
 <sourceEntries>
-<entry excluding="debug|main_PIC32.c|main_PIC18.c|main_dsPIC33F.c|main_dsPIC30F.c|release|PIC32.X|PIC18.X|dsPIC33F.X|dsPIC30F.X|CANopen_stack/temp|CANopen_stack/PIC32|CANopen_stack/PIC24H_dsPIC33F|CANopen_stack/PIC18|CANopen_stack/dsPIC30F|CANopen_stack/_doc" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+<entry excluding="CANopen_stack/temp|CANopen_stack/PIC32|CANopen_stack/PIC24H_dsPIC33F|CANopen_stack/PIC18|CANopen_stack/dsPIC30F|CANopen_stack/_doc" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="src"/>
 </sourceEntries>
 </configuration>
 </storageModule>
@@ -135,9 +137,10 @@
 </storageModule>
 <storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
 <storageModule moduleId="org.eclipse.cdt.core.language.mapping"/>
+<storageModule moduleId="org.eclipse.cdt.internal.ui.text.commentOwnerProjectMappings"/>
 </cconfiguration>
-<cconfiguration id="com.beck-ipc.powerpcide.releaseConfiguration.155203158">
-<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="com.beck-ipc.powerpcide.releaseConfiguration.155203158" moduleId="org.eclipse.cdt.core.settings" name="release">
+<cconfiguration id="com.beck-ipc.powerpcide.releaseConfiguration.415857396">
+<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="com.beck-ipc.powerpcide.releaseConfiguration.415857396" moduleId="org.eclipse.cdt.core.settings" name="release">
 <externalSettings/>
 <extensions>
 <extension id="com.beck_ipc.powerpcide.wizards.BeckIPC" point="org.eclipse.cdt.core.BinaryParser"/>
@@ -148,36 +151,38 @@
 </extensions>
 </storageModule>
 <storageModule moduleId="cdtBuildSystem" version="4.0.0">
-<configuration artifactExtension="bex" artifactName="Example_IO" buildProperties="com.beck-ipc.powerpcide.buildType=com.beck-ipc.powerpcide.buildType.release" cleanCommand="${eclipse_home}/tc-sc2x3/bin/clean-bex" description="release configuration" errorParsers="org.eclipse.cdt.core.MakeErrorParser;org.eclipse.cdt.core.GCCErrorParser" id="com.beck-ipc.powerpcide.releaseConfiguration.155203158" name="release" parent="com.beck-ipc.powerpcide.releaseConfiguration">
-<folderInfo id="com.beck-ipc.powerpcide.releaseConfiguration.155203158." name="/" resourcePath="">
-<toolChain id="com.beck-ipc.powerpcide.wizards.releaseToolChain.207507588" name="SC2x3 Toolchain" superClass="com.beck-ipc.powerpcide.wizards.releaseToolChain">
-<targetPlatform id="com.beck-ipc.powerpcide.wizards.targetPlatform.658929450" isAbstract="false" name="Target Platform" superClass="com.beck-ipc.powerpcide.wizards.targetPlatform"/>
-<builder buildPath="${workspace_loc:/Example_IO/release}" id="com.beck-ipc.powerpcide.wizards.builder.1347734282" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="SC2x3 Builder" superClass="com.beck-ipc.powerpcide.wizards.builder"/>
-<tool id="com.beck-ipc.powerpcide.wizards.cCompiler.1507913393" name="SC2x3 C Compiler" superClass="com.beck-ipc.powerpcide.wizards.cCompiler">
-<option defaultValue="beck-ipc.c.optimization.level.more" id="com.beck-ipc.powerpcide.cCompiler.option.optimization.level.112033831" name="Optimization Level" superClass="com.beck-ipc.powerpcide.cCompiler.option.optimization.level" valueType="enumerated"/>
-<option id="com.beck-ipc.powerpcide.cCompiler.option.debugging.level.496593819" name="Debug Level" superClass="com.beck-ipc.powerpcide.cCompiler.option.debugging.level"/>
-<option id="com.beck-ipc.powerpcide.cCompiler.option.include.userPaths.368142577" name="Include paths (-I)" superClass="com.beck-ipc.powerpcide.cCompiler.option.include.userPaths" valueType="includePath">
+<configuration artifactExtension="bex" artifactName="Master" buildProperties="com.beck-ipc.powerpcide.buildType=com.beck-ipc.powerpcide.buildType.release" cleanCommand="${eclipse_home}/tc-sc2x3/bin/clean-bex" description="release configuration" errorParsers="org.eclipse.cdt.core.MakeErrorParser;org.eclipse.cdt.core.GCCErrorParser" id="com.beck-ipc.powerpcide.releaseConfiguration.415857396" name="release" parent="com.beck-ipc.powerpcide.releaseConfiguration">
+<folderInfo id="com.beck-ipc.powerpcide.releaseConfiguration.415857396." name="/" resourcePath="">
+<toolChain id="com.beck-ipc.powerpcide.wizards.releaseToolChain.984868396" name="SC2x3 Toolchain" superClass="com.beck-ipc.powerpcide.wizards.releaseToolChain">
+<targetPlatform id="com.beck-ipc.powerpcide.wizards.targetPlatform.275088759" isAbstract="false" name="Target Platform" superClass="com.beck-ipc.powerpcide.wizards.targetPlatform"/>
+<builder buildPath="${workspace_loc:/Master/release}" id="com.beck-ipc.powerpcide.wizards.builder.1393118250" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="SC2x3 Builder" superClass="com.beck-ipc.powerpcide.wizards.builder"/>
+<tool id="com.beck-ipc.powerpcide.wizards.cCompiler.243807122" name="SC2x3 C Compiler" superClass="com.beck-ipc.powerpcide.wizards.cCompiler">
+<option defaultValue="beck-ipc.c.optimization.level.more" id="com.beck-ipc.powerpcide.cCompiler.option.optimization.level.626807624" name="Optimization Level" superClass="com.beck-ipc.powerpcide.cCompiler.option.optimization.level" valueType="enumerated"/>
+<option id="com.beck-ipc.powerpcide.cCompiler.option.debugging.level.543474677" name="Debug Level" superClass="com.beck-ipc.powerpcide.cCompiler.option.debugging.level"/>
+<option id="com.beck-ipc.powerpcide.cCompiler.option.include.userPaths.2006056615" name="Include paths (-I)" superClass="com.beck-ipc.powerpcide.cCompiler.option.include.userPaths" valueType="includePath">
 <listOptionValue builtIn="false" value="&quot;${eclipse_home}/tc-sc2x3/powerpc-e300-eabi/include/c++/4.3.1/&quot;"/>
 <listOptionValue builtIn="false" value="&quot;${eclipse_home}/tc-sc2x3/powerpc-e300-eabi/include/beck/&quot;"/>
 <listOptionValue builtIn="false" value="&quot;${eclipse_home}/tc-sc2x3/powerpc-e300-eabi/include/&quot;"/>
-<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Example_IO/CANopen_stack}&quot;"/>
-<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Example_IO/CANopen_stack/BECK_SC2x3}&quot;"/>
+<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Master/src/CANopen_stack}&quot;"/>
+<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Master/src/CANopen_stack/BECK_SC2x3}&quot;"/>
+<listOptionValue builtIn="false" value="&quot;${workspace_loc:/Master/src}&quot;"/>
 </option>
-<inputType id="com.beck-ipc.powerpcide.compiler.cInputType.1233519944" name="Compiler Input" superClass="com.beck-ipc.powerpcide.compiler.cInputType"/>
+<option id="com.beck-ipc.powerpcide.cCompiler.option.preprocessor.def.symbols.2116088391" name="Defined symbols (-D)" superClass="com.beck-ipc.powerpcide.cCompiler.option.preprocessor.def.symbols"/>
+<inputType id="com.beck-ipc.powerpcide.compiler.cInputType.661632871" name="Compiler Input" superClass="com.beck-ipc.powerpcide.compiler.cInputType"/>
 </tool>
-<tool id="com.beck-ipc.powerpcide.wizards.cLinker.2059904187" name="SC2x3 C Linker" superClass="com.beck-ipc.powerpcide.wizards.cLinker">
-<inputType id="com.beck-ipc.powerpcide.linker.cInputType.219990913" name="Linker Input" superClass="com.beck-ipc.powerpcide.linker.cInputType"/>
+<tool id="com.beck-ipc.powerpcide.wizards.cLinker.479403521" name="SC2x3 C Linker" superClass="com.beck-ipc.powerpcide.wizards.cLinker">
+<inputType id="com.beck-ipc.powerpcide.linker.cInputType.1459768074" name="Linker Input" superClass="com.beck-ipc.powerpcide.linker.cInputType"/>
 </tool>
-<tool id="com.beck-ipc.powerpcide.wizards.cppLinker.1355020374" name="SC2x3 C++ Linker" superClass="com.beck-ipc.powerpcide.wizards.cppLinker"/>
-<tool id="com.beck-ipc.powerpcide.wizards.cppCompiler.701011969" name="SC2x3 C++ Compiler" superClass="com.beck-ipc.powerpcide.wizards.cppCompiler">
-<option defaultValue="com.beck-ipc.powerpcide.cppCompiler.optimization.level.more" id="com.beck-ipc.powerpcide.cppCompiler.option.optimization.level.1504798606" name="Optimization Level" superClass="com.beck-ipc.powerpcide.cppCompiler.option.optimization.level" valueType="enumerated"/>
-<option id="com.beck-ipc.powerpcide.cppCompiler.option.debugging.level.2087937482" name="Debug Level" superClass="com.beck-ipc.powerpcide.cppCompiler.option.debugging.level"/>
+<tool id="com.beck-ipc.powerpcide.wizards.cppLinker.2031071176" name="SC2x3 C++ Linker" superClass="com.beck-ipc.powerpcide.wizards.cppLinker"/>
+<tool id="com.beck-ipc.powerpcide.wizards.cppCompiler.262576026" name="SC2x3 C++ Compiler" superClass="com.beck-ipc.powerpcide.wizards.cppCompiler">
+<option defaultValue="com.beck-ipc.powerpcide.cppCompiler.optimization.level.more" id="com.beck-ipc.powerpcide.cppCompiler.option.optimization.level.1735066615" name="Optimization Level" superClass="com.beck-ipc.powerpcide.cppCompiler.option.optimization.level" valueType="enumerated"/>
+<option id="com.beck-ipc.powerpcide.cppCompiler.option.debugging.level.1359846200" name="Debug Level" superClass="com.beck-ipc.powerpcide.cppCompiler.option.debugging.level"/>
 </tool>
-<tool id="com.beck-ipc.powerpcide.wizards.assembler.959793891" name="SC2x3 Assembler" superClass="com.beck-ipc.powerpcide.wizards.assembler"/>
+<tool id="com.beck-ipc.powerpcide.wizards.assembler.761839053" name="SC2x3 Assembler" superClass="com.beck-ipc.powerpcide.wizards.assembler"/>
 </toolChain>
 </folderInfo>
 <sourceEntries>
-<entry excluding="debug|main_PIC32.c|main_PIC18.c|main_dsPIC33F.c|main_dsPIC30F.c|release|PIC32.X|PIC18.X|dsPIC33F.X|dsPIC30F.X|CANopen_stack/temp|CANopen_stack/PIC32|CANopen_stack/PIC24H_dsPIC33F|CANopen_stack/PIC18|CANopen_stack/dsPIC30F|CANopen_stack/_doc|src" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name=""/>
+<entry excluding="CANopen_stack/temp|CANopen_stack/PIC32|CANopen_stack/PIC24H_dsPIC33F|CANopen_stack/PIC18|CANopen_stack/dsPIC30F|CANopen_stack/_doc" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
 </sourceEntries>
 </configuration>
 </storageModule>
@@ -266,9 +271,10 @@
 </storageModule>
 <storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
 <storageModule moduleId="org.eclipse.cdt.core.language.mapping"/>
+<storageModule moduleId="org.eclipse.cdt.internal.ui.text.commentOwnerProjectMappings"/>
 </cconfiguration>
 </storageModule>
 <storageModule moduleId="cdtBuildSystem" version="4.0.0">
-<project id="Example_IO.com.beck-ipc.powerpcide.wizards.IPCatCHIPProject.999981823" name="IPC@CHIP Application" projectType="com.beck-ipc.powerpcide.wizards.IPCatCHIPProject"/>
+<project id="Master.com.beck-ipc.powerpcide.wizards.IPCatCHIPProject.143810731" name="IPC@CHIP Application" projectType="com.beck-ipc.powerpcide.wizards.IPCatCHIPProject"/>
 </storageModule>
 </cproject>

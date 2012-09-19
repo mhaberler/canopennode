@@ -538,6 +538,8 @@ void CO_CANinterrupt(CO_CANmodule_t *CANmodule){
       CAN_REG(CANmodule->CANbaseAddress, C_INTF) &= 0xFFFB;
       //First CAN message (bootup) was sent successfully
       CANmodule->firstCANtxMessage = 0;
+      //clear flag from previous message
+      CANmodule->bufferInhibitFlag = 0;
       //Are there any new messages waiting to be send and buffer is free
       if(CANmodule->CANtxCount > 0 && (CAN_REG(CANmodule->CANbaseAddress, C_TXBUF0 + C_TXCON) & 0x8) == 0){
          UNSIGNED16 index;          //index of transmitting message
@@ -549,7 +551,6 @@ void CO_CANinterrupt(CO_CANmodule_t *CANmodule){
             //if message buffer is full, send it.
             if(buffer->bufferFull){
                //messages with syncFlag set (synchronous PDOs) must be transmited inside preset time window
-               CANmodule->bufferInhibitFlag = 0;
                if(CANmodule->curentSyncTimeIsInsideWindow && buffer->syncFlag){
                   if(!(*CANmodule->curentSyncTimeIsInsideWindow)){
                      CO_errorReport((CO_emergencyReport_t*)CANmodule->EM, ERROR_TPDO_OUTSIDE_WINDOW, 0);
@@ -579,7 +580,7 @@ void CO_CANinterrupt(CO_CANmodule_t *CANmodule){
 UNSIGNED32 CO_ODF(   void       *object,
                      UNSIGNED16  index,
                      UNSIGNED8   subIndex,
-                     UNSIGNED8   length,
+                     UNSIGNED16 *pLength,
                      UNSIGNED16  attribute,
                      UNSIGNED8   dir,
                      void       *dataBuff,
@@ -595,21 +596,21 @@ UNSIGNED32 CO_ODF(   void       *object,
 
    if(dir==0){ //Reading Object Dictionary variable
       DISABLE_INTERRUPTS();
-      memcpy(dataBuff, pData, length);
+      memcpy(dataBuff, pData, *pLength);
       ENABLE_INTERRUPTS();
    }
 
    else{ //Writing Object Dictionary variable
       if((attribute&0x3) == CO_ODA_MEM_ROM){
          #ifdef CO_USE_FLASH_WRITE
-            memcpyram2flash(pData, dataBuff, length);
+            memcpyram2flash(pData, dataBuff, *pLength);
          #else
             return 0x06010002L;     //Attempt to write a read only object
          #endif
       }
       else{
          DISABLE_INTERRUPTS();
-         memcpy((void*)pData, dataBuff, length);
+         memcpy((void*)pData, dataBuff, *pLength);
          ENABLE_INTERRUPTS();
       }
    }

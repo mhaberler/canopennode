@@ -132,7 +132,7 @@ INTEGER16 CO_SYNC_receive(void *object, CO_CANrxMsg_t *msg);
 UNSIGNED32 CO_ODF_1005( void       *object,
                         UNSIGNED16  index,
                         UNSIGNED8   subIndex,
-                        UNSIGNED8   length,
+                        UNSIGNED16 *pLength,
                         UNSIGNED16  attribute,
                         UNSIGNED8   dir,
                         void       *dataBuff,
@@ -149,7 +149,7 @@ UNSIGNED32 CO_ODF_1005( void       *object,
 UNSIGNED32 CO_ODF_1006( void       *object,
                         UNSIGNED16  index,
                         UNSIGNED8   subIndex,
-                        UNSIGNED8   length,
+                        UNSIGNED16 *pLength,
                         UNSIGNED16  attribute,
                         UNSIGNED8   dir,
                         void       *dataBuff,
@@ -166,7 +166,7 @@ UNSIGNED32 CO_ODF_1006( void       *object,
 UNSIGNED32 CO_ODF_1019( void       *object,
                         UNSIGNED16  index,
                         UNSIGNED8   subIndex,
-                        UNSIGNED8   length,
+                        UNSIGNED16 *pLength,
                         UNSIGNED16  attribute,
                         UNSIGNED8   dir,
                         void       *dataBuff,
@@ -199,7 +199,7 @@ UNSIGNED32 CO_ODF_1019( void       *object,
       CANdevRxIdx                - Index of receive buffer for SYNC reception.
       CANdevTx                   - CAN device for SYNC transmission <CO_CANmodule_t>.
       CANdevTxIdx                - Index of transmit buffer pointer for SYNC transmission.
-                         
+
    Return <CO_ReturnError>:
       CO_ERROR_NO                 - Operation completed successfully.
       CO_ERROR_ILLEGAL_ARGUMENT   - Error in function arguments.

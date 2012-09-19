@@ -30,6 +30,7 @@
 
 
 #include "eeprom.h"
+#include "CO_SDO.h" // for CO_ODF
 
 
 /******************************************************************************/
@@ -43,11 +44,11 @@
 #define SPIBRG          SPI2ABRG
 
 
-/******************************************************************************/
+/* Store parameters ***********************************************************/
 UNSIGNED32 CO_ODF_1010( void       *object,
                         UNSIGNED16  index,
                         UNSIGNED8   subIndex,
-                        UNSIGNED8   length,
+                        UNSIGNED16 *pLength,
                         UNSIGNED16  attribute,
                         UNSIGNED8   dir,
                         void       *dataBuff,
@@ -60,19 +61,25 @@ UNSIGNED32 CO_ODF_1010( void       *object,
          UNSIGNED32 val;
          memcpySwap4((UNSIGNED8*)&val, (UNSIGNED8*)dataBuff);
          if(val == 0x65766173){
-            //store parameters
             EE_MBR_t MBR;
-            //unprotect data
-            EE_writeStatus(0);
-            //write to eeprom (blocking function)
-            EE_writeBlock(EE->OD_ROMAddress, EE_SIZE/2, EE->OD_ROMSize);
-            //write CRC to the last page in eeprom
+
+            //read the master boot record from the last page in eeprom
+            EE_readBlock((UNSIGNED8*)&MBR, EE_SIZE - EE_PAGE_SIZE, sizeof(MBR));
+            //if EEPROM is not yet initilalized, enable it now
+            if(MBR.OD_EEPROMSize != EE->OD_EEPROMSize)
+               EE->OD_EEPROMWriteEnable = 1;
+
+            //prepare MBR
             MBR.CRC = CRC16(EE->OD_ROMAddress, EE->OD_ROMSize);
             MBR.OD_EEPROMSize = EE->OD_EEPROMSize;
             MBR.OD_ROMSize = EE->OD_ROMSize;
+
+            //write to eeprom (blocking function)
+            EE_writeStatus(0); //unprotect data
             EE_writeBlock((UNSIGNED8*)&MBR, EE_SIZE - EE_PAGE_SIZE, sizeof(MBR));
-            //protect data
-            EE_writeStatus(0x88);
+            EE_writeBlock(EE->OD_ROMAddress, EE_SIZE/2, EE->OD_ROMSize);
+            EE_writeStatus(0x88); //protect data
+
             //verify data and MBR and status register
             if(   EE_verifyBlock(EE->OD_ROMAddress, EE_SIZE/2, EE->OD_ROMSize) == 1
                && EE_verifyBlock((UNSIGNED8*)&MBR, EE_SIZE - EE_PAGE_SIZE, sizeof(MBR)) == 1
@@ -87,15 +94,15 @@ UNSIGNED32 CO_ODF_1010( void       *object,
       }
    }
 
-   return CO_ODF(object, index, subIndex, length, attribute, dir, dataBuff, pData);
+   return CO_ODF(object, index, subIndex, pLength, attribute, dir, dataBuff, pData);
 }
 
 
-/******************************************************************************/
+/* Restore default parameters *************************************************/
 UNSIGNED32 CO_ODF_1011( void       *object,
                         UNSIGNED16  index,
                         UNSIGNED8   subIndex,
-                        UNSIGNED8   length,
+                        UNSIGNED16 *pLength,
                         UNSIGNED16  attribute,
                         UNSIGNED8   dir,
                         void       *dataBuff,
@@ -104,35 +111,47 @@ UNSIGNED32 CO_ODF_1011( void       *object,
    EE_t *EE = (EE_t*) object; //this is the correct pointer type of the first argument
 
    if(dir == 1){ //Writing Object Dictionary variable
-      if(subIndex == 1){
+      if(subIndex >= 1){
          UNSIGNED32 val;
          memcpySwap4((UNSIGNED8*)&val, (UNSIGNED8*)dataBuff);
          if(val == 0x64616F6C){
-            //restore default parameters
             EE_MBR_t MBR;
-            //unprotect data
-            EE_writeStatus(0);
-            //write special code to the last page in eeprom
-            MBR.CRC = 0;
-            MBR.OD_EEPROMSize = EE->OD_EEPROMSize;
-            MBR.OD_ROMSize = 0;
+
+            //read the master boot record from the last page in eeprom
+            EE_readBlock((UNSIGNED8*)&MBR, EE_SIZE - EE_PAGE_SIZE, sizeof(MBR));
+            //verify MBR for safety
+            if(EE_verifyBlock((UNSIGNED8*)&MBR, EE_SIZE - EE_PAGE_SIZE, sizeof(MBR)) == 0)
+               return 0x06060000;   //Access failed due to an hardware error.
+
+            switch(subIndex){
+               case 0x01: MBR.OD_ROMSize = 0;              break; //clear the ROM
+               //following don't work, if not enabled in object dictionary
+               case 0x77: MBR.OD_ROMSize = EE->OD_ROMSize; break; //restore the ROM back
+               case 0x7F: MBR.OD_EEPROMSize = 0;           break; //clear EEPROM
+               default: return 0x06090011;                        //Sub-index does not exist.
+            }
+
+            //write changed MBR
+            EE_writeStatus(0); //unprotect data
             EE_writeBlock((UNSIGNED8*)&MBR, EE_SIZE - EE_PAGE_SIZE, sizeof(MBR));
-            //protect data
-            EE_writeStatus(0x88);
+            EE_writeStatus(0x88); //protect data
+
             //verify MBR and status register
-            if(   EE_verifyBlock((UNSIGNED8*)&MBR, EE_SIZE - EE_PAGE_SIZE, sizeof(MBR)) == 1
+            if(EE_verifyBlock((UNSIGNED8*)&MBR, EE_SIZE - EE_PAGE_SIZE, sizeof(MBR)) == 1
                && (EE_readStatus()&0x8C) == 0x88){
                //write successfull
                return 0;
             }
-            return 0x06060000;   //Access failed due to an hardware error.
+            else{
+               return 0x06060000;   //Access failed due to an hardware error.
+            }
          }
          else
             return 0x08000020; //Data cannot be transferred or stored to the application.
       }
    }
 
-   return CO_ODF(object, index, subIndex, length, attribute, dir, dataBuff, pData);
+   return CO_ODF(object, index, subIndex, pLength, attribute, dir, dataBuff, pData);
 }
 
 
@@ -179,29 +198,36 @@ INTEGER16 EE_init_1(
    EE->OD_ROMAddress = OD_ROMAddress;
    EE->OD_ROMSize = OD_ROMSize;
    EE->OD_EEPROMCurrentIndex = 0;
+   EE->OD_EEPROMWriteEnable = 0;
 
    //read the master boot record from the last page in eeprom
    EE_MBR_t MBR;
    EE_readBlock((UNSIGNED8*)&MBR, EE_SIZE - EE_PAGE_SIZE, sizeof(MBR));
 
-   if(MBR.CRC == 0xFFFFFFFF || MBR.OD_EEPROMSize != OD_EEPROMSize || MBR.OD_ROMSize != OD_ROMSize){
-      //eeprom is empty or corrupt, so don't load any variables from it. Default values will stay.
+   //read the CO_OD_EEPROM from EEPROM, first verify, if data are OK
+   if(MBR.OD_EEPROMSize == OD_EEPROMSize && (MBR.OD_ROMSize == OD_ROMSize || MBR.OD_ROMSize == 0)){
+      UNSIGNED32 firstWordRAM = *((UNSIGNED32*)OD_EEPROMAddress);
+      UNSIGNED32 firstWordEE, lastWordEE;
+      EE_readBlock((UNSIGNED8*)&firstWordEE, 0, 4);
+      EE_readBlock((UNSIGNED8*)&lastWordEE, OD_EEPROMSize-4, 4);
+      if(firstWordRAM == firstWordEE && firstWordRAM == lastWordEE){
+         EE_readBlock(OD_EEPROMAddress, 0, OD_EEPROMSize);
+         EE->OD_EEPROMWriteEnable = 1;
+      }
+      else{
+         return CO_ERROR_DATA_CORRUPT;
+      }
+   }
+   else{
       return CO_ERROR_DATA_CORRUPT;
    }
 
-   //read the CO_OD_EEPROM from EEPROM, first verify, if data are OK
-   UNSIGNED32 firstWordRAM = *((UNSIGNED32*)OD_EEPROMAddress);
-   UNSIGNED32 firstWordEE, lastWordEE;
-   EE_readBlock((UNSIGNED8*)&firstWordEE, 0, 4);
-   EE_readBlock((UNSIGNED8*)&lastWordEE, OD_EEPROMSize-4, 4);
-   if(firstWordRAM == firstWordEE && firstWordRAM == lastWordEE)
-      EE_readBlock(OD_EEPROMAddress, 0, OD_EEPROMSize);
-
    //read the CO_OD_ROM from EEPROM and verify CRC
-   EE_readBlock(OD_ROMAddress, EE_SIZE/2, OD_ROMSize);
-   if(CRC16(OD_ROMAddress, OD_ROMSize) != MBR.CRC){
-      //CRC does not match
-      return CO_ERROR_CRC;
+   if(MBR.OD_ROMSize == OD_ROMSize){
+      EE_readBlock(OD_ROMAddress, EE_SIZE/2, OD_ROMSize);
+      if(CRC16(OD_ROMAddress, OD_ROMSize) != MBR.CRC){
+         return CO_ERROR_CRC;
+      }
    }
 
    return CO_ERROR_NO;
@@ -219,8 +245,7 @@ void EE_delete(EE_t **ppEE){
 
 /******************************************************************************/
 void EE_process(EE_t *EE){
-   //make sure, that previous write to EEPROM is not in progress.
-   if(!EE_isWriteInProcess()){
+   if(EE && EE->OD_EEPROMWriteEnable && !EE_isWriteInProcess()){
       //verify next word
       if(++EE->OD_EEPROMCurrentIndex == EE->OD_EEPROMSize) EE->OD_EEPROMCurrentIndex = 0;
       unsigned int i = EE->OD_EEPROMCurrentIndex;
@@ -257,7 +282,7 @@ void EE_process(EE_t *EE){
 
    Parameters:
       tx          - Ponter to transmitting data. If NULL, zeroes will be transmitted.
-      rx          - Ponter to data buffer, where received data wile be stored.      
+      rx          - Ponter to data buffer, where received data wile be stored.
                     If null, Received data will be disregarded.
       len         - Length of data buffers. Max 16.
 *******************************************************************************/
@@ -285,7 +310,7 @@ void EE_SPIwrite(UNSIGNED8 *tx, UNSIGNED8 *rx, UNSIGNED8 len){
 *******************************************************************************/
 void EE_writeEnable(){
    UNSIGNED8 buf = EE_CMD_WREN;
-   
+
    EE_SSLow();
    EE_SPIwrite(&buf, 0, 1);
    EE_SSHigh();
@@ -313,7 +338,7 @@ void EE_writeByteNoWait(UNSIGNED8 data, UNSIGNED32 addr){
 UNSIGNED8 EE_readByte(UNSIGNED32 addr){
    UNSIGNED8 bufTx[4];
    UNSIGNED8 bufRx[4];
-   
+
    bufTx[0] = EE_CMD_READ;
    bufTx[1] = (UNSIGNED8) (addr >> 8);
    bufTx[2] = (UNSIGNED8) addr;
@@ -345,7 +370,7 @@ void EE_writeBlock(UNSIGNED8 *data, UNSIGNED32 addr, UNSIGNED32 len){
       buf[0] = EE_CMD_WRITE;
       buf[1] = (UNSIGNED8) (addr >> 8);
       buf[2] = (UNSIGNED8) addr;
-   
+
       EE_SSLow();
       EE_SPIwrite(buf, 0, 3);
 
@@ -362,7 +387,7 @@ void EE_writeBlock(UNSIGNED8 *data, UNSIGNED32 addr, UNSIGNED32 len){
          }
       }
       EE_SSHigh();
-   
+
       // wait for completion of the write operation
       i=EE_readStatus();
       while(EE_isWriteInProcess());
@@ -535,7 +560,7 @@ const UNSIGNED8 CRC16TabHi[256]={
 UNSIGNED16 CRC16(UNSIGNED8 *str, UNSIGNED16 len){
    UNSIGNED8 CRC16Lo = 0, CRC16Hi = 0;
    UNSIGNED16 i;
-   
+
    for(i=0; i<len; i++){
       UNSIGNED8 t = CRC16Lo ^ str[i];
       CRC16Lo = CRC16TabLo[t] ^ CRC16Hi;

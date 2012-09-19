@@ -70,7 +70,7 @@ INTEGER16 CO_SYNC_receive(void *object, CO_CANrxMsg_t *msg){
 UNSIGNED32 CO_ODF_1005( void       *object,
                         UNSIGNED16  index,
                         UNSIGNED8   subIndex,
-                        UNSIGNED8   length,
+                        UNSIGNED16 *pLength,
                         UNSIGNED16  attribute,
                         UNSIGNED8   dir,
                         void       *dataBuff,
@@ -96,7 +96,7 @@ UNSIGNED32 CO_ODF_1005( void       *object,
       }
    }
 
-   abortCode = CO_ODF(object, index, subIndex, length, attribute, dir, dataBuff, pData);
+   abortCode = CO_ODF(object, index, subIndex, pLength, attribute, dir, dataBuff, pData);
 
    if(abortCode == 0 && dir == 1){
       SYNC->COB_ID = COB_ID&0x7FF;
@@ -137,7 +137,7 @@ UNSIGNED32 CO_ODF_1005( void       *object,
 UNSIGNED32 CO_ODF_1006( void       *object,
                         UNSIGNED16  index,
                         UNSIGNED8   subIndex,
-                        UNSIGNED8   length,
+                        UNSIGNED16 *pLength,
                         UNSIGNED16  attribute,
                         UNSIGNED8   dir,
                         void       *dataBuff,
@@ -150,7 +150,7 @@ UNSIGNED32 CO_ODF_1006( void       *object,
    SYNC = (CO_SYNC_t*) object; //this is the correct pointer type of the first argument
    memcpySwap4((UNSIGNED8*)&period, (UNSIGNED8*)dataBuff);
 
-   abortCode = CO_ODF(object, index, subIndex, length, attribute, dir, dataBuff, pData);
+   abortCode = CO_ODF(object, index, subIndex, pLength, attribute, dir, dataBuff, pData);
 
    if(abortCode == 0 && dir == 1){
       //period transition from 0 to something
@@ -173,7 +173,7 @@ UNSIGNED32 CO_ODF_1006( void       *object,
 UNSIGNED32 CO_ODF_1019( void       *object,
                         UNSIGNED16  index,
                         UNSIGNED8   subIndex,
-                        UNSIGNED8   length,
+                        UNSIGNED16 *pLength,
                         UNSIGNED16  attribute,
                         UNSIGNED8   dir,
                         void       *dataBuff,
@@ -188,7 +188,7 @@ UNSIGNED32 CO_ODF_1019( void       *object,
       if(SYNC->periodTime) return 0x08000022L; //Data cannot be transferred or stored to the application because of the present device state.
    }
 
-   abortCode = CO_ODF(object, index, subIndex, length, attribute, dir, dataBuff, pData);
+   abortCode = CO_ODF(object, index, subIndex, pLength, attribute, dir, dataBuff, pData);
 
    if(abortCode == 0 && dir == 1){
       UNSIGNED8 len = 0;

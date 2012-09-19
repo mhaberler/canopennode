@@ -6,22 +6,22 @@
 
    Copyright (C) 2010 Janez Paternoster
 
-   License: GNU General Public License (GPL).
+   License: GNU Lesser General Public License (LGPL).
 
    <http://canopennode.sourceforge.net>
 */
 /*
    This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
+   it under the terms of the GNU Lesser General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+   GNU Lesser General Public License for more details.
 
-   You should have received a copy of the GNU General Public License
+   You should have received a copy of the GNU Lesser General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
@@ -170,11 +170,12 @@ int main (void){
 
       while(reset == 0){
 /* loop for normal program execution ******************************************/
-         UNSIGNED16 timer1msDiff;
+         UNSIGNED16 timer1msCopy, timer1msDiff;
          static UNSIGNED16 TMR_TMR_PREV = 0;
 
-         timer1msDiff = CO_timer1ms - timer1msPrevious;
-         timer1msPrevious = CO_timer1ms;
+         timer1msCopy = CO_timer1ms;
+         timer1msDiff = timer1msCopy - timer1msPrevious;
+         timer1msPrevious = timer1msCopy;
 
          ClrWdt();
 
@@ -270,4 +271,17 @@ CO_CAN_ISR(){
    CO_CANinterrupt(CO->CANmodule[0]);
    //Clear combined Interrupt flag
    CO_CAN_ISR_FLAG = 0;
+}
+
+
+//not used, for compatibility
+UNSIGNED32 ODF_testDomain( void       *object,
+                           UNSIGNED16  index,
+                           UNSIGNED8   subIndex,
+                           UNSIGNED16 *pLength,
+                           UNSIGNED16  attribute,
+                           UNSIGNED8   dir,
+                           void       *dataBuff,
+                           const void *pData){
+   return 0;
 }

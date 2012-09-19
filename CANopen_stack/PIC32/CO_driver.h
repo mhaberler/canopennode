@@ -66,7 +66,7 @@
    populated before CAN message is sent.
 
    CANmessage is send with calling <CO_CANsend> function, which accepts two
-   argument: pointer to CAN device and pointer to tx buffer returned by 
+   argument: pointer to CAN device and pointer to tx buffer returned by
    <CO_CANtxBufferInit> function. If any hardware CAN transmit buffer is free,
    message is copied directly to CAN module and _bufferFull_ variable from
    <CO_CANtxArray_t> stays false. If no hardware CAN transmit buffer is free,
@@ -99,6 +99,7 @@
       REAL64            - Of type long double
       VISIBLE_STRING    - Of type char
       OCTET_STRING      - Of type unsigned char
+      DOMAIN            - Application specific
 *******************************************************************************/
    #define CO_OD_ROM_IDENT
 
@@ -114,6 +115,7 @@
    #define REAL64          long double
    #define VISIBLE_STRING  char
    #define OCTET_STRING    unsigned char
+   #define DOMAIN          unsigned char
 
 
 /*******************************************************************************
@@ -172,7 +174,7 @@
 
    Interrupt masking is used to protect critical sections.
 
-   It is used in some places in library to protect short sections of code in 
+   It is used in some places in library to protect short sections of code in
    functions, which may be accessed from different tasks. Alternative solutions
    are possible, for example disable only timer interrupt, if there is only
    mainline and timer task.
@@ -477,11 +479,11 @@ typedef struct{
       syncFlag          - Synchronous PDO messages has this flag set. It prevents them to be sent outside the synchronous window.
 *******************************************************************************/
 typedef struct{
-   UNSIGNED32        CMSGSID;
-   UNSIGNED32        CMSGEID;
-   UNSIGNED8         data[8];
-   UNSIGNED8         bufferFull;
-   UNSIGNED8         syncFlag;
+   UNSIGNED32           CMSGSID;
+   UNSIGNED32           CMSGEID;
+   UNSIGNED8            data[8];
+   volatile UNSIGNED8   bufferFull;
+   volatile UNSIGNED8   syncFlag;
 }CO_CANtxArray_t;
 
 
@@ -492,12 +494,12 @@ typedef struct{
 
    Variables:
       CANbaseAddress    - See parameters in <CO_CANmodule_init>.
-      CANmsgBuff        - See parameters in <CO_CANmodule_init>.
-      CANmsgBuffSize    - See parameters in <CO_CANmodule_init>.
-      rxArray           - See parameters in <CO_CANmodule_init>.
-      rxSize            - See parameters in <CO_CANmodule_init>.
-      txArray           - See parameters in <CO_CANmodule_init>.
-      txSize            - See parameters in <CO_CANmodule_init>.
+      CANmsgBuff        - CAN message buffer. See <CO_CANrxMsg_t>.
+      CANmsgBuffSize    - Size of the above buffer.
+      rxArray           - Array for handling received CAN messages. See <CO_CANrxArray_t>.
+      rxSize            - Size of above array is equal to number of receiving CAN objects.
+      txArray           - Array for handling transmitting CAN messages. See <CO_CANtxArray_t>.
+      txSize            - Size of above array is equal to number of transmitting CAN objects.
       curentSyncTimeIsInsideWindow - Pointer to variable with same name inside
                           <CO_SYNC_t> object. This pointer is configured inside
                           <CO_SYNC_init> function.
@@ -526,11 +528,11 @@ typedef struct{
    UNSIGNED16              rxSize;
    CO_CANtxArray_t        *txArray;
    UNSIGNED16              txSize;
-   UNSIGNED8              *curentSyncTimeIsInsideWindow;
-   UNSIGNED8               useCANrxFilters;
-   UNSIGNED8               bufferInhibitFlag;
-   UNSIGNED8               firstCANtxMessage;
-   UNSIGNED16              CANtxCount;
+   volatile UNSIGNED8     *curentSyncTimeIsInsideWindow;
+   volatile UNSIGNED8      useCANrxFilters;
+   volatile UNSIGNED8      bufferInhibitFlag;
+   volatile UNSIGNED8      firstCANtxMessage;
+   volatile UNSIGNED16     CANtxCount;
    UNSIGNED32              errOld;
    void                   *EM;
 }CO_CANmodule_t;
@@ -616,8 +618,8 @@ void CO_CANsetNormalMode(UNSIGNED16 CANbaseAddress);
                           If address is zero, memory for new object will be
                           allocated and address will be set.
       CANbaseAddress    - CAN module base address. See <Peripheral addresses>.
-      rxSize            - Size of above array is equal to number of receiving CAN objects.
-      txSize            - Size of above array is equal to number of transmitting CAN objects.
+      rxSize            - Size of receive array is equal to number of receiving CAN objects.
+      txSize            - Size of transmit array is equal to number of transmitting CAN objects.
       CANbitRate        - CAN bit rate. Valid values are (in kbps): 10, 20, 50,
                           125, 250, 500, 800, 1000. If value is illegal, bitrate
                           defaults to 125.
@@ -799,28 +801,6 @@ void CO_CANverifyErrors(CO_CANmodule_t *CANmodule);
       CANmodule   - Pointer to CAN module object <CO_CANmodule_t>.
 *******************************************************************************/
 void CO_CANinterrupt(CO_CANmodule_t *CANmodule);
-
-
-/*******************************************************************************
-   Function: CO_ODF
-
-   Default function for SDO server access of variables from Object Dictionary.
-
-   PIC32MX specifics: Normal copy is used in all cases. All variables
-   are in RAM. (EEPROM and ROM variables may be backuped into external eeprom chip.)
-   CANopen and PIC32MX uses Little endian, so no byte inversion is implemented.
-   With Big endianes, bytes must be inverted if CO_ODA_MB_VALUE bit is true.
-
-   For more information see topic <SDO server access function> in CO_SDO.h file.
-*******************************************************************************/
-UNSIGNED32 CO_ODF(   void       *object,
-                     UNSIGNED16  index,
-                     UNSIGNED8   subIndex,
-                     UNSIGNED8   length,
-                     UNSIGNED16  attribute,
-                     UNSIGNED8   dir,
-                     void       *dataBuff,
-                     const void *pData);
 
 
 #endif

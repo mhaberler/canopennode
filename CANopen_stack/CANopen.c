@@ -6,22 +6,22 @@
 
    Copyright (C) 2010 Janez Paternoster
 
-   License: GNU General Public License (GPL).
+   License: GNU Lesser General Public License (LGPL).
 
    <http://canopennode.sourceforge.net>
 */
 /*
    This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
+   it under the terms of the GNU Lesser General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+   GNU Lesser General Public License for more details.
 
-   You should have received a copy of the GNU General Public License
+   You should have received a copy of the GNU Lesser General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
@@ -407,17 +407,6 @@ void CO_process_RPDO(CO_t *CO){
 /******************************************************************************/
 void CO_process_TPDO(CO_t *CO){
    INTEGER16 i;
-   static UNSIGNED8 PDOsWasFirstSent = 0;
-
-
-   //send PDOs after CANopen network start and after all monitored nodes become operational
-   if(!PDOsWasFirstSent){
-      if(!CO->CANmodule[0]->firstCANtxMessage && CO->HBcons->allMonitoredOperational){
-         PDOsWasFirstSent = 1;
-         for(i=0; i<CO_NO_TPDO; i++)
-            CO->TPDO[i]->sendRequest = 1;
-      }
-   }
 
    //Verify PDO Change Of State and process PDOs
    for(i=0; i<CO_NO_TPDO; i++){

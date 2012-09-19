@@ -193,7 +193,7 @@ INTEGER16 CO_NMT_receive(void *object, CO_CANrxMsg_t *msg);
       HB_CANdev   - CAN device for HB transmission <CO_CANmodule_t>.
       HB_txIdx    - Index of transmit buffer pointer for HB transmission.
       CANidTxHB   - CAN identifier for HB message.
-                         
+
    Return <CO_ReturnError>:
       CO_ERROR_NO                 - Operation completed successfully.
       CO_ERROR_ILLEGAL_ARGUMENT   - Error in function arguments.

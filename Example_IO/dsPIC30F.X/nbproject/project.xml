@@ -4,7 +4,7 @@
     <configuration>
         <data xmlns="http://www.netbeans.org/ns/make-project/1">
             <name>dsPIC30F</name>
-            <creation-uuid>bcda819e-a2bc-4027-ac04-11f1140154e1</creation-uuid>
+            <creation-uuid>174ae458-aaf0-465f-a138-fe8d25e25f7b</creation-uuid>
             <make-project-type>0</make-project-type>
             <c-extensions>c</c-extensions>
             <cpp-extensions/>

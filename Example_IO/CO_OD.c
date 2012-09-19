@@ -59,7 +59,9 @@ struct sCO_OD_RAM CO_OD_RAM = {
 /*2107*/ {0x3E8, 0x0, 0x0, 0x0, 0x0},
 /*2108*/ {0},
 /*2109*/ {0},
-/*2110*/ {0L, 0L},
+/*2110*/ {0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L},
+/*2120*/ {0x4, 0x1234567890ABCDEFLL, 0x234567890ABCDEF1LL, 12.345, 456.789},
+/*2121*/ 0,
 /*6000*/ {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0},
 /*6200*/ {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0},
 /*6401*/ {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
@@ -74,6 +76,7 @@ struct sCO_OD_EEPROM CO_OD_EEPROM = {
            CO_OD_FIRST_LAST_WORD,
 
 /*2106*/ 0x0L,
+/*2112*/ {1L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L},
 
            CO_OD_FIRST_LAST_WORD,
 };
@@ -117,7 +120,7 @@ struct sCO_OD_EEPROM CO_OD_EEPROM = {
 /*1F80*/ 0x0L,
 /*2101*/ 0x30,
 /*2102*/ 0xFA,
-/*2111*/ {1L, 0L},
+/*2111*/ {1L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L},
 
            CO_OD_FIRST_LAST_WORD
 };
@@ -264,6 +267,12 @@ struct sCO_OD_EEPROM CO_OD_EEPROM = {
            {(const void*)&CO_OD_ROM.TPDOMappingParameter[3].mappedObject6, 0x8D,  4},
            {(const void*)&CO_OD_ROM.TPDOMappingParameter[3].mappedObject7, 0x8D,  4},
            {(const void*)&CO_OD_ROM.TPDOMappingParameter[3].mappedObject8, 0x8D,  4}};
+/*0x2120*/ const CO_ODrecord_t ODrecord2120[5] = {
+           {(const void*)&CO_OD_RAM.testVar.maxSubIndex, 0x06,  1},
+           {(const void*)&CO_OD_RAM.testVar.I64, 0xBE,  8},
+           {(const void*)&CO_OD_RAM.testVar.U64, 0xBE,  8},
+           {(const void*)&CO_OD_RAM.testVar.R32, 0xBE,  4},
+           {(const void*)&CO_OD_RAM.testVar.R64, 0xBE,  8}};
 
 
 /*******************************************************************************
@@ -271,35 +280,35 @@ struct sCO_OD_EEPROM CO_OD_EEPROM = {
 *******************************************************************************/
 #define WRITING (dir == 1)
 #define READING (dir == 0)
-UNSIGNED32 CO_ODF(void*, UNSIGNED16, UNSIGNED8, UNSIGNED8, UNSIGNED16, UNSIGNED8, void*, const void*);
+UNSIGNED32 CO_ODF(void*, UNSIGNED16, UNSIGNED8, UNSIGNED16*, UNSIGNED16, UNSIGNED8, void*, const void*);
 
-UNSIGNED32 CO_ODF_1003(void*, UNSIGNED16, UNSIGNED8, UNSIGNED8, UNSIGNED16, UNSIGNED8, void*, const void*);
+UNSIGNED32 CO_ODF_1003(void*, UNSIGNED16, UNSIGNED8, UNSIGNED16*, UNSIGNED16, UNSIGNED8, void*, const void*);
 
-UNSIGNED32 CO_ODF_1005(void*, UNSIGNED16, UNSIGNED8, UNSIGNED8, UNSIGNED16, UNSIGNED8, void*, const void*);
+UNSIGNED32 CO_ODF_1005(void*, UNSIGNED16, UNSIGNED8, UNSIGNED16*, UNSIGNED16, UNSIGNED8, void*, const void*);
 
-UNSIGNED32 CO_ODF_1006(void*, UNSIGNED16, UNSIGNED8, UNSIGNED8, UNSIGNED16, UNSIGNED8, void*, const void*);
+UNSIGNED32 CO_ODF_1006(void*, UNSIGNED16, UNSIGNED8, UNSIGNED16*, UNSIGNED16, UNSIGNED8, void*, const void*);
 
-UNSIGNED32 CO_ODF_1010(void*, UNSIGNED16, UNSIGNED8, UNSIGNED8, UNSIGNED16, UNSIGNED8, void*, const void*);
+UNSIGNED32 CO_ODF_1010(void*, UNSIGNED16, UNSIGNED8, UNSIGNED16*, UNSIGNED16, UNSIGNED8, void*, const void*);
 
-UNSIGNED32 CO_ODF_1011(void*, UNSIGNED16, UNSIGNED8, UNSIGNED8, UNSIGNED16, UNSIGNED8, void*, const void*);
+UNSIGNED32 CO_ODF_1011(void*, UNSIGNED16, UNSIGNED8, UNSIGNED16*, UNSIGNED16, UNSIGNED8, void*, const void*);
 
-UNSIGNED32 CO_ODF_1014(void*, UNSIGNED16, UNSIGNED8, UNSIGNED8, UNSIGNED16, UNSIGNED8, void*, const void*);
+UNSIGNED32 CO_ODF_1014(void*, UNSIGNED16, UNSIGNED8, UNSIGNED16*, UNSIGNED16, UNSIGNED8, void*, const void*);
 
-UNSIGNED32 CO_ODF_1016(void*, UNSIGNED16, UNSIGNED8, UNSIGNED8, UNSIGNED16, UNSIGNED8, void*, const void*);
+UNSIGNED32 CO_ODF_1016(void*, UNSIGNED16, UNSIGNED8, UNSIGNED16*, UNSIGNED16, UNSIGNED8, void*, const void*);
 
-UNSIGNED32 CO_ODF_1019(void*, UNSIGNED16, UNSIGNED8, UNSIGNED8, UNSIGNED16, UNSIGNED8, void*, const void*);
+UNSIGNED32 CO_ODF_1019(void*, UNSIGNED16, UNSIGNED8, UNSIGNED16*, UNSIGNED16, UNSIGNED8, void*, const void*);
 
-UNSIGNED32 CO_ODF_1200(void*, UNSIGNED16, UNSIGNED8, UNSIGNED8, UNSIGNED16, UNSIGNED8, void*, const void*);
+UNSIGNED32 CO_ODF_1200(void*, UNSIGNED16, UNSIGNED8, UNSIGNED16*, UNSIGNED16, UNSIGNED8, void*, const void*);
 
-UNSIGNED32 CO_ODF_RPDOcom(void*, UNSIGNED16, UNSIGNED8, UNSIGNED8, UNSIGNED16, UNSIGNED8, void*, const void*);
+UNSIGNED32 CO_ODF_RPDOcom(void*, UNSIGNED16, UNSIGNED8, UNSIGNED16*, UNSIGNED16, UNSIGNED8, void*, const void*);
 
-UNSIGNED32 CO_ODF_RPDOmap(void*, UNSIGNED16, UNSIGNED8, UNSIGNED8, UNSIGNED16, UNSIGNED8, void*, const void*);
+UNSIGNED32 CO_ODF_RPDOmap(void*, UNSIGNED16, UNSIGNED8, UNSIGNED16*, UNSIGNED16, UNSIGNED8, void*, const void*);
 
-UNSIGNED32 CO_ODF_TPDOcom(void*, UNSIGNED16, UNSIGNED8, UNSIGNED8, UNSIGNED16, UNSIGNED8, void*, const void*);
+UNSIGNED32 CO_ODF_TPDOcom(void*, UNSIGNED16, UNSIGNED8, UNSIGNED16*, UNSIGNED16, UNSIGNED8, void*, const void*);
 
-UNSIGNED32 CO_ODF_TPDOmap(void*, UNSIGNED16, UNSIGNED8, UNSIGNED8, UNSIGNED16, UNSIGNED8, void*, const void*);
+UNSIGNED32 CO_ODF_TPDOmap(void*, UNSIGNED16, UNSIGNED8, UNSIGNED16*, UNSIGNED16, UNSIGNED8, void*, const void*);
 
-UNSIGNED32 CO_ODF_2101(void *object, UNSIGNED16 index, UNSIGNED8 subIndex, UNSIGNED8 length,
+UNSIGNED32 CO_ODF_2101(void *object, UNSIGNED16 index, UNSIGNED8 subIndex, UNSIGNED16* pLength,
                        UNSIGNED16 attribute, UNSIGNED8 dir, void* dataBuff, const void* pData){
   UNSIGNED32 abortCode;
   if(WRITING){
@@ -307,11 +316,11 @@ UNSIGNED32 CO_ODF_2101(void *object, UNSIGNED16 index, UNSIGNED8 subIndex, UNSIG
     if(var < 1)   return 0x06090032L;  //Value of parameter written too low.
     if(var > 127) return 0x06090031L;  //Value of parameter written too high.
   }
-  abortCode = CO_ODF(object, index, subIndex, length, attribute, dir, dataBuff, pData);
+  abortCode = CO_ODF(object, index, subIndex, pLength, attribute, dir, dataBuff, pData);
   return abortCode;
 }
 
-UNSIGNED32 CO_ODF_2102(void *object, UNSIGNED16 index, UNSIGNED8 subIndex, UNSIGNED8 length,
+UNSIGNED32 CO_ODF_2102(void *object, UNSIGNED16 index, UNSIGNED8 subIndex, UNSIGNED16* pLength,
                        UNSIGNED16 attribute, UNSIGNED8 dir, void* dataBuff, const void* pData){
   UNSIGNED32 abortCode;
   if(WRITING){
@@ -319,11 +328,11 @@ UNSIGNED32 CO_ODF_2102(void *object, UNSIGNED16 index, UNSIGNED8 subIndex, UNSIG
     memcpySwap2((UNSIGNED8*)&var, (UNSIGNED8*)dataBuff);
     if(!(var == 10 || var == 20 || var == 50 || var == 125 || var == 250 || var == 500 || var == 800 || var == 1000)) return 0x06090030L;  //Invalid value for the parameter
   }
-  abortCode = CO_ODF(object, index, subIndex, length, attribute, dir, dataBuff, pData);
+  abortCode = CO_ODF(object, index, subIndex, pLength, attribute, dir, dataBuff, pData);
   return abortCode;
 }
 
-UNSIGNED32 CO_ODF_2107(void *object, UNSIGNED16 index, UNSIGNED8 subIndex, UNSIGNED8 length,
+UNSIGNED32 CO_ODF_2107(void *object, UNSIGNED16 index, UNSIGNED8 subIndex, UNSIGNED16* pLength,
                        UNSIGNED16 attribute, UNSIGNED8 dir, void* dataBuff, const void* pData){
   UNSIGNED32 abortCode;
   if(WRITING){
@@ -332,9 +341,11 @@ UNSIGNED32 CO_ODF_2107(void *object, UNSIGNED16 index, UNSIGNED8 subIndex, UNSIG
     if(!((subIndex == 3 || subIndex == 5) && var == 0))
       return 0x06090030; //Invalid value for parameter
   }
-  abortCode = CO_ODF(object, index, subIndex, length, attribute, dir, dataBuff, pData);
+  abortCode = CO_ODF(object, index, subIndex, pLength, attribute, dir, dataBuff, pData);
   return abortCode;
 }
+
+UNSIGNED32 ODF_testDomain(void*, UNSIGNED16, UNSIGNED8, UNSIGNED16*, UNSIGNED16, UNSIGNED8, void*, const void*);
 
 
 /*******************************************************************************
@@ -387,8 +398,11 @@ const sCO_OD_object CO_OD[CO_OD_NoOfElements] = {
 {0x2107, 0x05, 0xBE,  2, (const void*)&CO_OD_RAM.performance[0],                        CO_ODF_2107},
 {0x2108, 0x01, 0xB6,  2, (const void*)&CO_OD_RAM.temperature[0],                        CO_ODF},
 {0x2109, 0x01, 0xB6,  2, (const void*)&CO_OD_RAM.voltage[0],                            CO_ODF},
-{0x2110, 0x02, 0xFE,  4, (const void*)&CO_OD_RAM.variableInt32[0],                      CO_ODF},
-{0x2111, 0x02, 0xFD,  4, (const void*)&CO_OD_ROM.variableROMInt32[0],                   CO_ODF},
+{0x2110, 0x10, 0xFE,  4, (const void*)&CO_OD_RAM.variableInt32[0],                      CO_ODF},
+{0x2111, 0x10, 0xFD,  4, (const void*)&CO_OD_ROM.variableROMInt32[0],                   CO_ODF},
+{0x2112, 0x10, 0xFF,  4, (const void*)&CO_OD_EEPROM.variableNVInt32[0],                 CO_ODF},
+{0x2120, 0x04, 0x00,  0, (const void*)&ODrecord2120,                                    CO_ODF},
+{0x2121, 0x00, 0x3E,  0, 0,                                                             ODF_testDomain},
 {0x6000, 0x08, 0x76,  1, (const void*)&CO_OD_RAM.readInput8Bit[0],                      CO_ODF},
 {0x6200, 0x08, 0x3E,  1, (const void*)&CO_OD_RAM.writeOutput8Bit[0],                    CO_ODF},
 {0x6401, 0x0C, 0xB6,  2, (const void*)&CO_OD_RAM.readAnalogueInput16Bit[0],             CO_ODF},

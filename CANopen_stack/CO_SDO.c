@@ -64,10 +64,75 @@ INTEGER16 CO_SDO_receive(void *object, CO_CANrxMsg_t *msg){
 
 
 /******************************************************************************/
+#ifndef CO_ODF_MASK_DEFAULT
+UNSIGNED32 CO_ODF(   void       *object,
+                     UNSIGNED16  index,
+                     UNSIGNED8   subIndex,
+                     UNSIGNED16 *pLength,
+                     UNSIGNED16  attribute,
+                     UNSIGNED8   dir,
+                     void       *dataBuff,
+                     const void *pData)
+{
+   #define CO_ODA_MEM_ROM          0x01   //same attribute is in CO_SDO.h file
+   #define CO_ODA_MEM_RAM          0x02   //same attribute is in CO_SDO.h file
+   #define CO_ODA_MEM_EEPROM       0x03   //same attribute is in CO_SDO.h file
+   #define CO_ODA_MB_VALUE         0x80   //same attribute is in CO_SDO.h file
+
+   UNSIGNED16 length = *pLength;
+
+   if(dir==0){ //Reading Object Dictionary variable
+#ifdef BIG_ENDIAN
+      if(attribute & CO_ODA_MB_VALUE){
+         UNSIGNED8 *dataBuffCopy = (UNSIGNED8*)dataBuff;
+         UNSIGNED8 *pDataCopy = (UNSIGNED8*)pData + length;
+         DISABLE_INTERRUPTS();
+         while(length--) *(dataBuffCopy++) = *(--pDataCopy);
+         ENABLE_INTERRUPTS();
+      }
+      else{
+#endif
+         UNSIGNED8 *dataBuffCopy = (UNSIGNED8*)dataBuff;
+         UNSIGNED8 *pDataCopy = (UNSIGNED8*)pData;
+         DISABLE_INTERRUPTS();
+         while(length--) *(dataBuffCopy++) = *(pDataCopy++);
+         ENABLE_INTERRUPTS();
+#ifdef BIG_ENDIAN
+      }
+#endif
+   }
+
+   else{ //Writing Object Dictionary variable
+#ifdef BIG_ENDIAN
+      if(attribute & CO_ODA_MB_VALUE){
+         UNSIGNED8 *dataBuffCopy = (UNSIGNED8*)dataBuff;
+         UNSIGNED8 *pDataCopy = (UNSIGNED8*)pData + length;
+         DISABLE_INTERRUPTS();
+         while(length--) *(--pDataCopy) = *(dataBuffCopy++);
+         ENABLE_INTERRUPTS();
+      }
+      else{
+#endif
+         UNSIGNED8 *dataBuffCopy = (UNSIGNED8*)dataBuff;
+         UNSIGNED8 *pDataCopy = (UNSIGNED8*)pData;
+         DISABLE_INTERRUPTS();
+         while(length--) *(pDataCopy++) = *(dataBuffCopy++);
+         ENABLE_INTERRUPTS();
+#ifdef BIG_ENDIAN
+      }
+#endif
+   }
+
+   return 0L;
+}
+#endif
+
+
+/******************************************************************************/
 UNSIGNED32 CO_ODF_1200( void       *object,
                         UNSIGNED16  index,
                         UNSIGNED8   subIndex,
-                        UNSIGNED8   length,
+                        UNSIGNED16 *pLength,
                         UNSIGNED16  attribute,
                         UNSIGNED8   dir,
                         void       *dataBuff,
@@ -78,7 +143,7 @@ UNSIGNED32 CO_ODF_1200( void       *object,
 
    nodeId = (UNSIGNED8*) object; //this is the correct pointer type of the first argument
 
-   abortCode = CO_ODF(object, index, subIndex, length, attribute, dir, dataBuff, pData);
+   abortCode = CO_ODF(object, index, subIndex, pLength, attribute, dir, dataBuff, pData);
 
    if(subIndex>0){
       //add NodeId to the value, which will be sent by SDO server
@@ -210,46 +275,63 @@ const sCO_OD_object* CO_OD_find( CO_SDO_t            *SDO,
 
 
 /******************************************************************************/
-UNSIGNED8 CO_OD_getLength(const sCO_OD_object* object, UNSIGNED8 subIndex){
+UNSIGNED16 CO_OD_getLength(const sCO_OD_object* object, UNSIGNED8 subIndex){
    if(object->length){//object type is var or array
       if(subIndex == 0 && object->maxSubIndex > 0) return 1;  //object type is array
       return object->length;
    }
-   return ((const CO_ODrecord_t*)(object->pData))[subIndex].length;
+   else if(object->pData == 0){//data type is domain
+      return CO_OD_MAX_OBJECT_SIZE;
+   }
+   else{//object type is record
+      return ((const CO_ODrecord_t*)(object->pData))[subIndex].length;
+   }
 }
 
 
 /******************************************************************************/
 UNSIGNED8 CO_OD_getAttribute(const sCO_OD_object* object, UNSIGNED8 subIndex){
-  if(object->length){//object type is var or array
-    UNSIGNED16 attr = object->attribute;
-    if(subIndex == 0 && object->maxSubIndex > 0) return (attr&0x03) | 0x04;  //object type is array
-    return attr;
-  }
-  return ((const CO_ODrecord_t*)(object->pData))[subIndex].attribute;
+   if(object->length){//object type is var or array
+      UNSIGNED8 attr = object->attribute;
+      if(subIndex == 0 && object->maxSubIndex > 0) return (attr&0x03) | 0x04;  //object type is array
+      return attr;
+   }
+   else if(object->pData == 0){//data type is domain
+      return object->attribute;
+   }
+   else{//object type is record
+      return ((const CO_ODrecord_t*)(object->pData))[subIndex].attribute;
+   }
 }
 
 
 /******************************************************************************/
 const void* CO_OD_getDataPointer(const sCO_OD_object* object, UNSIGNED8 subIndex){
-   //Object Type is Var
-   if(object->maxSubIndex == 0) return object->pData;
-   //Object Type is Array
-   if(object->length){
+   if(object->pData == 0){             //data type is domain
+      return 0;
+   }
+   else if(object->maxSubIndex == 0){  //Object Type is Var
+      return object->pData;
+   }
+   else if(object->length){            //Object Type is Array
       if(subIndex==0){
          //this is the data, for the subIndex 0 in the array
          return (const void*) &object->maxSubIndex;
       }
       return (const void*)(((const INTEGER8*)object->pData) + ((subIndex-1) * object->length));
    }
-   //Object Type is Record, data pointer is located in special structure.
-   return ((const CO_ODrecord_t*)(object->pData))[subIndex].pData;
+   else{                               //Object Type is Record
+      return ((const CO_ODrecord_t*)(object->pData))[subIndex].pData;
+   }
 }
 
 
 /******************************************************************************/
-void SDO_ABORT(CO_SDO_t *SDO, UNSIGNED32 code){
+void CO_SDO_abort(CO_SDO_t *SDO, UNSIGNED32 code){
    SDO->CANtxBuff->data[0] = 0x80;
+   SDO->CANtxBuff->data[1] = SDO->index & 0xFF;
+   SDO->CANtxBuff->data[2] = (SDO->index>>8) & 0xFF;
+   SDO->CANtxBuff->data[3] = SDO->subIndex;
    memcpySwap4(&SDO->CANtxBuff->data[4], (UNSIGNED8*)&code);
    SDO->state = 0;
    CO_CANsend(SDO->CANdevTx, SDO->CANtxBuff);
@@ -262,14 +344,9 @@ void CO_SDO_process( CO_SDO_t            *SDO,
 {
    if(NMTisPreOrOperational){
       if(SDO->CANrxNew && !SDO->CANtxBuff->bufferFull){  //New SDO object has to be processed and SDO CAN send buffer is free
-         //setup variables for default response
-         SDO->CANtxBuff->data[1] = SDO->CANrxData[1];
-         SDO->CANtxBuff->data[2] = SDO->CANrxData[2];
-         SDO->CANtxBuff->data[3] = SDO->CANrxData[3];
-         SDO->CANtxBuff->data[4] = 0;
-         SDO->CANtxBuff->data[5] = 0;
-         SDO->CANtxBuff->data[6] = 0;
-         SDO->CANtxBuff->data[7] = 0;
+         //clear response buffer
+         SDO->CANtxBuff->data[0] = SDO->CANtxBuff->data[1] = SDO->CANtxBuff->data[2] = SDO->CANtxBuff->data[3] = 0;
+         SDO->CANtxBuff->data[4] = SDO->CANtxBuff->data[5] = SDO->CANtxBuff->data[6] = SDO->CANtxBuff->data[7] = 0;
 
          switch(SDO->CANrxData[0]>>5){  //Switch Client Command Specifier
             UNSIGNED32 abortCode;
@@ -282,55 +359,63 @@ void CO_SDO_process( CO_SDO_t            *SDO,
                //find pointer to object dictionary object
                SDO->pODE = CO_OD_find(SDO, SDO->index, &SDO->indexOfFoundObject);
                if(!SDO->pODE){
-                  SDO_ABORT(SDO, 0x06020000L); //object does not exist in OD
+                  CO_SDO_abort(SDO, 0x06020000L); //object does not exist in OD
                   break;
                }
                if(SDO->subIndex > SDO->pODE->maxSubIndex){
-                  SDO_ABORT(SDO, 0x06090011L); //Sub-index does not exist.
+                  CO_SDO_abort(SDO, 0x06090011L); //Sub-index does not exist.
                   break;
                }
                SDO->dataLength = CO_OD_getLength(SDO->pODE, SDO->subIndex);
                attr = CO_OD_getAttribute(SDO->pODE, SDO->subIndex);
                //verify length
                if(SDO->dataLength > CO_OD_MAX_OBJECT_SIZE){
-                  SDO_ABORT(SDO, 0x06040047L);  //general internal incompatibility in the device
+                  CO_SDO_abort(SDO, 0x06040047L);  //general internal incompatibility in the device
                   break;
                }
                if(!(attr&CO_ODA_WRITEABLE)){
-                  SDO_ABORT(SDO, 0x06010002L); //attempt to write a read-only object
+                  CO_SDO_abort(SDO, 0x06010002L); //attempt to write a read-only object
                   break;
                }
+               //default response
+               SDO->CANtxBuff->data[0] = 0x60;
+               SDO->CANtxBuff->data[1] = SDO->CANrxData[1];
+               SDO->CANtxBuff->data[2] = SDO->CANrxData[2];
+               SDO->CANtxBuff->data[3] = SDO->CANrxData[3];
                if(SDO->CANrxData[0] & 0x02){
                   //Expedited transfer
                   if(SDO->CANrxData[0] & 0x01)//is size indicated
                      len = 4 - ((SDO->CANrxData[0]>>2)&0x03);   //size
                   else len = 4;
+                  //is domain data type
+                  if(SDO->pODE->pData == 0){
+                     SDO->dataLength = len;
+                  }
                   //verify length
-                  if(SDO->dataLength != len){
-                     SDO_ABORT(SDO, 0x06070010L);  //Length of service parameter does not match
+                  else if(SDO->dataLength != len){
+                     CO_SDO_abort(SDO, 0x06070010L);  //Length of service parameter does not match
                      break;
                   }
                   //write to memory
                   abortCode = SDO->pODE->pFunct(SDO->ObjectDictionaryPointers[SDO->indexOfFoundObject],
                                                 SDO->index,
                                                 SDO->subIndex,
-                                                SDO->dataLength,
+                                               &SDO->dataLength,
                                                 attr,
                                                 1,
                                                 &SDO->CANrxData[4],
                                                 CO_OD_getDataPointer(SDO->pODE, SDO->subIndex));
                   //send response and finish
-                  if(abortCode)
-                     SDO->CANtxBuff->data[0] = 0x80;
-                  else
-                     SDO->CANtxBuff->data[0] = 0x60;
-                  memcpySwap4(&SDO->CANtxBuff->data[4], (UNSIGNED8*)&abortCode);
+                  if(abortCode){
+                     CO_SDO_abort(SDO, abortCode);
+                     break;
+                  }
                   SDO->state = 0;
                   CO_CANsend(SDO->CANdevTx, SDO->CANtxBuff);
                }
                else{
 #if CO_OD_MAX_OBJECT_SIZE == 0x04
-                  SDO_ABORT(SDO, 0x06010000L);  //unsupported access to an object
+                  CO_SDO_abort(SDO, 0x06010000L);  //unsupported access to an object
                }
                break;
 #else
@@ -339,35 +424,38 @@ void CO_SDO_process( CO_SDO_t            *SDO,
                   if(SDO->CANrxData[0]&0x01){
                      UNSIGNED32 lenRx;
                      memcpySwap4((UNSIGNED8*)&lenRx, &SDO->CANrxData[4]);
-                     if(lenRx != SDO->dataLength){
-                        SDO_ABORT(SDO, 0x06070010L);  //Length of service parameter does not match
+                     //is domain data type
+                     if(SDO->pODE->pData == 0){
+                        SDO->dataLength = lenRx;
+                     }
+                     //verify length
+                     else if(lenRx != SDO->dataLength){
+                        CO_SDO_abort(SDO, 0x06070010L);  //Length of service parameter does not match
                         break;
                      }
                   }
                   SDO->bufferOffset = 0;
                   SDO->timeoutTimer = 0;
                   SDO->state = 0x02;
-                  SDO->CANtxBuff->data[0] = 0x60;
                   CO_CANsend(SDO->CANdevTx, SDO->CANtxBuff);
                }
                break;
 
             case 0:   //Download SDO segment
                if(!(SDO->state&0x02)){//download SDO segment was not initiated
-                  SDO_ABORT(SDO, 0x05040001L);//command specifier not valid
+                  CO_SDO_abort(SDO, 0x05040001L);//command specifier not valid
                   break;
                }
                //verify toggle bit
                if((SDO->CANrxData[0]&0x10) != (SDO->state&0x10)){
-                  SDO_ABORT(SDO, 0x05030000L);//toggle bit not alternated
+                  CO_SDO_abort(SDO, 0x05030000L);//toggle bit not alternated
                   break;
                }
                //get size
                len = 7 - ((SDO->CANrxData[0]>>1)&0x07);   //size
                //verify length
-               SDO->dataLength = CO_OD_getLength(SDO->pODE, SDO->subIndex);
                if((SDO->bufferOffset + len) > SDO->dataLength || (SDO->bufferOffset + len) > CO_OD_MAX_OBJECT_SIZE){
-                  SDO_ABORT(SDO, 0x06070012L);  //Length of service parameter too high
+                  CO_SDO_abort(SDO, 0x06070012L);  //Length of service parameter too high
                   break;
                }
                //copy data to buffer
@@ -380,23 +468,19 @@ void CO_SDO_process( CO_SDO_t            *SDO,
                if(SDO->CANrxData[0] & 0x01){
                   //verify length
                   if(SDO->dataLength != SDO->bufferOffset){
-                     SDO_ABORT(SDO, 0x06070010L);  //Length of service parameter does not match
+                     CO_SDO_abort(SDO, 0x06070010L);  //Length of service parameter does not match
                      break;
                   }
                   abortCode = SDO->pODE->pFunct(SDO->ObjectDictionaryPointers[SDO->indexOfFoundObject],
                                                 SDO->index,
                                                 SDO->subIndex,
-                                                SDO->dataLength,
+                                               &SDO->dataLength,
                                                 CO_OD_getAttribute(SDO->pODE, SDO->subIndex),
                                                 1,
                                                 SDO->databuffer,
                                                 CO_OD_getDataPointer(SDO->pODE, SDO->subIndex));
-                  memcpySwap4(&SDO->CANtxBuff->data[4], (UNSIGNED8*)&abortCode);
                   if(abortCode){
-                     //send SDO_ABORT
-                     SDO->CANtxBuff->data[0] = 0x80;
-                     SDO->state = 0;
-                     CO_CANsend(SDO->CANdevTx, SDO->CANtxBuff);
+                     CO_SDO_abort(SDO, abortCode);
                      break;
                   }
                   SDO->state = 0;
@@ -407,10 +491,6 @@ void CO_SDO_process( CO_SDO_t            *SDO,
                   if(SDO->state&0x10) SDO->state &= 0xEF;
                   else SDO->state |= 0x10;
                }
-               //write other response data
-               SDO->CANtxBuff->data[1] = 0;
-               SDO->CANtxBuff->data[2] = 0;
-               SDO->CANtxBuff->data[3] = 0;
                //download segment response
                CO_CANsend(SDO->CANdevTx, SDO->CANtxBuff);
                break;
@@ -421,37 +501,45 @@ void CO_SDO_process( CO_SDO_t            *SDO,
                //find pointer to object dictionary object
                SDO->pODE = CO_OD_find(SDO, SDO->index, &SDO->indexOfFoundObject);
                if(!SDO->pODE){
-                  SDO_ABORT(SDO, 0x06020000L); //object does not exist in OD
+                  CO_SDO_abort(SDO, 0x06020000L); //object does not exist in OD
                   break;
                }
                if(SDO->subIndex > SDO->pODE->maxSubIndex){
-                  SDO_ABORT(SDO, 0x06090011L); //Sub-index does not exist.
+                  CO_SDO_abort(SDO, 0x06090011L); //Sub-index does not exist.
                   break;
                }
                SDO->dataLength = CO_OD_getLength(SDO->pODE, SDO->subIndex);
                attr = CO_OD_getAttribute(SDO->pODE, SDO->subIndex);
                //verify length
                if(SDO->dataLength > CO_OD_MAX_OBJECT_SIZE){
-                  SDO_ABORT(SDO, 0x06040047L);  //general internal incompatibility in the device
+                  CO_SDO_abort(SDO, 0x06040047L);  //general internal incompatibility in the device
                   break;
                }
                if(!(attr&CO_ODA_READABLE)){
-                  SDO_ABORT(SDO, 0x06010001L);  //attempt to read a write-only object
+                  CO_SDO_abort(SDO, 0x06010001L);  //attempt to read a write-only object
                   break;
                }
                abortCode = SDO->pODE->pFunct(SDO->ObjectDictionaryPointers[SDO->indexOfFoundObject],
                                              SDO->index,
                                              SDO->subIndex,
-                                             SDO->dataLength,
+                                            &SDO->dataLength,
                                              attr,
                                              0,
                                              SDO->databuffer,
                                              CO_OD_getDataPointer(SDO->pODE, SDO->subIndex));
                if(abortCode){
-                  SDO_ABORT(SDO, abortCode);
+                  CO_SDO_abort(SDO, abortCode);
                   break;
                }
-               if(SDO->dataLength <= 4){
+               //default response
+               SDO->CANtxBuff->data[1] = SDO->CANrxData[1];
+               SDO->CANtxBuff->data[2] = SDO->CANrxData[2];
+               SDO->CANtxBuff->data[3] = SDO->CANrxData[3];
+               if(SDO->dataLength == 0 || SDO->dataLength > CO_OD_MAX_OBJECT_SIZE){
+                  CO_SDO_abort(SDO, 0x06040047L);  //general internal incompatibility in the device
+                  break;
+               }
+               else if(SDO->dataLength <= 4){
                   //expedited transfer
                   for(i=0; i<SDO->dataLength; i++)
                      SDO->CANtxBuff->data[4+i] = SDO->databuffer[i];
@@ -476,12 +564,12 @@ void CO_SDO_process( CO_SDO_t            *SDO,
 
             case 3:   //Upload SDO segment
                if(!(SDO->state&0x04)){//upload SDO segment was not initiated
-                  SDO_ABORT(SDO, 0x05040001L);//command specifier not valid
+                  CO_SDO_abort(SDO, 0x05040001L);//command specifier not valid
                   break;
                }
                //verify toggle bit
                if((SDO->CANrxData[0]&0x10) != (SDO->state&0x10)){
-                  SDO_ABORT(SDO, 0x05030000L);//toggle bit not alternated
+                  CO_SDO_abort(SDO, 0x05030000L);//toggle bit not alternated
                   break;
                }
                //calculate length to be sent
@@ -490,8 +578,6 @@ void CO_SDO_process( CO_SDO_t            *SDO,
                //fill data bytes
                for(i=0; i<len; i++)
                   SDO->CANtxBuff->data[i+1] = SDO->databuffer[SDO->bufferOffset+i];
-               for(; i<7; i++)
-                  SDO->CANtxBuff->data[i+1] = 0;
                SDO->bufferOffset += len;
                SDO->CANtxBuff->data[0] = 0x00 | (SDO->state&0x10) | ((7-len)<<1);
                //is end of transfer?
@@ -514,7 +600,7 @@ void CO_SDO_process( CO_SDO_t            *SDO,
                break;
 
             default:
-               SDO_ABORT(SDO, 0x05040001L);//command specifier not valid
+               CO_SDO_abort(SDO, 0x05040001L);//command specifier not valid
          }//end switch
          SDO->CANrxNew = 0;
       }//end process new SDO object
@@ -524,7 +610,7 @@ void CO_SDO_process( CO_SDO_t            *SDO,
       if(SDO->state){ //Segmented SDO transfer in progress
          if(SDO->timeoutTimer < SDOtimeoutTime) SDO->timeoutTimer += timeDifference_ms;
          if(SDO->timeoutTimer >= SDOtimeoutTime){
-            SDO_ABORT(SDO, 0x05040000L); //SDO protocol timed out
+            CO_SDO_abort(SDO, 0x05040000L); //SDO protocol timed out
          }
       }
 #endif

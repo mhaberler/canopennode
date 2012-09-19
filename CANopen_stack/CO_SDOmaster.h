@@ -73,21 +73,31 @@
                        If NULL, it will be ignored.
 
       state          - Internal state of the SDO client:
+                        Bit0 = 0: not used.
                         Bit1 = 1: segmented download in progress.
                         Bit2 = 1: segmented upload in progress.
+                        Bit3 = 0: not used.
                         Bit4: toggled bit from previous object.
-                        Bit6 = 1: download initiated.
-                        Bit7 = 1: upload initiated.
+                        Bit5 = 1: download initiated.
+                        Bit6 = 1: upload initiated.
       buffer         - Pointer to data buffer supplied by user.
       bufferSize     - By download application indicates data size in buffer,
                        by upload application indicates buffer size.
       bufferOffset   - Offset in buffer of next data segment being read/written.
       timeoutTimer   - Timeout timer for SDO communication.
+      index          - Index of current object in Object Dictionary.
+      subIndex       - Subindex of current object in Object Dictionary.
 
       CANdevRx       - CAN device for SDO client reception <CO_CANmodule_t>.
       CANdevRxIdx    - Index of receive buffer for SDO client reception.
       CANrxNew       - Variable indicates, if new SDO message received from CAN bus.
       CANrxData      - 8 data bytes of the received message.
+
+      pFunctSignal   - Pointer to optional external function. If defined, it is
+                       called from high priority interrupt after new CAN SDO
+                       response message is received. Function may wake up
+                       external task, which processes SDO client functions.
+      functArg       - Optional argument, which is passed to above function.
 
       CANdevTx       - Pointer to CAN device used for SDO client transmission <CO_CANmodule_t>.
       CANtxBuff      - CAN transmit buffer inside CANdev for CAN tx message.
@@ -102,11 +112,16 @@ typedef struct{
    UNSIGNED16              bufferSize;
    UNSIGNED16              bufferOffset;
    UNSIGNED16              timeoutTimer;
+   UNSIGNED16              index;
+   UNSIGNED8               subIndex;
 
    CO_CANmodule_t         *CANdevRx;
    UNSIGNED16              CANdevRxIdx;
    UNSIGNED16              CANrxNew;      //must be 2-byte variable because of correct alignment of CANrxData
    UNSIGNED8               CANrxData[8];  //take care for correct (word) alignment!
+
+   void                  (*pFunctSignal)(UNSIGNED32 arg);
+   UNSIGNED32              functArg;
 
    CO_CANmodule_t         *CANdevTx;
    CO_CANtxArray_t        *CANtxBuff;
@@ -229,7 +244,7 @@ INTEGER8 CO_SDOclientDownloadInitiate( CO_SDOclient_t   *SDO_C,
                                        UNSIGNED16        index,
                                        UNSIGNED8         subIndex,
                                        UNSIGNED8        *dataTx,
-                                       UNSIGNED8         dataSize);
+                                       UNSIGNED16        dataSize);
 
 
 /*******************************************************************************
@@ -289,7 +304,7 @@ INTEGER8 CO_SDOclientUploadInitiate(   CO_SDOclient_t   *SDO_C,
                                        UNSIGNED16        index,
                                        UNSIGNED8         subIndex,
                                        UNSIGNED8        *dataRx,
-                                       UNSIGNED8         dataRxSize);
+                                       UNSIGNED16        dataRxSize);
 
 
 /*******************************************************************************

@@ -75,9 +75,24 @@ function g_CANopenDataType(dataType){
 		case 0x05: return "05 - UNSIGNED8";
 		case 0x06: return "06 - UNSIGNED16";
 		case 0x07: return "07 - UNSIGNED32";
-		//case 0x08: return "08 - REAL32";
+		case 0x08: return "08 - REAL32";
 		case 0x09: return "09 - VISIBLE_STRING";
 		case 0x0A: return "0A - OCTET_STRING";
+      case 0x0B: return "0B - UNICODE_STRING";
+      case 0x0C: return "0C - TIME_OF_DAY";
+      case 0x0D: return "0D - TIME_DIFFERENCE";
+      case 0x0F: return "0F - DOMAIN";
+      case 0x10: return "10 - INTEGER24";
+      case 0x11: return "11 - REAL64";
+      case 0x12: return "12 - INTEGER40";
+      case 0x13: return "13 - INTEGER48";
+      case 0x14: return "14 - INTEGER56";
+      case 0x15: return "15 - INTEGER64";
+      case 0x16: return "16 - UNSIGNED24";
+      case 0x18: return "18 - UNSIGNED40";
+      case 0x19: return "19 - UNSIGNED48";
+      case 0x1A: return "1A - UNSIGNED56";
+      case 0x1B: return "1B - UNSIGNED64";
 		default:  return "";
 	}
 }
@@ -85,7 +100,7 @@ function g_CANopenDataType(dataType){
 function g_validateValue(value, dataType){
 	dataType = dataType.slice(0, 2);
 	value = value.replace("$NODEID+", "");
-	i = parseInt(value);
+	var i = parseInt(value);
 	switch(dataType){
 		//case 0x01: return "01": //BOOLEAN;
 		case "02": //INTEGER8;
@@ -124,7 +139,13 @@ function g_validateValue(value, dataType){
 				return "0";
 			}
 			break;
-		//case "08": //REAL32;
+		case "08": //REAL32;
+         var f = parseFloat(value);
+			if(!(-3.4e38<f && f<3.4e38)){
+				alert("Valid Value for REAL32 is between -3.4e38 and 3.4e38 !");
+				return "0";
+			}
+			break;
 		case "09": //VISIBLE_STRING;
 			break;
 		case "0A": //OCTET_STRING;
@@ -136,7 +157,9 @@ function g_validateValue(value, dataType){
 				return "00";
 			}
 			break;
-		default:  return "0";
+		default:
+         //no validation
+			break;
 	}
 	return value;
 }

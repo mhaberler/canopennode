@@ -100,6 +100,9 @@
     <a href="#object_2109" title="Voltage">2109</a>
     <a href="#object_2110" title="Variable Int32">2110</a>
     <a href="#object_2111" title="Variable ROM Int32">2111</a>
+    <a href="#object_2112" title="Variable NV Int32">2112</a>
+    <a href="#object_2120" title="test var">2120</a>
+    <a href="#object_2121" title="test domain">2121</a>
     <a href="#object_6000" title="Read input 8 bit">6000</a>
     <a href="#object_6200" title="Write output 8 bit">6200</a>
     <a href="#object_6401" title="Read analogue input 16 bit">6401</a>
@@ -344,6 +347,18 @@
             <a href="#object_2111">2111</a>
             - Variable ROM Int32
           </li>
+          <li>
+            <a href="#object_2112">2112</a>
+            - Variable NV Int32
+          </li>
+          <li>
+            <a href="#object_2120">2120</a>
+            - test var
+          </li>
+          <li>
+            <a href="#object_2121">2121</a>
+            - test domain
+          </li>
         </ul>
         <li>
           <a href="#objDictProfile">Device Profile</a>
@@ -385,11 +400,11 @@
         </tr>
         <tr>
           <th>Creation Time</th>
-          <td>10:39:00</td>
+          <td>11:24:37</td>
         </tr>
         <tr>
           <th>Creation Date</th>
-          <td>2012-03-22</td>
+          <td>2012-09-14</td>
         </tr>
         <tr>
           <th>Created By</th>
@@ -3617,7 +3632,7 @@
         </table>
         <div>
           <h4>Default SDO Server access to object is overrode by user defined function:</h4>
-          <pre>UNSIGNED32 CO_ODF_2101(void *object, UNSIGNED16 index, UNSIGNED8 subIndex, UNSIGNED8 length,
+          <pre>UNSIGNED32 CO_ODF_2101(void *object, UNSIGNED16 index, UNSIGNED8 subIndex, UNSIGNED16* pLength,
                        UNSIGNED16 attribute, UNSIGNED8 dir, void* dataBuff, const void* pData){
   UNSIGNED32 abortCode;
   if(WRITING){
@@ -3625,7 +3640,7 @@
     if(var &lt; 1)   return 0x06090032L;  //Value of parameter written too low.
     if(var &gt; 127) return 0x06090031L;  //Value of parameter written too high.
   }
-  abortCode = CO_ODF(object, index, subIndex, length, attribute, dir, dataBuff, pData);
+  abortCode = CO_ODF(object, index, subIndex, pLength, attribute, dir, dataBuff, pData);
   return abortCode;
 }</pre>
         </div>
@@ -3665,7 +3680,7 @@
         </table>
         <div>
           <h4>Default SDO Server access to object is overrode by user defined function:</h4>
-          <pre>UNSIGNED32 CO_ODF_2102(void *object, UNSIGNED16 index, UNSIGNED8 subIndex, UNSIGNED8 length,
+          <pre>UNSIGNED32 CO_ODF_2102(void *object, UNSIGNED16 index, UNSIGNED8 subIndex, UNSIGNED16* pLength,
                        UNSIGNED16 attribute, UNSIGNED8 dir, void* dataBuff, const void* pData){
   UNSIGNED32 abortCode;
   if(WRITING){
@@ -3673,7 +3688,7 @@
     memcpySwap2((UNSIGNED8*)&amp;var, (UNSIGNED8*)dataBuff);
     if(!(var == 10 || var == 20 || var == 50 || var == 125 || var == 250 || var == 500 || var == 800 || var == 1000)) return 0x06090030L;  //Invalid value for the parameter
   }
-  abortCode = CO_ODF(object, index, subIndex, length, attribute, dir, dataBuff, pData);
+  abortCode = CO_ODF(object, index, subIndex, pLength, attribute, dir, dataBuff, pData);
   return abortCode;
 }</pre>
         </div>
@@ -3845,7 +3860,7 @@
         </table>
         <div>
           <h4>Default SDO Server access to object is overrode by user defined function:</h4>
-          <pre>UNSIGNED32 CO_ODF_2107(void *object, UNSIGNED16 index, UNSIGNED8 subIndex, UNSIGNED8 length,
+          <pre>UNSIGNED32 CO_ODF_2107(void *object, UNSIGNED16 index, UNSIGNED8 subIndex, UNSIGNED16* pLength,
                        UNSIGNED16 attribute, UNSIGNED8 dir, void* dataBuff, const void* pData){
   UNSIGNED32 abortCode;
   if(WRITING){
@@ -3854,7 +3869,7 @@
     if(!((subIndex == 3 || subIndex == 5) &amp;&amp; var == 0))
       return 0x06090030; //Invalid value for parameter
   }
-  abortCode = CO_ODF(object, index, subIndex, length, attribute, dir, dataBuff, pData);
+  abortCode = CO_ODF(object, index, subIndex, pLength, attribute, dir, dataBuff, pData);
   return abortCode;
 }</pre>
         </div>
@@ -3986,7 +4001,7 @@
           </tr>
           <tr>
             <td>Array</td>
-            <td>3</td>
+            <td>17</td>
             <td>RAM</td>
             <td>INTEGER32</td>
             <td>rw</td>
@@ -4005,7 +4020,7 @@
           <tr>
             <td>00</td>
             <td>max sub-index</td>
-            <td>2</td>
+            <td>16</td>
             <td/>
           </tr>
           <tr>
@@ -4016,6 +4031,90 @@
           </tr>
           <tr>
             <td>02</td>
+            <td>int32</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>03</td>
+            <td>int32</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>04</td>
+            <td>int32</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>05</td>
+            <td>int32</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>06</td>
+            <td>int32</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>07</td>
+            <td>int32</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>08</td>
+            <td>int32</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>09</td>
+            <td>int32</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>0A</td>
+            <td>int32</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>0B</td>
+            <td>int32</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>0C</td>
+            <td>int32</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>0D</td>
+            <td>int32</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>0E</td>
+            <td>int32</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>0F</td>
+            <td>int32</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>10</td>
             <td>int32</td>
             <td>0</td>
             <td/>
@@ -4040,7 +4139,7 @@
           </tr>
           <tr>
             <td>Array</td>
-            <td>3</td>
+            <td>17</td>
             <td>ROM</td>
             <td>INTEGER32</td>
             <td>rw</td>
@@ -4059,7 +4158,7 @@
           <tr>
             <td>00</td>
             <td>max sub-index</td>
-            <td>2</td>
+            <td>16</td>
             <td/>
           </tr>
           <tr>
@@ -4074,11 +4173,337 @@
             <td>0</td>
             <td/>
           </tr>
+          <tr>
+            <td>03</td>
+            <td>int32</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>04</td>
+            <td>int32</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>05</td>
+            <td>int32</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>06</td>
+            <td>int32</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>07</td>
+            <td>int32</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>08</td>
+            <td>int32</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>09</td>
+            <td>int32</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>0A</td>
+            <td>int32</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>0B</td>
+            <td>int32</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>0C</td>
+            <td>int32</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>0D</td>
+            <td>int32</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>0E</td>
+            <td>int32</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>0F</td>
+            <td>int32</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>10</td>
+            <td>int32</td>
+            <td>0</td>
+            <td/>
+          </tr>
         </table>
         <div class="description lang_en">
-          <h4>en: Variable Integer 32bit</h4>
+          <h4>en: Variable ROM Integer 32bit</h4>
           <div>Vartiable is free to use by application.</div>
         </div>
+      </div>
+      <div id="object_2112" class="elements">
+        <h3>2112 - Variable NV Int32</h3>
+        <table>
+          <tr>
+            <th>Object Type</th>
+            <th>Sub Number</th>
+            <th>Memory Type</th>
+            <th>Data Type</th>
+            <th>Access Type</th>
+            <th>PDO Mapping</th>
+            <th>TPDO detects COS</th>
+          </tr>
+          <tr>
+            <td>Array</td>
+            <td>17</td>
+            <td>EEPROM</td>
+            <td>INTEGER32</td>
+            <td>rw</td>
+            <td>optional</td>
+            <td>yes</td>
+          </tr>
+        </table>
+        <br/>
+        <table>
+          <tr>
+            <th>Subindex</th>
+            <th>Name</th>
+            <th>Default value</th>
+            <th>Actual value</th>
+          </tr>
+          <tr>
+            <td>00</td>
+            <td>max sub-index</td>
+            <td>16</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>01</td>
+            <td>int32</td>
+            <td>1</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>02</td>
+            <td>int32</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>03</td>
+            <td>int32</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>04</td>
+            <td>int32</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>05</td>
+            <td>int32</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>06</td>
+            <td>int32</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>07</td>
+            <td>int32</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>08</td>
+            <td>int32</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>09</td>
+            <td>int32</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>0A</td>
+            <td>int32</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>0B</td>
+            <td>int32</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>0C</td>
+            <td>int32</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>0D</td>
+            <td>int32</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>0E</td>
+            <td>int32</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>0F</td>
+            <td>int32</td>
+            <td>0</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>10</td>
+            <td>int32</td>
+            <td>0</td>
+            <td/>
+          </tr>
+        </table>
+        <div class="description lang_en">
+          <h4>en: Variable nonvolatile Integer 32bit</h4>
+          <div>Vartiable is free to use by application. Variable is stored to internal baterry powered SRAM.</div>
+        </div>
+      </div>
+      <div id="object_2120" class="elements">
+        <h3>2120 - test var</h3>
+        <table>
+          <tr>
+            <th>Object Type</th>
+            <th>Sub Number</th>
+            <th>Memory Type</th>
+          </tr>
+          <tr>
+            <td>Record</td>
+            <td>5</td>
+            <td>RAM</td>
+          </tr>
+        </table>
+        <br/>
+        <table>
+          <tr>
+            <th>Subindex</th>
+            <th>Name</th>
+            <th>Data Type</th>
+            <th>Access Type</th>
+            <th>PDO Mapping</th>
+            <th>TPDO detects COS</th>
+            <th>Default value</th>
+            <th>Actual value</th>
+          </tr>
+          <tr>
+            <td>00</td>
+            <td>max sub-index</td>
+            <td>UNSIGNED8</td>
+            <td>ro</td>
+            <td>no</td>
+            <td>no</td>
+            <td>4</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>01</td>
+            <td>I64</td>
+            <td>INTEGER64</td>
+            <td>rw</td>
+            <td>optional</td>
+            <td>no</td>
+            <td>0x1234567890ABCDEFLL</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>02</td>
+            <td>U64</td>
+            <td>UNSIGNED64</td>
+            <td>rw</td>
+            <td>optional</td>
+            <td>no</td>
+            <td>0x234567890ABCDEF1LL</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>03</td>
+            <td>R32</td>
+            <td>REAL32</td>
+            <td>rw</td>
+            <td>optional</td>
+            <td>no</td>
+            <td>12.345</td>
+            <td/>
+          </tr>
+          <tr>
+            <td>04</td>
+            <td>R64</td>
+            <td>REAL64</td>
+            <td>rw</td>
+            <td>optional</td>
+            <td>no</td>
+            <td>456.789</td>
+            <td/>
+          </tr>
+        </table>
+      </div>
+      <div id="object_2121" class="elements">
+        <h3>2121 - test domain</h3>
+        <table>
+          <tr>
+            <th>Object Type</th>
+            <th>Memory Type</th>
+            <th>Data Type</th>
+            <th>Access Type</th>
+            <th>PDO Mapping</th>
+            <th>TPDO detects COS</th>
+            <th>Default value</th>
+            <th>Actual value</th>
+          </tr>
+          <tr>
+            <td>Var</td>
+            <td>RAM</td>
+            <td>DOMAIN</td>
+            <td>rw</td>
+            <td>optional</td>
+            <td>no</td>
+            <td>0</td>
+            <td/>
+          </tr>
+        </table>
+        <h4>Default SDO Server access to object is replaced by external function: "ODF_testDomain".</h4>
       </div>
     </div>
     <div id="objDictProfile">

@@ -98,6 +98,7 @@
       REAL64            - Of type long double
       VISIBLE_STRING    - Of type char
       OCTET_STRING      - Of type unsigned char
+      DOMAIN            - Application specific
 *******************************************************************************/
    #define CO_OD_ROM_IDENT
 
@@ -110,9 +111,10 @@
    #define INTEGER32       signed long int
    #define INTEGER64       signed long long int
    #define REAL32          float
-   #define REAL64          long double
+   #define REAL64          double
    #define VISIBLE_STRING  char
    #define OCTET_STRING    unsigned char
+   #define DOMAIN          unsigned char
 
 
 /*******************************************************************************
@@ -181,6 +183,19 @@
 
 
 /*******************************************************************************
+   Macros: Other configuration
+
+   Different macros (overrides) specific for this processor
+
+      CO_LOG_CAN_MESSAGES           - Call external function for each received
+                                      or transmitted CAN message.
+      CO_OD_MAX_OBJECT_SIZE         - Override SDO server buffer size
+*******************************************************************************/
+#define CO_LOG_CAN_MESSAGES
+#define CO_OD_MAX_OBJECT_SIZE           889
+
+
+/*******************************************************************************
    Object: CO_CANrxMsg_t
 
    CAN receive message structure as aligned in CAN module. Object is passed to
@@ -236,11 +251,11 @@ typedef struct{
       syncFlag          - Synchronous PDO messages has this flag set. It prevents them to be sent outside the synchronous window.
 *******************************************************************************/
 typedef struct{
-   UNSIGNED32        ident;
-   UNSIGNED8         DLC;
-   UNSIGNED8         data[8];
-   UNSIGNED8         bufferFull;
-   UNSIGNED8         syncFlag;
+   UNSIGNED32           ident;
+   UNSIGNED8            DLC;
+   UNSIGNED8            data[8];
+   volatile UNSIGNED8   bufferFull;
+   volatile UNSIGNED8   syncFlag;
 }CO_CANtxArray_t;
 
 
@@ -251,10 +266,10 @@ typedef struct{
 
    Variables:
       CANbaseAddress    - See parameters in <CO_CANmodule_init>.
-      rxArray           - See parameters in <CO_CANmodule_init>.
-      rxSize            - See parameters in <CO_CANmodule_init>.
-      txArray           - See parameters in <CO_CANmodule_init>.
-      txSize            - See parameters in <CO_CANmodule_init>.
+      rxArray           - Array for handling received CAN messages. See <CO_CANrxArray_t>.
+      rxSize            - Size of above array is equal to number of receiving CAN objects.
+      txArray           - Array for handling transmitting CAN messages. See <CO_CANtxArray_t>.
+      txSize            - Size of above array is equal to number of transmitting CAN objects.
       curentSyncTimeIsInsideWindow - Pointer to variable with same name inside
                           <CO_SYNC_t> object. This pointer is configured inside
                           <CO_SYNC_init> function.
@@ -277,11 +292,11 @@ typedef struct{
    UNSIGNED16              rxSize;
    CO_CANtxArray_t        *txArray;
    UNSIGNED16              txSize;
-   UNSIGNED8              *curentSyncTimeIsInsideWindow;
-   UNSIGNED8               bufferInhibitFlag;
-   UNSIGNED8               firstCANtxMessage;
-   UNSIGNED8               error;
-   UNSIGNED16              CANtxCount;
+   volatile UNSIGNED8     *curentSyncTimeIsInsideWindow;
+   volatile UNSIGNED8      bufferInhibitFlag;
+   volatile UNSIGNED8      firstCANtxMessage;
+   volatile UNSIGNED8      error;
+   volatile UNSIGNED16     CANtxCount;
    UNSIGNED32              errOld;
    void                   *EM;
 }CO_CANmodule_t;
@@ -362,8 +377,8 @@ void CO_CANsetNormalMode(UNSIGNED16 CANbaseAddress);
                           If address is zero, memory for new object will be
                           allocated and address will be set.
       CANbaseAddress    - CAN module base address. See <Peripheral addresses>.
-      rxSize            - Size of above array is equal to number of receiving CAN objects.
-      txSize            - Size of above array is equal to number of transmitting CAN objects.
+      rxSize            - Size of receive array is equal to number of receiving CAN objects.
+      txSize            - Size of transmit array is equal to number of transmitting CAN objects.
       CANbitRate        - CAN bit rate. Valid values are (in kbps): 10, 20, 50,
                           125, 250, 500, 800, 1000. If value is illegal, bitrate
                           defaults to 125.
@@ -551,28 +566,6 @@ void CO_CANverifyErrors(CO_CANmodule_t *CANmodule);
       For _CanCallback_ function from _CAN API_ for SC243.
 *******************************************************************************/
 int CO_CANinterrupt(CO_CANmodule_t *CANmodule, CanEvent event, const CanMsg *msg);
-
-
-/*******************************************************************************
-   Function: CO_ODF
-
-   Default function for SDO server access of variables from Object Dictionary.
-
-   SC243 specifics: All variables are in RAM. (EEPROM and ROM variables may be
-   backuped into external eeprom chip.)
-   CANopen uses Little endian, SC243 uses Big endian, so byte inversion is
-   implemented when CO_ODA_MB_VALUE bit is true.
-
-   For more information see topic <SDO server access function> in CO_SDO.h file.
-*******************************************************************************/
-UNSIGNED32 CO_ODF(   void       *object,
-                     UNSIGNED16  index,
-                     UNSIGNED8   subIndex,
-                     UNSIGNED8   length,
-                     UNSIGNED16  attribute,
-                     UNSIGNED8   dir,
-                     void       *dataBuff,
-                     const void *pData);
 
 
 #endif

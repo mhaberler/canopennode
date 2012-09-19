@@ -40,7 +40,7 @@
 UNSIGNED32 CO_ODF_1003( void       *object,
                         UNSIGNED16  index,
                         UNSIGNED8   subIndex,
-                        UNSIGNED8   length,
+                        UNSIGNED16 *pLength,
                         UNSIGNED16  attribute,
                         UNSIGNED8   dir,
                         void       *dataBuff,
@@ -65,7 +65,7 @@ UNSIGNED32 CO_ODF_1003( void       *object,
          return 0x06010002L;  //Attempt to write a read only object.
    }
 
-   return CO_ODF(object, index, subIndex, length, attribute, dir, dataBuff, pData);
+   return CO_ODF(object, index, subIndex, pLength, attribute, dir, dataBuff, pData);
 }
 
 
@@ -73,7 +73,7 @@ UNSIGNED32 CO_ODF_1003( void       *object,
 UNSIGNED32 CO_ODF_1014( void       *object,
                         UNSIGNED16  index,
                         UNSIGNED8   subIndex,
-                        UNSIGNED8   length,
+                        UNSIGNED16 *pLength,
                         UNSIGNED16  attribute,
                         UNSIGNED8   dir,
                         void       *dataBuff,

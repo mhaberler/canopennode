@@ -32,7 +32,6 @@
 #include "CO_driver.h"
 #include "CO_Emergency.h"
 
-#include <string.h> // for memcpy
 #include <stdlib.h> // for malloc, free
 
 
@@ -261,7 +260,7 @@ void CO_CANclearPendingSyncPDOs(CO_CANmodule_t *CANmodule){
 
    if(CANmodule->bufferInhibitFlag){
       canPurgeTx(CANmodule->CANbaseAddress, FALSE);
-      CO_errorReport((CO_emergencyReport_t*)CANmodule->EM, ERROR_TPDO_OUTSIDE_WINDOW, 0);
+      CO_errorReport((CO_emergencyReport_t*)CANmodule->EM, ERROR_TPDO_OUTSIDE_WINDOW, 1);
    }
 }
 
@@ -359,7 +358,8 @@ int CO_CANinterrupt(CO_CANmodule_t *CANmodule, CanEvent event, const CanMsg *msg
    if(event == CAN_EVENT_TX){
       //First CAN message (bootup) was sent successfully
       CANmodule->firstCANtxMessage = 0;
-
+      //clear flag from previous message
+      CANmodule->bufferInhibitFlag = 0;
       //Are there any new messages waiting to be send and buffer is free
       if(CANmodule->CANtxCount > 0){
          UNSIGNED16 index;          //index of transmitting message
@@ -371,13 +371,12 @@ int CO_CANinterrupt(CO_CANmodule_t *CANmodule, CanEvent event, const CanMsg *msg
             //if message buffer is full, send it.
             if(buffer->bufferFull){
                //messages with syncFlag set (synchronous PDOs) must be transmited inside preset time window
-               CANmodule->bufferInhibitFlag = 0;
                if(CANmodule->curentSyncTimeIsInsideWindow && buffer->syncFlag){
                   if(!(*CANmodule->curentSyncTimeIsInsideWindow)){
-                     CO_errorReport((CO_emergencyReport_t*)CANmodule->EM, ERROR_TPDO_OUTSIDE_WINDOW, 0);
+                     CO_errorReport((CO_emergencyReport_t*)CANmodule->EM, ERROR_TPDO_OUTSIDE_WINDOW, 2);
                      //release buffer
                      buffer->bufferFull = 0;
-                     //exit interrupt
+                     //exit for loop
                      break;
                   }
                   CANmodule->bufferInhibitFlag = 1;
@@ -388,7 +387,7 @@ int CO_CANinterrupt(CO_CANmodule_t *CANmodule, CanEvent event, const CanMsg *msg
 
                //release buffer
                buffer->bufferFull = 0;
-               //exit interrupt
+               //exit for loop
                break;
             }
          }//end of for loop
@@ -406,51 +405,4 @@ int CO_CANinterrupt(CO_CANmodule_t *CANmodule, CanEvent event, const CanMsg *msg
       return 0;
    }
    return 0;
-}
-
-
-/******************************************************************************/
-UNSIGNED32 CO_ODF(   void       *object,
-                     UNSIGNED16  index,
-                     UNSIGNED8   subIndex,
-                     UNSIGNED8   length,
-                     UNSIGNED16  attribute,
-                     UNSIGNED8   dir,
-                     void       *dataBuff,
-                     const void *pData)
-{
-   #define CO_ODA_MEM_ROM          0x01   //same attribute is in CO_SDO.h file
-   #define CO_ODA_MEM_RAM          0x02   //same attribute is in CO_SDO.h file
-   #define CO_ODA_MEM_EEPROM       0x03   //same attribute is in CO_SDO.h file
-   #define CO_ODA_MB_VALUE         0x80   //same attribute is in CO_SDO.h file
-
-   if(dir==0){ //Reading Object Dictionary variable
-      if((attribute & CO_ODA_MB_VALUE) && length == 2){
-         memcpySwap2((UNSIGNED8*)dataBuff, (UNSIGNED8*)pData);
-      }
-      else if((attribute & CO_ODA_MB_VALUE) && length == 4){
-         memcpySwap4((UNSIGNED8*)dataBuff, (UNSIGNED8*)pData);
-      }
-      else{
-         DISABLE_INTERRUPTS();
-         memcpy(dataBuff, pData, length);
-         ENABLE_INTERRUPTS();
-      }
-   }
-
-   else{ //Writing Object Dictionary variable
-      if((attribute & CO_ODA_MB_VALUE) && length == 2){
-         memcpySwap2((UNSIGNED8*)pData, (UNSIGNED8*)dataBuff);
-      }
-      else if((attribute & CO_ODA_MB_VALUE) && length == 4){
-         memcpySwap4((UNSIGNED8*)pData, (UNSIGNED8*)dataBuff);
-      }
-      else{
-         DISABLE_INTERRUPTS();
-         memcpy((void*)pData, dataBuff, length);
-         ENABLE_INTERRUPTS();
-      }
-   }
-
-   return 0L;
 }

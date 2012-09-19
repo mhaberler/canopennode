@@ -342,12 +342,29 @@
 									<menuitem label="05 - UNSIGNED8"/>
 									<menuitem label="06 - UNSIGNED16"/>
 									<menuitem label="07 - UNSIGNED32"/>
-									<menuitem label="08 - REAL32" disabled="true"/>
+									<menuitem label="08 - REAL32"/>
 									<menuitem label="09 - VISIBLE_STRING"/>
 									<menuitem label="0A - OCTET_STRING"/>
+									<menuitem label="0B - UNICODE_STRING"/>
+									<menuitem label="0C - TIME_OF_DAY"/>
+									<menuitem label="0D - TIME_DIFFERENCE"/>
+									<menuitem label="0E - (reserved)" disabled="true"/>
+									<menuitem label="0F - DOMAIN"/>
+									<menuitem label="10 - INTEGER24"/>
+									<menuitem label="11 - REAL64"/>
+									<menuitem label="12 - INTEGER40"/>
+									<menuitem label="13 - INTEGER48"/>
+									<menuitem label="14 - INTEGER56"/>
+									<menuitem label="15 - INTEGER64"/>
+									<menuitem label="16 - UNSIGNED24"/>
+									<menuitem label="17 - (reserved)" disabled="true"/>
+									<menuitem label="18 - UNSIGNED40"/>
+									<menuitem label="19 - UNSIGNED48"/>
+									<menuitem label="1A - UNSIGNED56"/>
+									<menuitem label="1B - UNSIGNED64"/>
 								</menupopup>
 							</menulist>
-							<image src="pict/question.png" onclick="g_labelDisplay('Data Type', 'Data type is used in the following way in the C source code:\n - BOOLEAN(01h) - not supported\n - INTEGER8(02h) - char\n - INTEGER16(03h) - int\n - INTEGER32(04h) - long\n - UNSIGNED8(05h) - unsigned char\n - UNSIGNED16(06h) - unsigned int\n - UNSIGNED32(07h) - unsigned long\n - REAL32(08h) - not supported\n - VISIBLE_STRING(09h) - char []\n - OCTET_STRING(0Ah) - unsigned char []\n\nVISIBLE_STRING is shown in text fields as usual string.\nOCTET_STRING is shown in text fields with separate bytes represented by two hex digits. Between neighbour bytes may be a space. Example value for 5 byte long variable: \'11 AA BB 00 01\' or \'11AABB0001\'.\nVariable size for Visible or Octet string is calculated from length of Default value.\n\nIf Object Type is Array, then Data Type is valid for all subobjects (except first). If Object Type is Record, then Data Type is defined by each subobject, here has no meaning.');"/>
+							<image src="pict/question.png" onclick="g_labelDisplay('Data Type', 'Data type is used in the following way in the C source code:\n - BOOLEAN(01h) - not supported\n - INTEGER8(02h) - char\n - INTEGER16(03h) - short int\n - INTEGER32(04h) - long\n - UNSIGNED8(05h) - unsigned char\n - UNSIGNED16(06h) - unsigned short int\n - UNSIGNED32(07h) - unsigned long\n - REAL32(08h) - float\n - VISIBLE_STRING(09h) - char []\n - OCTET_STRING(0Ah) - unsigned char []\n - DOMAIN(0Fh) - application defined access\n - REAL64(11h) - double (long double)\n - INTEGER64(15h) - long long\n - UNSIGNED64(1Bh) - unsigned long long\n\nVISIBLE_STRING is shown in text fields as usual string.\nOCTET_STRING is shown in text fields with separate bytes represented by two hex digits. Between neighbour bytes may be a space. Example value for 5 byte long variable: \'11 AA BB 00 01\' or \'11AABB0001\'.\nVariable size for Visible or Octet string is calculated from length of Default value.\n\nIf Object Type is Array, then Data Type is valid for all subobjects (except first). If Object Type is Record, then Data Type is defined by each subobject, here has no meaning.');"/>
 						</hbox>
 						<hbox align="center">
 							<label style="width:7em" value="Access Type:"/>
@@ -451,9 +468,26 @@
 									<menuitem label="05 - UNSIGNED8"/>
 									<menuitem label="06 - UNSIGNED16"/>
 									<menuitem label="07 - UNSIGNED32"/>
-									<menuitem label="08 - REAL32" disabled="true"/>
+									<menuitem label="08 - REAL32"/>
 									<menuitem label="09 - VISIBLE_STRING"/>
 									<menuitem label="0A - OCTET_STRING"/>
+									<menuitem label="0B - UNICODE_STRING"/>
+									<menuitem label="0C - TIME_OF_DAY"/>
+									<menuitem label="0D - TIME_DIFFERENCE"/>
+									<menuitem label="0E - (reserved)" disabled="true"/>
+									<menuitem label="0F - DOMAIN" disabled="true"/>
+									<menuitem label="10 - INTEGER24"/>
+									<menuitem label="11 - REAL64"/>
+									<menuitem label="12 - INTEGER40"/>
+									<menuitem label="13 - INTEGER48"/>
+									<menuitem label="14 - INTEGER56"/>
+									<menuitem label="15 - INTEGER64"/>
+									<menuitem label="16 - UNSIGNED24"/>
+									<menuitem label="17 - (reserved)" disabled="true"/>
+									<menuitem label="18 - UNSIGNED40"/>
+									<menuitem label="19 - UNSIGNED48"/>
+									<menuitem label="1A - UNSIGNED56"/>
+									<menuitem label="1B - UNSIGNED64"/>
 								</menupopup>
 							</menulist>
 							<image src="pict/question.png" onclick="g_labelDisplay('Data Type', 'See descriptoin for Objects.');"/>

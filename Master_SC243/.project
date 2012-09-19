@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>Example_IO</name>
+	<name>Master</name>
 	<comment></comment>
 	<projects>
 	</projects>
@@ -31,7 +31,7 @@
 				</dictionary>
 				<dictionary>
 					<key>org.eclipse.cdt.make.core.buildLocation</key>
-					<value>${workspace_loc:/Example_IO/debug}</value>
+					<value>${workspace_loc:/Master/debug}</value>
 				</dictionary>
 				<dictionary>
 					<key>org.eclipse.cdt.make.core.contents</key>
@@ -72,9 +72,9 @@
 	</natures>
 	<linkedResources>
 		<link>
-			<name>CANopen_stack</name>
+			<name>src/CANopen_stack</name>
 			<type>2</type>
-			<location>D:/_/Dokumenti/Krmilniki/CANopen/CANopen_stack</location>
+			<location>D:/_/Dokumenti/CANopenNode/CANopen_stack</location>
 		</link>
 	</linkedResources>
 </projectDescription>

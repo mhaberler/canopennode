@@ -28,7 +28,6 @@
 
 *******************************************************************************/
 
-
 #ifndef _CO_EMERGENCY_H
 #define _CO_EMERGENCY_H
 
@@ -199,27 +198,27 @@
       ERROR_1D_unused                        - 1D, 0x1000 - (unused)
       ERROR_1E_unused                        - 1E, 0x1000 - (unused)
       ERROR_1F_unused                        - 1F, 0x1000 - (unused)
-                                            
+
    Generic errors (informative):
       ERROR_EMERGENCY_BUFFER_FULL            - 20, 0x1000 - Emergency buffer is full, Emergency message wasn't sent.
       ERROR_ERROR_REPORT_BUSY                - 21, 0x1000 - <CO_errorReport> is busy, Emergency message wasn't sent.
-      ERROR_22_unused                        - 22, 0x1000 - (unused)
+      ERROR_MICROCONTROLLER_RESET            - 22, 0x1000 - Microcontroller has just started.
       ERROR_23_unused                        - 23, 0x1000 - (unused)
       ERROR_24_unused                        - 24, 0x1000 - (unused)
       ERROR_25_unused                        - 25, 0x1000 - (unused)
       ERROR_26_unused                        - 26, 0x1000 - (unused)
       ERROR_27_unused                        - 27, 0x1000 - (unused)
-                                            
+
    Generic errors (critical):
       ERROR_WRONG_ERROR_REPORT               - 28, 0x6100 - Wrong parameters to <CO_errorReport()> function.
       ERROR_ISR_TIMER_OVERFLOW               - 29, 0x6100 - Timer task has overflowed.
       ERROR_MEMORY_ALLOCATION_ERROR          - 2A, 0x6100 - Unable to allocate memory for objects.
       ERROR_GENERIC_ERROR                    - 2B, 0x1000 - Generic error, test usage.
       ERROR_MAIN_TIMER_OVERFLOW              - 2C, 0x6100 - Mainline function exceeded maximum execution time.
-      ERROR_INTERNAL_STATE_APPL              - 2D, 0x6100 - Error in application software internal state.
+      ERROR_INCONSISTENT_OBJECT_DICTIONARY   - 2D, 0x6100 - Object dictionary does not match the software.
       ERROR_CALCULATION_OF_PARAMETERS        - 2E, 0x1000 - Error in calculation of device parameters.
       ERROR_NON_VOLATILE_MEMORY              - 2F, 0x5000 - Error with access to non volatile device memory
-                                            
+
    Manufacturer specific errors:
       Manufacturer may define its own constants up to index 0xFF. Of course, he
       must then define large enough buffer for error status bits (up to 32 bytes).
@@ -263,7 +262,7 @@
    //Generic errors (informative)
    #define ERROR_EMERGENCY_BUFFER_FULL                0x20, 0x1000
    #define ERROR_ERROR_REPORT_BUSY                    0x21, 0x1000
-   #define ERROR_22_unused                            0x22, 0x1000
+   #define ERROR_MICROCONTROLLER_RESET                0x22, 0x1000
    #define ERROR_23_unused                            0x23, 0x1000
    #define ERROR_24_unused                            0x24, 0x1000
    #define ERROR_25_unused                            0x25, 0x1000
@@ -276,7 +275,7 @@
    #define ERROR_MEMORY_ALLOCATION_ERROR              0x2A, 0x6100
    #define ERROR_GENERIC_ERROR                        0x2B, 0x1000
    #define ERROR_MAIN_TIMER_OVERFLOW                  0x2C, 0x6100
-   #define ERROR_INTERNAL_STATE_APPL                  0x2D, 0x6100
+   #define ERROR_INCONSISTENT_OBJECT_DICTIONARY       0x2D, 0x6100
    #define ERROR_CALCULATION_OF_PARAMETERS            0x2E, 0x6300
    #define ERROR_NON_VOLATILE_MEMORY                  0x2F, 0x5000
 
@@ -287,7 +286,7 @@
    Object contains error buffer, to which new emergency messages are written,
    when <CO_errorReport> function is called. This object is in pair with
    <CO_emergencyProcess_t> object.
-   
+
 
    Variables:
       errorStatusBits            - See parameters in <CO_emergency_init>.
@@ -435,7 +434,7 @@ typedef struct{
 UNSIGNED32 CO_ODF_1003( void       *object,
                         UNSIGNED16  index,
                         UNSIGNED8   subIndex,
-                        UNSIGNED8   length,
+                        UNSIGNED16 *pLength,
                         UNSIGNED16  attribute,
                         UNSIGNED8   dir,
                         void       *dataBuff,
@@ -452,7 +451,7 @@ UNSIGNED32 CO_ODF_1003( void       *object,
 UNSIGNED32 CO_ODF_1014( void       *object,
                         UNSIGNED16  index,
                         UNSIGNED8   subIndex,
-                        UNSIGNED8   length,
+                        UNSIGNED16 *pLength,
                         UNSIGNED16  attribute,
                         UNSIGNED8   dir,
                         void       *dataBuff,

@@ -58,17 +58,55 @@ INTEGER16 CO_HBcons_receive(void *object, CO_CANrxMsg_t *msg){
 
 
 /******************************************************************************/
+void CO_HBconsumer_monitoredNodeConfig(
+      CO_HBconsumer_t        *HBcons,
+      UNSIGNED8               idx)
+{
+   UNSIGNED16 COB_ID;
+   UNSIGNED16 NodeID = (UNSIGNED16)((HBcons->ObjDict_consumerHeartbeatTime[idx]>>16)&0xFF);
+   CO_HBconsNode_t *monitoredNode = &HBcons->monitoredNodes[idx];
+
+   monitoredNode->time = (UNSIGNED16)HBcons->ObjDict_consumerHeartbeatTime[idx];
+   monitoredNode->NMTstate = 0;
+   monitoredNode->monStarted = 0;
+
+   //is channel used
+   if(NodeID && monitoredNode->time){
+      COB_ID = NodeID + 0x700;
+   }
+   else{
+      COB_ID = 0;
+      monitoredNode->time = 0;
+   }
+
+   //configure Heartbeat consumer CAN reception
+   CO_CANrxBufferInit(     HBcons->CANdevRx,       //CAN device
+                           HBcons->CANdevRxIdxStart + idx, //rx buffer index
+                           COB_ID,                 //CAN identifier
+                           0x7FF,                  //mask
+                           0,                      //rtr
+                           (void*)&HBcons->monitoredNodes[idx], //object passed to the receive function
+                           CO_HBcons_receive);     //this function will process received message
+
+}
+
+
+/******************************************************************************/
 UNSIGNED32 CO_ODF_1016( void       *object,
                         UNSIGNED16  index,
                         UNSIGNED8   subIndex,
-                        UNSIGNED8   length,
+                        UNSIGNED16 *pLength,
                         UNSIGNED16  attribute,
                         UNSIGNED8   dir,
                         void       *dataBuff,
                         const void *pData)
 {
+   UNSIGNED32 abortCode;
+   CO_HBconsumer_t *HBcons;
+
+   HBcons = (CO_HBconsumer_t*) object; //this is the correct pointer type of the first argument
+
    if(dir == 1){  //Writing Object Dictionary variable
-      CO_HBconsumer_t *HBcons;
       UNSIGNED8 i;
       UNSIGNED32 dataBuffCopy;
       UNSIGNED8 NodeID;
@@ -77,8 +115,6 @@ UNSIGNED32 CO_ODF_1016( void       *object,
       memcpySwap4((UNSIGNED8*)&dataBuffCopy, (UNSIGNED8*)dataBuff);
       NodeID = (dataBuffCopy>>16) & 0xFF;
       HBconsTime = dataBuffCopy & 0xFFFF;
-
-      HBcons = (CO_HBconsumer_t*) object; //this is the correct pointer type of the first argument
 
       if(dataBuffCopy & 0xFF800000)
          return 0x06040043L;  //General parameter incompatibility reason.
@@ -95,7 +131,13 @@ UNSIGNED32 CO_ODF_1016( void       *object,
       }
    }
 
-   return CO_ODF(object, index, subIndex, length, attribute, dir, dataBuff, pData);
+   abortCode = CO_ODF(object, index, subIndex, pLength, attribute, dir, dataBuff, pData);
+
+   //Configure
+   if(dir == 1 && abortCode == 0 && subIndex >= 1)
+      CO_HBconsumer_monitoredNodeConfig(HBcons, subIndex-1);
+
+   return abortCode;
 }
 
 
@@ -109,7 +151,6 @@ const UNSIGNED32             *ObjDict_consumerHeartbeatTime,
       CO_CANmodule_t *CANdevRx, UNSIGNED16 CANdevRxIdxStart)
 {
    UNSIGNED8 i;
-   CO_HBconsNode_t *monitoredNode;
    CO_HBconsumer_t *HBcons;
 
    //allocate memory if not already allocated
@@ -126,36 +167,11 @@ const UNSIGNED32             *ObjDict_consumerHeartbeatTime,
    HBcons->ObjDict_consumerHeartbeatTime = ObjDict_consumerHeartbeatTime;
    HBcons->numberOfMonitoredNodes = numberOfMonitoredNodes;
    HBcons->allMonitoredOperational = 0;
+   HBcons->CANdevRx = CANdevRx;
+   HBcons->CANdevRxIdxStart = CANdevRxIdxStart;
 
-   monitoredNode = &HBcons->monitoredNodes[0];
-
-   for(i=0; i<HBcons->numberOfMonitoredNodes; i++){
-      UNSIGNED16 COB_ID;
-      UNSIGNED16 NodeID = (UNSIGNED16)((HBcons->ObjDict_consumerHeartbeatTime[i]>>16)&0xFF);
-      monitoredNode->time = (UNSIGNED16)HBcons->ObjDict_consumerHeartbeatTime[i];
-      monitoredNode->NMTstate = 0;
-      monitoredNode->monStarted = 0;
-
-      //is channel used
-      if(NodeID && monitoredNode->time){
-         COB_ID = NodeID + 0x700;
-      }
-      else{
-         COB_ID = 0;
-         monitoredNode->time = 0;
-      }
-
-      //configure Heartbeat consumer CAN reception
-      CO_CANrxBufferInit(     CANdevRx,               //CAN device
-                              CANdevRxIdxStart + i,   //rx buffer index
-                              COB_ID,                 //CAN identifier
-                              0x7FF,                  //mask
-                              0,                      //rtr
-                              (void*)&HBcons->monitoredNodes[i], //object passed to the receive function
-                              CO_HBcons_receive);     //this function will process received message
-
-      monitoredNode++;
-   }
+   for(i=0; i<HBcons->numberOfMonitoredNodes; i++)
+      CO_HBconsumer_monitoredNodeConfig(HBcons, i);
 
    //Configure SDO server for first argument of CO_ODF_1016
    CO_OD_configureArgumentForODF(SDO, 0x1016, (void*)HBcons);

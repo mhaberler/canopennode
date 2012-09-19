@@ -45,7 +45,7 @@
    Two blocks of CANopen Object Dictionary data are stored in eeprom:
    OD_EEPROM - Stored is from eeprom address 0. Data are stored automatically on
                change. No data corruption control is made.
-   OD_ROM    - Stored from upper half eeprom address. Data are protected from 
+   OD_ROM    - Stored from upper half eeprom address. Data are protected from
                accidental write, can also be hardware protected. Data integrity
                is verified with CRC.
                Data are stored on special CANopen command - Writing 0x65766173
@@ -92,6 +92,7 @@ typedef struct{
       OD_ROMAddress           - See parameters in <EE_init_1>.
       OD_ROMSize              - See parameters in <EE_init_1>.
       OD_EEPROMCurrentIndex   - Internal variable controls the OD_EEPROM vrite.
+      OD_EEPROMWriteEnable    - Writing to EEPROM is enabled.
 *******************************************************************************/
 typedef struct{
    UNSIGNED8     *OD_EEPROMAddress;
@@ -99,6 +100,7 @@ typedef struct{
    UNSIGNED8     *OD_ROMAddress;
    UNSIGNED32     OD_ROMSize;
    UNSIGNED32     OD_EEPROMCurrentIndex;
+   UNSIGNED8      OD_EEPROMWriteEnable;
 }EE_t;
 
 

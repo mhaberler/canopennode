@@ -85,9 +85,9 @@
 
    Each SDO Server access function has a prefix CO_ODF to its function name.
 
-   Basic function is <CO_ODF>, which reads or writes into RAM or ROM. Because
-   microcontrollers uses different memory strategies for retentive usage, this
-   function is implemented in CO_driver.c file.
+   Basic function is <CO_ODF>, which reads or writes into RAM or ROM. If
+   microcontroller uses different memory strategies for retentive usage, this
+   function may be implemented in CO_driver.c file.
 
    To any object can be assigned also a custom function, which has total control
    over the Object Dictionary object. Object Dictionary Editor gives two
@@ -120,7 +120,7 @@
       index       - Index of object in object dictionary (informative).
       subIndex    - Subindex of object in object dictionary (informative).
       attribute   - Attribute of object in object dictionary (informative).
-      length      - Number of bytes to be transfered.
+      pLength     - Pointer to number of bytes to be transfered (writeable).
       dir         - Equal to 0 when reading, equal to 1 when writing.
       dataBuff    - Pointer to RAM data buffer to/from where data will be transfered.
       pData       - Pointer to variable in Object Dictionary.
@@ -195,6 +195,27 @@
       byte 3      - Object subIndex.
       byte 4..7   - <SDO abort code>.
 
+   Byte 0 contents for SDO client request:
+      0010nnes    - Download initiate.
+      000tnnnc    - Download segment.
+      01000000    - Upload initiate.
+      011t0000    - Upload segment.
+      11000rs0    - Block download initiate.
+      csssssss    - Block download sub-block (sequence).
+      110nnn01    - Block download end.
+      10000000    - Abort transfer.
+
+   Byte 0 contents for server response:
+      01100000    - Download initiate.
+      001t0000    - Download segment.
+      0100nnes    - Upload initiate.
+      000tnnnc    - Upload segment.
+      10100r00    - Block download initiate.
+      10100010    - Block download sub-block (after sequence).
+      10100001    - Block download end.
+      10000000    - Abort transfer.
+
+
 
 ********************************************************************************
    Topic: SDO abort code
@@ -239,9 +260,11 @@
 
 /*******************************************************************************
    Constant: Maximum object size in Object Dictionary
-      CO_OD_MAX_OBJECT_SIZE   - Value can be in range from 4 to 255 bytes.
+      CO_OD_MAX_OBJECT_SIZE   - Value can be in range from 4 to 889 bytes.
 *******************************************************************************/
-   #define CO_OD_MAX_OBJECT_SIZE    32
+   #ifndef CO_OD_MAX_OBJECT_SIZE
+      #define CO_OD_MAX_OBJECT_SIZE    32
+   #endif
 
 
 /*******************************************************************************
@@ -305,7 +328,7 @@ typedef struct {
    UNSIGNED8     length;
    const void*   pData;
    UNSIGNED32  (*pFunct)(void *object, UNSIGNED16 index, UNSIGNED8 subIndex,
-                   UNSIGNED8 length, UNSIGNED16 attribute, UNSIGNED8 dir,
+                   UNSIGNED16 *pLength, UNSIGNED16 attribute, UNSIGNED8 dir,
                    void* dataBuff, const void* pData);
 }sCO_OD_object;
 
@@ -370,15 +393,15 @@ typedef struct{
       dataLength           - Actual length of data in databuffer.
       databuffer           - Data buffer.
       bufferOffset         - Offset in buffer of next data segment being read/written.
-      state                - Curent internal state of the SDO server:
+      state                - Current internal state of the SDO server:
                               Bit1 = 1: segmented download in progress.
                               Bit2 = 1: segmented upload in progress.
                               Bit4: toggled bit from previous object.
-      pODE                 - Pointer to curent Object Dictionary object.
-      indexOfFoundObject   - Similar to pODE, but this is the index of curent
+      pODE                 - Pointer to current Object Dictionary object.
+      indexOfFoundObject   - Similar to pODE, but this is the index of current
                              Object Dictionary object.
-      index                - Index of curent object in Object Dictionary.
-      subIndex             - Subindex of curent object in Object Dictionary.
+      index                - Index of current object in Object Dictionary.
+      subIndex             - Subindex of current object in Object Dictionary.
       timeoutTimer         - Timeout timer for SDO communication.
 
       CANrxNew             - Variable indicates, if new SDO message received from CAN bus.
@@ -426,6 +449,34 @@ INTEGER16 CO_SDO_receive(void *object, CO_CANrxMsg_t *msg);
 
 
 /*******************************************************************************
+   Function: CO_ODF
+
+   Default function for SDO server access of variables from Object Dictionary.
+
+   Function copies data, when CANopen SDO communication is triggered. If read
+   from Object Dictionary is requested, data are copied from pData to dataBuff.
+   In case of write, data are copied from dataBuff to pData.
+   If microcontroller is Big Endian, and data is multibyte variable (for
+   example INTEGER32), byte order is reversed.
+
+   If for specific microcontroller needs to be implemented special CO_ODF
+   function (for example if copy of ROM variables is special), then macro
+   'CO_ODF_MASK_DEFAULT' must be defined in CO_driver.h file. It will mask
+   default function.
+
+   For more information see topic <SDO server access function>.
+*******************************************************************************/
+UNSIGNED32 CO_ODF(   void       *object,
+                     UNSIGNED16  index,
+                     UNSIGNED8   subIndex,
+                     UNSIGNED16 *pLength,
+                     UNSIGNED16  attribute,
+                     UNSIGNED8   dir,
+                     void       *dataBuff,
+                     const void *pData);
+
+
+/*******************************************************************************
    Function: CO_ODF_1200
 
    Function for accessing _SDO server parameter_ (index 0x1200+) from SDO server.
@@ -435,7 +486,7 @@ INTEGER16 CO_SDO_receive(void *object, CO_CANrxMsg_t *msg);
 UNSIGNED32 CO_ODF_1200( void       *object,
                         UNSIGNED16  index,
                         UNSIGNED8   subIndex,
-                        UNSIGNED8   length,
+                        UNSIGNED16 *pLength,
                         UNSIGNED16  attribute,
                         UNSIGNED8   dir,
                         void       *dataBuff,
@@ -549,7 +600,7 @@ const sCO_OD_object* CO_OD_find( CO_SDO_t            *SDO,
    Return:
       Data length of the variable.
 *******************************************************************************/
-UNSIGNED8 CO_OD_getLength(const sCO_OD_object* object, UNSIGNED8 subIndex);
+UNSIGNED16 CO_OD_getLength(const sCO_OD_object* object, UNSIGNED8 subIndex);
 
 
 /*******************************************************************************

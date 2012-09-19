@@ -41,8 +41,8 @@
    FILE INFO:
       FileName:     IO
       FileVersion:  3.0
-      CreationTime: 10:39:00
-      CreationDate: 2012-03-22
+      CreationTime: 11:24:37
+      CreationDate: 2012-09-14
       CreatedBy:    -
 *******************************************************************************/
 
@@ -71,7 +71,7 @@
 /*******************************************************************************
    OBJECT DICTIONARY
 *******************************************************************************/
-   #define CO_OD_NoOfElements             52
+   #define CO_OD_NoOfElements             55
 
 
 /*******************************************************************************
@@ -131,6 +131,14 @@
                UNSIGNED32     mappedObject8;
                }              OD_TPDOMappingParameter_t;
 
+/*2120      */ typedef struct{
+               UNSIGNED8      maxSubIndex;
+               INTEGER64      I64;
+               UNSIGNED64     U64;
+               REAL32         R32;
+               REAL64         R64;
+               }              OD_testVar_t;
+
 
 /*******************************************************************************
    STRUCTURES FOR VARIABLES IN DIFFERENT MEMORY LOCATIONS
@@ -152,7 +160,9 @@ struct sCO_OD_RAM{
 /*2107      */ UNSIGNED16     performance[5];
 /*2108      */ INTEGER16      temperature[1];
 /*2109      */ INTEGER16      voltage[1];
-/*2110      */ INTEGER32      variableInt32[2];
+/*2110      */ INTEGER32      variableInt32[16];
+/*2120      */ OD_testVar_t   testVar;
+/*2121      */ DOMAIN         testDomain;
 /*6000      */ UNSIGNED8      readInput8Bit[8];
 /*6200      */ UNSIGNED8      writeOutput8Bit[8];
 /*6401      */ INTEGER16      readAnalogueInput16Bit[12];
@@ -166,6 +176,7 @@ struct sCO_OD_EEPROM{
                UNSIGNED32     FirstWord;
 
 /*2106      */ UNSIGNED32     powerOnCounter;
+/*2112      */ INTEGER32      variableNVInt32[16];
 
                UNSIGNED32     LastWord;
 };
@@ -197,7 +208,7 @@ struct sCO_OD_ROM{
 /*1F80      */ UNSIGNED32     NMTStartup;
 /*2101      */ UNSIGNED8      CANNodeID;
 /*2102      */ UNSIGNED16     CANBitRate;
-/*2111      */ INTEGER32      variableROMInt32[2];
+/*2111      */ INTEGER32      variableROMInt32[16];
 
                UNSIGNED32     LastWord;
 };
@@ -343,13 +354,23 @@ extern CO_OD_ROM_IDENT struct sCO_OD_ROM CO_OD_ROM;
       #define ODL_voltage_arrayLength                    1
       #define ODA_voltage_mainPCBSupply                  0
 
-/*2110, Data Type: INTEGER32, Array[2] */
+/*2110, Data Type: INTEGER32, Array[16] */
       #define OD_variableInt32                           CO_OD_RAM.variableInt32
-      #define ODL_variableInt32_arrayLength              2
+      #define ODL_variableInt32_arrayLength              16
 
-/*2111, Data Type: INTEGER32, Array[2] */
+/*2111, Data Type: INTEGER32, Array[16] */
       #define OD_variableROMInt32                        CO_OD_ROM.variableROMInt32
-      #define ODL_variableROMInt32_arrayLength           2
+      #define ODL_variableROMInt32_arrayLength           16
+
+/*2112, Data Type: INTEGER32, Array[16] */
+      #define OD_variableNVInt32                         CO_OD_EEPROM.variableNVInt32
+      #define ODL_variableNVInt32_arrayLength            16
+
+/*2120, Data Type: OD_testVar_t */
+      #define OD_testVar                                 CO_OD_RAM.testVar
+
+/*2121, Data Type: DOMAIN */
+      #define OD_testDomain                              CO_OD_RAM.testDomain
 
 /*6000, Data Type: UNSIGNED8, Array[8] */
       #define OD_readInput8Bit                           CO_OD_RAM.readInput8Bit

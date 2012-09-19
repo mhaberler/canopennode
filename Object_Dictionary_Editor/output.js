@@ -39,7 +39,7 @@
 		var CO_OD_C_initEEPROM = [];
 		var CO_OD_C_initROM = [];
 		var CO_OD_C_records = [];
-		var CO_OD_C_functions = ["UNSIGNED32 CO_ODF(void*, UNSIGNED16, UNSIGNED8, UNSIGNED8, UNSIGNED16, UNSIGNED8, void*, const void*);\n"];
+		var CO_OD_C_functions = ["UNSIGNED32 CO_ODF(void*, UNSIGNED16, UNSIGNED8, UNSIGNED16*, UNSIGNED16, UNSIGNED8, void*, const void*);\n"];
 		var CO_OD_C_OD = [];
 	//fileEDSspec
 		var EDSspec_info = [];
@@ -364,7 +364,7 @@ function calculateObjects(){
 			if(accessFunctionName){ //external function
 				DOCaccessSDOoverride = <h4>{"Default SDO Server access to object is replaced by external function: \""+accessFunctionName+"\"."}</h4>;
 				if(accessFunctionNameArray.indexOf(accessFunctionName)<0){ //prevent duplicate decalrations
-					CO_OD_C_functions.push("UNSIGNED32 "+accessFunctionName+"(void*, UNSIGNED16, UNSIGNED8, UNSIGNED8, UNSIGNED16, UNSIGNED8, void*, const void*);\n");
+					CO_OD_C_functions.push("UNSIGNED32 "+accessFunctionName+"(void*, UNSIGNED16, UNSIGNED8, UNSIGNED16*, UNSIGNED16, UNSIGNED8, void*, const void*);\n");
 					accessFunctionNameArray.push(accessFunctionName);
 				}
 			}
@@ -373,11 +373,11 @@ function calculateObjects(){
 				if(accessFunctionPreCode) accessFunctionPreCode = accessFunctionPreCode.replace(/^(.*)/gm, "  $1") + "\n";
 				if(accessFunctionPostCode) accessFunctionPostCode = accessFunctionPostCode.replace(/^(.*)/gm, "  $1") + "\n";
 				var func =
-					"UNSIGNED32 CO_ODF_"+index+"(void *object, UNSIGNED16 index, UNSIGNED8 subIndex, UNSIGNED8 length,\n" +
+					"UNSIGNED32 CO_ODF_"+index+"(void *object, UNSIGNED16 index, UNSIGNED8 subIndex, UNSIGNED16* pLength,\n" +
 					"                       UNSIGNED16 attribute, UNSIGNED8 dir, void* dataBuff, const void* pData){\n" +
 					"  UNSIGNED32 abortCode;\n" +
 					accessFunctionPreCode +
-					"  abortCode = CO_ODF(object, index, subIndex, length, attribute, dir, dataBuff, pData);\n" +
+					"  abortCode = CO_ODF(object, index, subIndex, pLength, attribute, dir, dataBuff, pData);\n" +
 					accessFunctionPostCode +
 					"  return abortCode;\n" +
 					"}";
@@ -481,8 +481,10 @@ function calculateObjects(){
 						if(combinedObjects[index].firstIndex == "" || combinedObjects[index].firstIndex == index)
 							CO_OD_H_aliases.push("      #define ODL_" + indent(nameNoSpace+"_stringLength",39) + defaultValueMemorySize.replace(" ", ""));
 					}
-					CO_OD_C_OD.push("{0x"+index+", 0x00, 0x"+g_byteToHexString(attribute)+", "+defaultValueMemorySize+", (const void*)&"+
-													indent("CO_OD_"+memoryType+"."+nameNoSpace+combinedObjects[index].curentCount+arrayType+", ", 49)+accessFunctionName+"},");
+               var varPtr = "(const void*)&CO_OD_"+memoryType+"."+nameNoSpace+combinedObjects[index].curentCount+arrayType;
+               if (dataType=="0F") varPtr = "0";   //DOMAIN data type
+					CO_OD_C_OD.push("{0x"+index+", 0x00, 0x"+g_byteToHexString(attribute)+", "+defaultValueMemorySize+", "+
+													indent(varPtr+", ", 63)+accessFunctionName+"},");
 					if(combinedObjects[index].firstIndex == "" || combinedObjects[index].firstIndex == index) CO_OD_H_aliases.push("");
 					break;
 				case "8":	//Array
@@ -612,9 +614,6 @@ function calculateObjects(){
 						if(isArr >= 0){
 							arr = dt.slice(isArr);
 							dt = dt.slice(0, isArr);
-						}
-						if(subDataType=="03" || subDataType=="04" || subDataType=="06" || subDataType=="07"){
-							subAttribute |= 0x80;  //Multi_byte value
 						}
 						//output
 						subDefinitions.push("               " + indent(dt, 15) + subNameNoSpace + arr + ";");
@@ -1005,23 +1004,48 @@ function dataType2c_code(dataType, value, arrayDef, object){
 
 function dataType2c_codeSize(dataType, value){
 	switch(dataType){
-		case "02": //INTEGER8;
-		case "05": //UNSIGNED8;
+		case "02": //INTEGER8
+		case "05": //UNSIGNED8
 			return " 1";
-		case "03": //INTEGER16;
-		case "06": //UNSIGNED16;
+		case "03": //INTEGER16
+		case "06": //UNSIGNED16
 			return " 2";
-		case "04": //INTEGER32;
-		case "07": //UNSIGNED32;
+		case "10": //INTEGER24
+		case "16": //UNSIGNED24
+			return " 3";
+		case "04": //INTEGER32
+		case "07": //UNSIGNED32
+		case "08": //REAL32
 			return " 4";
-		case "09": //VISIBLE_STRING;
+		case "12": //INTEGER40
+		case "18": //UNSIGNED40
+			return " 5";
+		case "13": //INTEGER48
+		case "19": //UNSIGNED48
+		case "0C": //TIME_OF_DAY
+		case "0D": //TIME_DIFFERENCE
+			return " 6";
+		case "14": //INTEGER56
+		case "1A": //UNSIGNED56
+			return " 7";
+		case "15": //INTEGER64
+		case "1B": //UNSIGNED64
+		case "11": //REAL64
+			return " 8";
+		case "09": //VISIBLE_STRING
 			var str = value.length.toString();
 			if(str.length==1) str = " " + str;
 			return str;
-		case "0A": //OCTET_STRING;
+		case "0A": //OCTET_STRING
 			var str = (value.replace(/\s/g, "").length/2).toString();
 			if(str.length==1) str = " " + str;
 			return str;
+		case "0B": //UNICODE_STRING
+			var str = (value.replace(/\s/g, "").length/4).toString();
+			if(str.length==1) str = " " + str;
+			return str;
+		case "0F": //DOMAIN
+			return " 0";
 		default:
 			return "??";
 	}
@@ -1030,7 +1054,7 @@ function dataType2c_codeSize(dataType, value){
 function value2c_code(value, dataType, object){
 	dataType = dataType.slice(0, 2);
 	value = value.replace("$NODEID+", "");
-	i = parseInt(value);
+	var i = parseInt(value);
 	switch(dataType){
 		//case 0x01: return "01": //BOOLEAN;
 		case "02": //INTEGER8;
@@ -1069,11 +1093,16 @@ function value2c_code(value, dataType, object){
 				return "0";
 			}
 			return "0x"+i.toString(16).toUpperCase()+"L";
-		//case "08": //REAL32;
+		case "08": //REAL32;
+      	var f = parseFloat(value);
+			if(!(-3.4e38<f && f<3.4e38)){
+				errorMessages.push("Error in object " + object + ": Invalid Default value!");
+				return "0";
+			}
+			return f.toString();
 		case "09": //VISIBLE_STRING;
 			var strArray = value.match(/./g); //array of characters
 			return "{'" + strArray.join("', '") + "'}";
-			break;
 		case "0A": //OCTET_STRING;
 			//example for allowed formats: '11 AA BB 00 01' or '11AABB0001'
 			var oct = value.replace(/[0-9A-F]{2}/gi, ""); //remove all pairs of two hex digits
@@ -1085,8 +1114,9 @@ function value2c_code(value, dataType, object){
 			var strArray = value.match(/[0-9A-F]{2}/gi); //array of pairs
 			return "{0x" + strArray.join(", 0x") + "}";
 		default:
-			errorMessages.push("Error in object " + object + ": Invalid Data Type!");
-			return "0";
+         return value;
+			//errorMessages.push("Error in object " + object + ": Invalid Data Type!");
+			//return "0";
 	}
 }
 
@@ -1103,7 +1133,7 @@ function attribute4c_code(memoryType, dataType, accessType, PDOmapping, TPDOdete
 	if(PDOmapping=="optional" || PDOmapping=="RPDO") attr |= 0x10;
 	if(PDOmapping=="optional" || PDOmapping=="TPDO") attr |= 0x20;
 	if(TPDOdetectCOS=="true") attr |= 0x40;
-	if(dataType=="03" || dataType=="04" || dataType=="06" || dataType=="07"){
+	if(!(dataType=="01" || dataType=="02" || dataType=="05" || dataType=="09" || dataType=="0A" || dataType=="0B" || dataType=="0F")){
 		attr |= 0x80; //Multi_byte value
 	}
 	return attr;

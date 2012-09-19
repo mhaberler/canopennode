@@ -426,7 +426,7 @@ function objectUpdateOrInsertNew(insertNew){
 			field = document.getElementById("object_dataType").label;
 			if(!field){alert("Please choose Data Type!"); return;}
 			field = field.slice(0, field.indexOf(" "));
-			if(field=="01" || field=="08"){alert("Please choose a valid Data Type!"); return;}
+			if(field=="01"){alert("Please choose a valid Data Type!"); return;}
 			newObject.@dataType = field;
 		//access type
 			var accessType = document.getElementById("object_accessType").label;
@@ -526,7 +526,7 @@ var subobj = {};
 
 function objectSetDataType(field, dataType){
 	var dataTypeVal = parseInt(dataType, 16);
-	if(1<=dataTypeVal && dataTypeVal<= 0x0A) field.selectedIndex = (dataTypeVal-1).toString();
+	if(1<=dataTypeVal && dataTypeVal<= 0x1B) field.selectedIndex = (dataTypeVal-1).toString();
 	field.setAttribute("label", g_CANopenDataType(dataType));
 }
 
@@ -651,7 +651,7 @@ function subobjUpdate(){
 			field = document.getElementById("subobj_dataType").label;
 			if(!field){alert("Please choose Data Type!"); return;}
 			field = field.slice(0, field.indexOf(" "));
-			if(field=="01" || field=="08"){alert("Please choose a valid Data Type!"); return;}
+			if(field=="01"){alert("Please choose a valid Data Type!"); return;}
 			newObject.@dataType = field;
 		//access type
 			var accessType = document.getElementById("subobj_accessType").label;

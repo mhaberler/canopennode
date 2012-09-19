@@ -41,11 +41,11 @@ OBJECTDIR=build/${CND_CONF}/${IMAGE_TYPE}
 DISTDIR=dist/${CND_CONF}/${IMAGE_TYPE}
 
 # Object Files Quoted if spaced
-OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/_ext/1472/CANopen.o ${OBJECTDIR}/_ext/581370467/CO_Emergency.o ${OBJECTDIR}/_ext/581370467/CO_HBconsumer.o ${OBJECTDIR}/_ext/581370467/CO_NMT_Heartbeat.o ${OBJECTDIR}/_ext/1472/CO_OD.o ${OBJECTDIR}/_ext/581370467/CO_PDO.o ${OBJECTDIR}/_ext/581370467/CO_SDO.o ${OBJECTDIR}/_ext/581370467/CO_SDOmaster.o ${OBJECTDIR}/_ext/581370467/CO_SYNC.o ${OBJECTDIR}/_ext/542917987/CO_driver.o ${OBJECTDIR}/_ext/542917987/eeprom.o ${OBJECTDIR}/_ext/1472/main_PIC32.o
-POSSIBLE_DEPFILES=${OBJECTDIR}/_ext/1472/CANopen.o.d ${OBJECTDIR}/_ext/581370467/CO_Emergency.o.d ${OBJECTDIR}/_ext/581370467/CO_HBconsumer.o.d ${OBJECTDIR}/_ext/581370467/CO_NMT_Heartbeat.o.d ${OBJECTDIR}/_ext/1472/CO_OD.o.d ${OBJECTDIR}/_ext/581370467/CO_PDO.o.d ${OBJECTDIR}/_ext/581370467/CO_SDO.o.d ${OBJECTDIR}/_ext/581370467/CO_SDOmaster.o.d ${OBJECTDIR}/_ext/581370467/CO_SYNC.o.d ${OBJECTDIR}/_ext/542917987/CO_driver.o.d ${OBJECTDIR}/_ext/542917987/eeprom.o.d ${OBJECTDIR}/_ext/1472/main_PIC32.o.d
+OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/_ext/542917987/CO_driver.o ${OBJECTDIR}/_ext/542917987/eeprom.o ${OBJECTDIR}/_ext/542917987/main_PIC32.o ${OBJECTDIR}/_ext/581370467/CO_Emergency.o ${OBJECTDIR}/_ext/581370467/CO_HBconsumer.o ${OBJECTDIR}/_ext/581370467/CO_NMT_Heartbeat.o ${OBJECTDIR}/_ext/581370467/CO_PDO.o ${OBJECTDIR}/_ext/581370467/CO_SDO.o ${OBJECTDIR}/_ext/581370467/CO_SYNC.o ${OBJECTDIR}/_ext/581370467/CO_SDOmaster.o ${OBJECTDIR}/_ext/581370467/CANopen.o ${OBJECTDIR}/_ext/1472/appl_PIC32_explorer16_IO.o ${OBJECTDIR}/_ext/1472/CO_OD.o
+POSSIBLE_DEPFILES=${OBJECTDIR}/_ext/542917987/CO_driver.o.d ${OBJECTDIR}/_ext/542917987/eeprom.o.d ${OBJECTDIR}/_ext/542917987/main_PIC32.o.d ${OBJECTDIR}/_ext/581370467/CO_Emergency.o.d ${OBJECTDIR}/_ext/581370467/CO_HBconsumer.o.d ${OBJECTDIR}/_ext/581370467/CO_NMT_Heartbeat.o.d ${OBJECTDIR}/_ext/581370467/CO_PDO.o.d ${OBJECTDIR}/_ext/581370467/CO_SDO.o.d ${OBJECTDIR}/_ext/581370467/CO_SYNC.o.d ${OBJECTDIR}/_ext/581370467/CO_SDOmaster.o.d ${OBJECTDIR}/_ext/581370467/CANopen.o.d ${OBJECTDIR}/_ext/1472/appl_PIC32_explorer16_IO.o.d ${OBJECTDIR}/_ext/1472/CO_OD.o.d
 
 # Object Files
-OBJECTFILES=${OBJECTDIR}/_ext/1472/CANopen.o ${OBJECTDIR}/_ext/581370467/CO_Emergency.o ${OBJECTDIR}/_ext/581370467/CO_HBconsumer.o ${OBJECTDIR}/_ext/581370467/CO_NMT_Heartbeat.o ${OBJECTDIR}/_ext/1472/CO_OD.o ${OBJECTDIR}/_ext/581370467/CO_PDO.o ${OBJECTDIR}/_ext/581370467/CO_SDO.o ${OBJECTDIR}/_ext/581370467/CO_SDOmaster.o ${OBJECTDIR}/_ext/581370467/CO_SYNC.o ${OBJECTDIR}/_ext/542917987/CO_driver.o ${OBJECTDIR}/_ext/542917987/eeprom.o ${OBJECTDIR}/_ext/1472/main_PIC32.o
+OBJECTFILES=${OBJECTDIR}/_ext/542917987/CO_driver.o ${OBJECTDIR}/_ext/542917987/eeprom.o ${OBJECTDIR}/_ext/542917987/main_PIC32.o ${OBJECTDIR}/_ext/581370467/CO_Emergency.o ${OBJECTDIR}/_ext/581370467/CO_HBconsumer.o ${OBJECTDIR}/_ext/581370467/CO_NMT_Heartbeat.o ${OBJECTDIR}/_ext/581370467/CO_PDO.o ${OBJECTDIR}/_ext/581370467/CO_SDO.o ${OBJECTDIR}/_ext/581370467/CO_SYNC.o ${OBJECTDIR}/_ext/581370467/CO_SDOmaster.o ${OBJECTDIR}/_ext/581370467/CANopen.o ${OBJECTDIR}/_ext/1472/appl_PIC32_explorer16_IO.o ${OBJECTDIR}/_ext/1472/CO_OD.o
 
 
 CFLAGS=
@@ -62,9 +62,9 @@ LDLIBSOPTIONS=
 FIXDEPS=fixDeps
 
 .build-conf:  ${BUILD_SUBPROJECTS}
-	${MAKE}  -f nbproject/Makefile-default.mk dist/${CND_CONF}/${IMAGE_TYPE}/PIC32.X.${IMAGE_TYPE}.${OUTPUT_SUFFIX}
+	${MAKE} ${MAKE_OPTIONS} -f nbproject/Makefile-default.mk dist/${CND_CONF}/${IMAGE_TYPE}/PIC32.X.${IMAGE_TYPE}.${OUTPUT_SUFFIX}
 
-MP_PROCESSOR_OPTION=32MX775F256L
+MP_PROCESSOR_OPTION=32MX795F512L
 MP_LINKER_FILE_OPTION=
 # ------------------------------------------------------------------------------------
 # Rules for buildStep: assemble
@@ -81,140 +81,156 @@ endif
 # ------------------------------------------------------------------------------------
 # Rules for buildStep: compile
 ifeq ($(TYPE_IMAGE), DEBUG_RUN)
-${OBJECTDIR}/_ext/1472/CANopen.o: ../CANopen.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/_ext/1472 
-	@${RM} ${OBJECTDIR}/_ext/1472/CANopen.o.d 
-	@${FIXDEPS} "${OBJECTDIR}/_ext/1472/CANopen.o.d" $(SILENT) -c ${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_REAL_ICE=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -Wall -MMD -MF "${OBJECTDIR}/_ext/1472/CANopen.o.d" -o ${OBJECTDIR}/_ext/1472/CANopen.o ../CANopen.c  
-	
-${OBJECTDIR}/_ext/581370467/CO_Emergency.o: ../../CANopen_stack/CO_Emergency.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/_ext/581370467 
-	@${RM} ${OBJECTDIR}/_ext/581370467/CO_Emergency.o.d 
-	@${FIXDEPS} "${OBJECTDIR}/_ext/581370467/CO_Emergency.o.d" $(SILENT) -c ${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_REAL_ICE=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -Wall -MMD -MF "${OBJECTDIR}/_ext/581370467/CO_Emergency.o.d" -o ${OBJECTDIR}/_ext/581370467/CO_Emergency.o ../../CANopen_stack/CO_Emergency.c  
-	
-${OBJECTDIR}/_ext/581370467/CO_HBconsumer.o: ../../CANopen_stack/CO_HBconsumer.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/_ext/581370467 
-	@${RM} ${OBJECTDIR}/_ext/581370467/CO_HBconsumer.o.d 
-	@${FIXDEPS} "${OBJECTDIR}/_ext/581370467/CO_HBconsumer.o.d" $(SILENT) -c ${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_REAL_ICE=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -Wall -MMD -MF "${OBJECTDIR}/_ext/581370467/CO_HBconsumer.o.d" -o ${OBJECTDIR}/_ext/581370467/CO_HBconsumer.o ../../CANopen_stack/CO_HBconsumer.c  
-	
-${OBJECTDIR}/_ext/581370467/CO_NMT_Heartbeat.o: ../../CANopen_stack/CO_NMT_Heartbeat.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/_ext/581370467 
-	@${RM} ${OBJECTDIR}/_ext/581370467/CO_NMT_Heartbeat.o.d 
-	@${FIXDEPS} "${OBJECTDIR}/_ext/581370467/CO_NMT_Heartbeat.o.d" $(SILENT) -c ${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_REAL_ICE=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -Wall -MMD -MF "${OBJECTDIR}/_ext/581370467/CO_NMT_Heartbeat.o.d" -o ${OBJECTDIR}/_ext/581370467/CO_NMT_Heartbeat.o ../../CANopen_stack/CO_NMT_Heartbeat.c  
-	
-${OBJECTDIR}/_ext/1472/CO_OD.o: ../CO_OD.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/_ext/1472 
-	@${RM} ${OBJECTDIR}/_ext/1472/CO_OD.o.d 
-	@${FIXDEPS} "${OBJECTDIR}/_ext/1472/CO_OD.o.d" $(SILENT) -c ${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_REAL_ICE=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -Wall -MMD -MF "${OBJECTDIR}/_ext/1472/CO_OD.o.d" -o ${OBJECTDIR}/_ext/1472/CO_OD.o ../CO_OD.c  
-	
-${OBJECTDIR}/_ext/581370467/CO_PDO.o: ../../CANopen_stack/CO_PDO.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/_ext/581370467 
-	@${RM} ${OBJECTDIR}/_ext/581370467/CO_PDO.o.d 
-	@${FIXDEPS} "${OBJECTDIR}/_ext/581370467/CO_PDO.o.d" $(SILENT) -c ${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_REAL_ICE=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -Wall -MMD -MF "${OBJECTDIR}/_ext/581370467/CO_PDO.o.d" -o ${OBJECTDIR}/_ext/581370467/CO_PDO.o ../../CANopen_stack/CO_PDO.c  
-	
-${OBJECTDIR}/_ext/581370467/CO_SDO.o: ../../CANopen_stack/CO_SDO.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/_ext/581370467 
-	@${RM} ${OBJECTDIR}/_ext/581370467/CO_SDO.o.d 
-	@${FIXDEPS} "${OBJECTDIR}/_ext/581370467/CO_SDO.o.d" $(SILENT) -c ${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_REAL_ICE=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -Wall -MMD -MF "${OBJECTDIR}/_ext/581370467/CO_SDO.o.d" -o ${OBJECTDIR}/_ext/581370467/CO_SDO.o ../../CANopen_stack/CO_SDO.c  
-	
-${OBJECTDIR}/_ext/581370467/CO_SDOmaster.o: ../../CANopen_stack/CO_SDOmaster.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/_ext/581370467 
-	@${RM} ${OBJECTDIR}/_ext/581370467/CO_SDOmaster.o.d 
-	@${FIXDEPS} "${OBJECTDIR}/_ext/581370467/CO_SDOmaster.o.d" $(SILENT) -c ${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_REAL_ICE=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -Wall -MMD -MF "${OBJECTDIR}/_ext/581370467/CO_SDOmaster.o.d" -o ${OBJECTDIR}/_ext/581370467/CO_SDOmaster.o ../../CANopen_stack/CO_SDOmaster.c  
-	
-${OBJECTDIR}/_ext/581370467/CO_SYNC.o: ../../CANopen_stack/CO_SYNC.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/_ext/581370467 
-	@${RM} ${OBJECTDIR}/_ext/581370467/CO_SYNC.o.d 
-	@${FIXDEPS} "${OBJECTDIR}/_ext/581370467/CO_SYNC.o.d" $(SILENT) -c ${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_REAL_ICE=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -Wall -MMD -MF "${OBJECTDIR}/_ext/581370467/CO_SYNC.o.d" -o ${OBJECTDIR}/_ext/581370467/CO_SYNC.o ../../CANopen_stack/CO_SYNC.c  
-	
 ${OBJECTDIR}/_ext/542917987/CO_driver.o: ../../CANopen_stack/PIC32/CO_driver.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} ${OBJECTDIR}/_ext/542917987 
 	@${RM} ${OBJECTDIR}/_ext/542917987/CO_driver.o.d 
-	@${FIXDEPS} "${OBJECTDIR}/_ext/542917987/CO_driver.o.d" $(SILENT) -c ${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_REAL_ICE=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -Wall -MMD -MF "${OBJECTDIR}/_ext/542917987/CO_driver.o.d" -o ${OBJECTDIR}/_ext/542917987/CO_driver.o ../../CANopen_stack/PIC32/CO_driver.c  
+	@${FIXDEPS} "${OBJECTDIR}/_ext/542917987/CO_driver.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -DCO_OD_MAX_OBJECT_SIZE=889 -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -O1 -Wall -MMD -MF "${OBJECTDIR}/_ext/542917987/CO_driver.o.d" -o ${OBJECTDIR}/_ext/542917987/CO_driver.o ../../CANopen_stack/PIC32/CO_driver.c   
 	
 ${OBJECTDIR}/_ext/542917987/eeprom.o: ../../CANopen_stack/PIC32/eeprom.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} ${OBJECTDIR}/_ext/542917987 
 	@${RM} ${OBJECTDIR}/_ext/542917987/eeprom.o.d 
-	@${FIXDEPS} "${OBJECTDIR}/_ext/542917987/eeprom.o.d" $(SILENT) -c ${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_REAL_ICE=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -Wall -MMD -MF "${OBJECTDIR}/_ext/542917987/eeprom.o.d" -o ${OBJECTDIR}/_ext/542917987/eeprom.o ../../CANopen_stack/PIC32/eeprom.c  
+	@${FIXDEPS} "${OBJECTDIR}/_ext/542917987/eeprom.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -DCO_OD_MAX_OBJECT_SIZE=889 -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -O1 -Wall -MMD -MF "${OBJECTDIR}/_ext/542917987/eeprom.o.d" -o ${OBJECTDIR}/_ext/542917987/eeprom.o ../../CANopen_stack/PIC32/eeprom.c   
 	
-${OBJECTDIR}/_ext/1472/main_PIC32.o: ../main_PIC32.c  nbproject/Makefile-${CND_CONF}.mk
+${OBJECTDIR}/_ext/542917987/main_PIC32.o: ../../CANopen_stack/PIC32/main_PIC32.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/_ext/542917987 
+	@${RM} ${OBJECTDIR}/_ext/542917987/main_PIC32.o.d 
+	@${FIXDEPS} "${OBJECTDIR}/_ext/542917987/main_PIC32.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -DCO_OD_MAX_OBJECT_SIZE=889 -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -O1 -Wall -MMD -MF "${OBJECTDIR}/_ext/542917987/main_PIC32.o.d" -o ${OBJECTDIR}/_ext/542917987/main_PIC32.o ../../CANopen_stack/PIC32/main_PIC32.c   
+	
+${OBJECTDIR}/_ext/581370467/CO_Emergency.o: ../../CANopen_stack/CO_Emergency.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/_ext/581370467 
+	@${RM} ${OBJECTDIR}/_ext/581370467/CO_Emergency.o.d 
+	@${FIXDEPS} "${OBJECTDIR}/_ext/581370467/CO_Emergency.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -DCO_OD_MAX_OBJECT_SIZE=889 -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -O1 -Wall -MMD -MF "${OBJECTDIR}/_ext/581370467/CO_Emergency.o.d" -o ${OBJECTDIR}/_ext/581370467/CO_Emergency.o ../../CANopen_stack/CO_Emergency.c   
+	
+${OBJECTDIR}/_ext/581370467/CO_HBconsumer.o: ../../CANopen_stack/CO_HBconsumer.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/_ext/581370467 
+	@${RM} ${OBJECTDIR}/_ext/581370467/CO_HBconsumer.o.d 
+	@${FIXDEPS} "${OBJECTDIR}/_ext/581370467/CO_HBconsumer.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -DCO_OD_MAX_OBJECT_SIZE=889 -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -O1 -Wall -MMD -MF "${OBJECTDIR}/_ext/581370467/CO_HBconsumer.o.d" -o ${OBJECTDIR}/_ext/581370467/CO_HBconsumer.o ../../CANopen_stack/CO_HBconsumer.c   
+	
+${OBJECTDIR}/_ext/581370467/CO_NMT_Heartbeat.o: ../../CANopen_stack/CO_NMT_Heartbeat.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/_ext/581370467 
+	@${RM} ${OBJECTDIR}/_ext/581370467/CO_NMT_Heartbeat.o.d 
+	@${FIXDEPS} "${OBJECTDIR}/_ext/581370467/CO_NMT_Heartbeat.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -DCO_OD_MAX_OBJECT_SIZE=889 -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -O1 -Wall -MMD -MF "${OBJECTDIR}/_ext/581370467/CO_NMT_Heartbeat.o.d" -o ${OBJECTDIR}/_ext/581370467/CO_NMT_Heartbeat.o ../../CANopen_stack/CO_NMT_Heartbeat.c   
+	
+${OBJECTDIR}/_ext/581370467/CO_PDO.o: ../../CANopen_stack/CO_PDO.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/_ext/581370467 
+	@${RM} ${OBJECTDIR}/_ext/581370467/CO_PDO.o.d 
+	@${FIXDEPS} "${OBJECTDIR}/_ext/581370467/CO_PDO.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -DCO_OD_MAX_OBJECT_SIZE=889 -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -O1 -Wall -MMD -MF "${OBJECTDIR}/_ext/581370467/CO_PDO.o.d" -o ${OBJECTDIR}/_ext/581370467/CO_PDO.o ../../CANopen_stack/CO_PDO.c   
+	
+${OBJECTDIR}/_ext/581370467/CO_SDO.o: ../../CANopen_stack/CO_SDO.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/_ext/581370467 
+	@${RM} ${OBJECTDIR}/_ext/581370467/CO_SDO.o.d 
+	@${FIXDEPS} "${OBJECTDIR}/_ext/581370467/CO_SDO.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -DCO_OD_MAX_OBJECT_SIZE=889 -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -O1 -Wall -MMD -MF "${OBJECTDIR}/_ext/581370467/CO_SDO.o.d" -o ${OBJECTDIR}/_ext/581370467/CO_SDO.o ../../CANopen_stack/CO_SDO.c   
+	
+${OBJECTDIR}/_ext/581370467/CO_SYNC.o: ../../CANopen_stack/CO_SYNC.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/_ext/581370467 
+	@${RM} ${OBJECTDIR}/_ext/581370467/CO_SYNC.o.d 
+	@${FIXDEPS} "${OBJECTDIR}/_ext/581370467/CO_SYNC.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -DCO_OD_MAX_OBJECT_SIZE=889 -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -O1 -Wall -MMD -MF "${OBJECTDIR}/_ext/581370467/CO_SYNC.o.d" -o ${OBJECTDIR}/_ext/581370467/CO_SYNC.o ../../CANopen_stack/CO_SYNC.c   
+	
+${OBJECTDIR}/_ext/581370467/CO_SDOmaster.o: ../../CANopen_stack/CO_SDOmaster.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/_ext/581370467 
+	@${RM} ${OBJECTDIR}/_ext/581370467/CO_SDOmaster.o.d 
+	@${FIXDEPS} "${OBJECTDIR}/_ext/581370467/CO_SDOmaster.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -DCO_OD_MAX_OBJECT_SIZE=889 -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -O1 -Wall -MMD -MF "${OBJECTDIR}/_ext/581370467/CO_SDOmaster.o.d" -o ${OBJECTDIR}/_ext/581370467/CO_SDOmaster.o ../../CANopen_stack/CO_SDOmaster.c   
+	
+${OBJECTDIR}/_ext/581370467/CANopen.o: ../../CANopen_stack/CANopen.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/_ext/581370467 
+	@${RM} ${OBJECTDIR}/_ext/581370467/CANopen.o.d 
+	@${FIXDEPS} "${OBJECTDIR}/_ext/581370467/CANopen.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -DCO_OD_MAX_OBJECT_SIZE=889 -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -O1 -Wall -MMD -MF "${OBJECTDIR}/_ext/581370467/CANopen.o.d" -o ${OBJECTDIR}/_ext/581370467/CANopen.o ../../CANopen_stack/CANopen.c   
+	
+${OBJECTDIR}/_ext/1472/appl_PIC32_explorer16_IO.o: ../appl_PIC32_explorer16_IO.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} ${OBJECTDIR}/_ext/1472 
-	@${RM} ${OBJECTDIR}/_ext/1472/main_PIC32.o.d 
-	@${FIXDEPS} "${OBJECTDIR}/_ext/1472/main_PIC32.o.d" $(SILENT) -c ${MP_CC} $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_REAL_ICE=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -Wall -MMD -MF "${OBJECTDIR}/_ext/1472/main_PIC32.o.d" -o ${OBJECTDIR}/_ext/1472/main_PIC32.o ../main_PIC32.c  
+	@${RM} ${OBJECTDIR}/_ext/1472/appl_PIC32_explorer16_IO.o.d 
+	@${FIXDEPS} "${OBJECTDIR}/_ext/1472/appl_PIC32_explorer16_IO.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -DCO_OD_MAX_OBJECT_SIZE=889 -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -O1 -Wall -MMD -MF "${OBJECTDIR}/_ext/1472/appl_PIC32_explorer16_IO.o.d" -o ${OBJECTDIR}/_ext/1472/appl_PIC32_explorer16_IO.o ../appl_PIC32_explorer16_IO.c   
+	
+${OBJECTDIR}/_ext/1472/CO_OD.o: ../CO_OD.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/_ext/1472 
+	@${RM} ${OBJECTDIR}/_ext/1472/CO_OD.o.d 
+	@${FIXDEPS} "${OBJECTDIR}/_ext/1472/CO_OD.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -DCO_OD_MAX_OBJECT_SIZE=889 -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -O1 -Wall -MMD -MF "${OBJECTDIR}/_ext/1472/CO_OD.o.d" -o ${OBJECTDIR}/_ext/1472/CO_OD.o ../CO_OD.c   
 	
 else
-${OBJECTDIR}/_ext/1472/CANopen.o: ../CANopen.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/_ext/1472 
-	@${RM} ${OBJECTDIR}/_ext/1472/CANopen.o.d 
-	@${FIXDEPS} "${OBJECTDIR}/_ext/1472/CANopen.o.d" $(SILENT) -c ${MP_CC} $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -Wall -MMD -MF "${OBJECTDIR}/_ext/1472/CANopen.o.d" -o ${OBJECTDIR}/_ext/1472/CANopen.o ../CANopen.c  
-	
-${OBJECTDIR}/_ext/581370467/CO_Emergency.o: ../../CANopen_stack/CO_Emergency.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/_ext/581370467 
-	@${RM} ${OBJECTDIR}/_ext/581370467/CO_Emergency.o.d 
-	@${FIXDEPS} "${OBJECTDIR}/_ext/581370467/CO_Emergency.o.d" $(SILENT) -c ${MP_CC} $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -Wall -MMD -MF "${OBJECTDIR}/_ext/581370467/CO_Emergency.o.d" -o ${OBJECTDIR}/_ext/581370467/CO_Emergency.o ../../CANopen_stack/CO_Emergency.c  
-	
-${OBJECTDIR}/_ext/581370467/CO_HBconsumer.o: ../../CANopen_stack/CO_HBconsumer.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/_ext/581370467 
-	@${RM} ${OBJECTDIR}/_ext/581370467/CO_HBconsumer.o.d 
-	@${FIXDEPS} "${OBJECTDIR}/_ext/581370467/CO_HBconsumer.o.d" $(SILENT) -c ${MP_CC} $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -Wall -MMD -MF "${OBJECTDIR}/_ext/581370467/CO_HBconsumer.o.d" -o ${OBJECTDIR}/_ext/581370467/CO_HBconsumer.o ../../CANopen_stack/CO_HBconsumer.c  
-	
-${OBJECTDIR}/_ext/581370467/CO_NMT_Heartbeat.o: ../../CANopen_stack/CO_NMT_Heartbeat.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/_ext/581370467 
-	@${RM} ${OBJECTDIR}/_ext/581370467/CO_NMT_Heartbeat.o.d 
-	@${FIXDEPS} "${OBJECTDIR}/_ext/581370467/CO_NMT_Heartbeat.o.d" $(SILENT) -c ${MP_CC} $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -Wall -MMD -MF "${OBJECTDIR}/_ext/581370467/CO_NMT_Heartbeat.o.d" -o ${OBJECTDIR}/_ext/581370467/CO_NMT_Heartbeat.o ../../CANopen_stack/CO_NMT_Heartbeat.c  
-	
-${OBJECTDIR}/_ext/1472/CO_OD.o: ../CO_OD.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/_ext/1472 
-	@${RM} ${OBJECTDIR}/_ext/1472/CO_OD.o.d 
-	@${FIXDEPS} "${OBJECTDIR}/_ext/1472/CO_OD.o.d" $(SILENT) -c ${MP_CC} $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -Wall -MMD -MF "${OBJECTDIR}/_ext/1472/CO_OD.o.d" -o ${OBJECTDIR}/_ext/1472/CO_OD.o ../CO_OD.c  
-	
-${OBJECTDIR}/_ext/581370467/CO_PDO.o: ../../CANopen_stack/CO_PDO.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/_ext/581370467 
-	@${RM} ${OBJECTDIR}/_ext/581370467/CO_PDO.o.d 
-	@${FIXDEPS} "${OBJECTDIR}/_ext/581370467/CO_PDO.o.d" $(SILENT) -c ${MP_CC} $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -Wall -MMD -MF "${OBJECTDIR}/_ext/581370467/CO_PDO.o.d" -o ${OBJECTDIR}/_ext/581370467/CO_PDO.o ../../CANopen_stack/CO_PDO.c  
-	
-${OBJECTDIR}/_ext/581370467/CO_SDO.o: ../../CANopen_stack/CO_SDO.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/_ext/581370467 
-	@${RM} ${OBJECTDIR}/_ext/581370467/CO_SDO.o.d 
-	@${FIXDEPS} "${OBJECTDIR}/_ext/581370467/CO_SDO.o.d" $(SILENT) -c ${MP_CC} $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -Wall -MMD -MF "${OBJECTDIR}/_ext/581370467/CO_SDO.o.d" -o ${OBJECTDIR}/_ext/581370467/CO_SDO.o ../../CANopen_stack/CO_SDO.c  
-	
-${OBJECTDIR}/_ext/581370467/CO_SDOmaster.o: ../../CANopen_stack/CO_SDOmaster.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/_ext/581370467 
-	@${RM} ${OBJECTDIR}/_ext/581370467/CO_SDOmaster.o.d 
-	@${FIXDEPS} "${OBJECTDIR}/_ext/581370467/CO_SDOmaster.o.d" $(SILENT) -c ${MP_CC} $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -Wall -MMD -MF "${OBJECTDIR}/_ext/581370467/CO_SDOmaster.o.d" -o ${OBJECTDIR}/_ext/581370467/CO_SDOmaster.o ../../CANopen_stack/CO_SDOmaster.c  
-	
-${OBJECTDIR}/_ext/581370467/CO_SYNC.o: ../../CANopen_stack/CO_SYNC.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/_ext/581370467 
-	@${RM} ${OBJECTDIR}/_ext/581370467/CO_SYNC.o.d 
-	@${FIXDEPS} "${OBJECTDIR}/_ext/581370467/CO_SYNC.o.d" $(SILENT) -c ${MP_CC} $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -Wall -MMD -MF "${OBJECTDIR}/_ext/581370467/CO_SYNC.o.d" -o ${OBJECTDIR}/_ext/581370467/CO_SYNC.o ../../CANopen_stack/CO_SYNC.c  
-	
 ${OBJECTDIR}/_ext/542917987/CO_driver.o: ../../CANopen_stack/PIC32/CO_driver.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} ${OBJECTDIR}/_ext/542917987 
 	@${RM} ${OBJECTDIR}/_ext/542917987/CO_driver.o.d 
-	@${FIXDEPS} "${OBJECTDIR}/_ext/542917987/CO_driver.o.d" $(SILENT) -c ${MP_CC} $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -Wall -MMD -MF "${OBJECTDIR}/_ext/542917987/CO_driver.o.d" -o ${OBJECTDIR}/_ext/542917987/CO_driver.o ../../CANopen_stack/PIC32/CO_driver.c  
+	@${FIXDEPS} "${OBJECTDIR}/_ext/542917987/CO_driver.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -DCO_OD_MAX_OBJECT_SIZE=889 -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -O1 -Wall -MMD -MF "${OBJECTDIR}/_ext/542917987/CO_driver.o.d" -o ${OBJECTDIR}/_ext/542917987/CO_driver.o ../../CANopen_stack/PIC32/CO_driver.c   
 	
 ${OBJECTDIR}/_ext/542917987/eeprom.o: ../../CANopen_stack/PIC32/eeprom.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} ${OBJECTDIR}/_ext/542917987 
 	@${RM} ${OBJECTDIR}/_ext/542917987/eeprom.o.d 
-	@${FIXDEPS} "${OBJECTDIR}/_ext/542917987/eeprom.o.d" $(SILENT) -c ${MP_CC} $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -Wall -MMD -MF "${OBJECTDIR}/_ext/542917987/eeprom.o.d" -o ${OBJECTDIR}/_ext/542917987/eeprom.o ../../CANopen_stack/PIC32/eeprom.c  
+	@${FIXDEPS} "${OBJECTDIR}/_ext/542917987/eeprom.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -DCO_OD_MAX_OBJECT_SIZE=889 -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -O1 -Wall -MMD -MF "${OBJECTDIR}/_ext/542917987/eeprom.o.d" -o ${OBJECTDIR}/_ext/542917987/eeprom.o ../../CANopen_stack/PIC32/eeprom.c   
 	
-${OBJECTDIR}/_ext/1472/main_PIC32.o: ../main_PIC32.c  nbproject/Makefile-${CND_CONF}.mk
+${OBJECTDIR}/_ext/542917987/main_PIC32.o: ../../CANopen_stack/PIC32/main_PIC32.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/_ext/542917987 
+	@${RM} ${OBJECTDIR}/_ext/542917987/main_PIC32.o.d 
+	@${FIXDEPS} "${OBJECTDIR}/_ext/542917987/main_PIC32.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -DCO_OD_MAX_OBJECT_SIZE=889 -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -O1 -Wall -MMD -MF "${OBJECTDIR}/_ext/542917987/main_PIC32.o.d" -o ${OBJECTDIR}/_ext/542917987/main_PIC32.o ../../CANopen_stack/PIC32/main_PIC32.c   
+	
+${OBJECTDIR}/_ext/581370467/CO_Emergency.o: ../../CANopen_stack/CO_Emergency.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/_ext/581370467 
+	@${RM} ${OBJECTDIR}/_ext/581370467/CO_Emergency.o.d 
+	@${FIXDEPS} "${OBJECTDIR}/_ext/581370467/CO_Emergency.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -DCO_OD_MAX_OBJECT_SIZE=889 -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -O1 -Wall -MMD -MF "${OBJECTDIR}/_ext/581370467/CO_Emergency.o.d" -o ${OBJECTDIR}/_ext/581370467/CO_Emergency.o ../../CANopen_stack/CO_Emergency.c   
+	
+${OBJECTDIR}/_ext/581370467/CO_HBconsumer.o: ../../CANopen_stack/CO_HBconsumer.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/_ext/581370467 
+	@${RM} ${OBJECTDIR}/_ext/581370467/CO_HBconsumer.o.d 
+	@${FIXDEPS} "${OBJECTDIR}/_ext/581370467/CO_HBconsumer.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -DCO_OD_MAX_OBJECT_SIZE=889 -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -O1 -Wall -MMD -MF "${OBJECTDIR}/_ext/581370467/CO_HBconsumer.o.d" -o ${OBJECTDIR}/_ext/581370467/CO_HBconsumer.o ../../CANopen_stack/CO_HBconsumer.c   
+	
+${OBJECTDIR}/_ext/581370467/CO_NMT_Heartbeat.o: ../../CANopen_stack/CO_NMT_Heartbeat.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/_ext/581370467 
+	@${RM} ${OBJECTDIR}/_ext/581370467/CO_NMT_Heartbeat.o.d 
+	@${FIXDEPS} "${OBJECTDIR}/_ext/581370467/CO_NMT_Heartbeat.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -DCO_OD_MAX_OBJECT_SIZE=889 -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -O1 -Wall -MMD -MF "${OBJECTDIR}/_ext/581370467/CO_NMT_Heartbeat.o.d" -o ${OBJECTDIR}/_ext/581370467/CO_NMT_Heartbeat.o ../../CANopen_stack/CO_NMT_Heartbeat.c   
+	
+${OBJECTDIR}/_ext/581370467/CO_PDO.o: ../../CANopen_stack/CO_PDO.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/_ext/581370467 
+	@${RM} ${OBJECTDIR}/_ext/581370467/CO_PDO.o.d 
+	@${FIXDEPS} "${OBJECTDIR}/_ext/581370467/CO_PDO.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -DCO_OD_MAX_OBJECT_SIZE=889 -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -O1 -Wall -MMD -MF "${OBJECTDIR}/_ext/581370467/CO_PDO.o.d" -o ${OBJECTDIR}/_ext/581370467/CO_PDO.o ../../CANopen_stack/CO_PDO.c   
+	
+${OBJECTDIR}/_ext/581370467/CO_SDO.o: ../../CANopen_stack/CO_SDO.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/_ext/581370467 
+	@${RM} ${OBJECTDIR}/_ext/581370467/CO_SDO.o.d 
+	@${FIXDEPS} "${OBJECTDIR}/_ext/581370467/CO_SDO.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -DCO_OD_MAX_OBJECT_SIZE=889 -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -O1 -Wall -MMD -MF "${OBJECTDIR}/_ext/581370467/CO_SDO.o.d" -o ${OBJECTDIR}/_ext/581370467/CO_SDO.o ../../CANopen_stack/CO_SDO.c   
+	
+${OBJECTDIR}/_ext/581370467/CO_SYNC.o: ../../CANopen_stack/CO_SYNC.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/_ext/581370467 
+	@${RM} ${OBJECTDIR}/_ext/581370467/CO_SYNC.o.d 
+	@${FIXDEPS} "${OBJECTDIR}/_ext/581370467/CO_SYNC.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -DCO_OD_MAX_OBJECT_SIZE=889 -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -O1 -Wall -MMD -MF "${OBJECTDIR}/_ext/581370467/CO_SYNC.o.d" -o ${OBJECTDIR}/_ext/581370467/CO_SYNC.o ../../CANopen_stack/CO_SYNC.c   
+	
+${OBJECTDIR}/_ext/581370467/CO_SDOmaster.o: ../../CANopen_stack/CO_SDOmaster.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/_ext/581370467 
+	@${RM} ${OBJECTDIR}/_ext/581370467/CO_SDOmaster.o.d 
+	@${FIXDEPS} "${OBJECTDIR}/_ext/581370467/CO_SDOmaster.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -DCO_OD_MAX_OBJECT_SIZE=889 -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -O1 -Wall -MMD -MF "${OBJECTDIR}/_ext/581370467/CO_SDOmaster.o.d" -o ${OBJECTDIR}/_ext/581370467/CO_SDOmaster.o ../../CANopen_stack/CO_SDOmaster.c   
+	
+${OBJECTDIR}/_ext/581370467/CANopen.o: ../../CANopen_stack/CANopen.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/_ext/581370467 
+	@${RM} ${OBJECTDIR}/_ext/581370467/CANopen.o.d 
+	@${FIXDEPS} "${OBJECTDIR}/_ext/581370467/CANopen.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -DCO_OD_MAX_OBJECT_SIZE=889 -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -O1 -Wall -MMD -MF "${OBJECTDIR}/_ext/581370467/CANopen.o.d" -o ${OBJECTDIR}/_ext/581370467/CANopen.o ../../CANopen_stack/CANopen.c   
+	
+${OBJECTDIR}/_ext/1472/appl_PIC32_explorer16_IO.o: ../appl_PIC32_explorer16_IO.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} ${OBJECTDIR}/_ext/1472 
-	@${RM} ${OBJECTDIR}/_ext/1472/main_PIC32.o.d 
-	@${FIXDEPS} "${OBJECTDIR}/_ext/1472/main_PIC32.o.d" $(SILENT) -c ${MP_CC} $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -Wall -MMD -MF "${OBJECTDIR}/_ext/1472/main_PIC32.o.d" -o ${OBJECTDIR}/_ext/1472/main_PIC32.o ../main_PIC32.c  
+	@${RM} ${OBJECTDIR}/_ext/1472/appl_PIC32_explorer16_IO.o.d 
+	@${FIXDEPS} "${OBJECTDIR}/_ext/1472/appl_PIC32_explorer16_IO.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -DCO_OD_MAX_OBJECT_SIZE=889 -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -O1 -Wall -MMD -MF "${OBJECTDIR}/_ext/1472/appl_PIC32_explorer16_IO.o.d" -o ${OBJECTDIR}/_ext/1472/appl_PIC32_explorer16_IO.o ../appl_PIC32_explorer16_IO.c   
 	
+${OBJECTDIR}/_ext/1472/CO_OD.o: ../CO_OD.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/_ext/1472 
+	@${RM} ${OBJECTDIR}/_ext/1472/CO_OD.o.d 
+	@${FIXDEPS} "${OBJECTDIR}/_ext/1472/CO_OD.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -DCO_OD_MAX_OBJECT_SIZE=889 -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -O1 -Wall -MMD -MF "${OBJECTDIR}/_ext/1472/CO_OD.o.d" -o ${OBJECTDIR}/_ext/1472/CO_OD.o ../CO_OD.c   
+	
+endif
+
+# ------------------------------------------------------------------------------------
+# Rules for buildStep: compileCPP
+ifeq ($(TYPE_IMAGE), DEBUG_RUN)
+else
 endif
 
 # ------------------------------------------------------------------------------------
 # Rules for buildStep: link
 ifeq ($(TYPE_IMAGE), DEBUG_RUN)
-dist/${CND_CONF}/${IMAGE_TYPE}/PIC32.X.${IMAGE_TYPE}.${OUTPUT_SUFFIX}: ${OBJECTFILES}  nbproject/Makefile-${CND_CONF}.mk
+dist/${CND_CONF}/${IMAGE_TYPE}/PIC32.X.${IMAGE_TYPE}.${OUTPUT_SUFFIX}: ${OBJECTFILES}  nbproject/Makefile-${CND_CONF}.mk   
 	@${MKDIR} dist/${CND_CONF}/${IMAGE_TYPE} 
-	${MP_CC} $(MP_EXTRA_LD_PRE)  -mdebugger -D__MPLAB_DEBUGGER_REAL_ICE=1 -mprocessor=$(MP_PROCESSOR_OPTION)  -o dist/${CND_CONF}/${IMAGE_TYPE}/PIC32.X.${IMAGE_TYPE}.${OUTPUT_SUFFIX} ${OBJECTFILES_QUOTED_IF_SPACED}        -Wl,--defsym=__MPLAB_BUILD=1$(MP_EXTRA_LD_POST)$(MP_LINKER_FILE_OPTION),--defsym=__MPLAB_DEBUG=1,--defsym=__ICD2RAM=1,--defsym=__DEBUG=1,--defsym=__MPLAB_DEBUGGER_REAL_ICE=1,--defsym=_min_heap_size=5000,-L"/C/Program Files/Microchip/MPLAB C32/lib",-L"/C/Program Files/Microchip/MPLAB C32/pic32mx/lib",-Map="${DISTDIR}/PIC32.X.${IMAGE_TYPE}.map" 
+	${MP_CC} $(MP_EXTRA_LD_PRE)  -mdebugger -D__MPLAB_DEBUGGER_ICD3=1 -mprocessor=$(MP_PROCESSOR_OPTION)  -o dist/${CND_CONF}/${IMAGE_TYPE}/PIC32.X.${IMAGE_TYPE}.${OUTPUT_SUFFIX} ${OBJECTFILES_QUOTED_IF_SPACED}         -Wl,--defsym=__MPLAB_BUILD=1$(MP_EXTRA_LD_POST)$(MP_LINKER_FILE_OPTION),--defsym=__MPLAB_DEBUG=1,--defsym=__ICD2RAM=1,--defsym=__DEBUG=1,--defsym=__MPLAB_DEBUGGER_ICD3=1,--defsym=_min_heap_size=5000,-L"/C/Program Files/Microchip/MPLAB C32/lib",-L"/C/Program Files/Microchip/MPLAB C32/pic32mx/lib",-Map="${DISTDIR}/PIC32.X.${IMAGE_TYPE}.map"
 else
-dist/${CND_CONF}/${IMAGE_TYPE}/PIC32.X.${IMAGE_TYPE}.${OUTPUT_SUFFIX}: ${OBJECTFILES}  nbproject/Makefile-${CND_CONF}.mk
+dist/${CND_CONF}/${IMAGE_TYPE}/PIC32.X.${IMAGE_TYPE}.${OUTPUT_SUFFIX}: ${OBJECTFILES}  nbproject/Makefile-${CND_CONF}.mk   
 	@${MKDIR} dist/${CND_CONF}/${IMAGE_TYPE} 
-	${MP_CC} $(MP_EXTRA_LD_PRE)  -mprocessor=$(MP_PROCESSOR_OPTION)  -o dist/${CND_CONF}/${IMAGE_TYPE}/PIC32.X.${IMAGE_TYPE}.${DEBUGGABLE_SUFFIX} ${OBJECTFILES_QUOTED_IF_SPACED}        -Wl,--defsym=__MPLAB_BUILD=1$(MP_EXTRA_LD_POST)$(MP_LINKER_FILE_OPTION),--defsym=_min_heap_size=5000,-L"/C/Program Files/Microchip/MPLAB C32/lib",-L"/C/Program Files/Microchip/MPLAB C32/pic32mx/lib",-Map="${DISTDIR}/PIC32.X.${IMAGE_TYPE}.map"
-	${MP_CC_DIR}\\pic32-bin2hex dist/${CND_CONF}/${IMAGE_TYPE}/PIC32.X.${IMAGE_TYPE}.${DEBUGGABLE_SUFFIX}  
+	${MP_CC} $(MP_EXTRA_LD_PRE)  -mprocessor=$(MP_PROCESSOR_OPTION)  -o dist/${CND_CONF}/${IMAGE_TYPE}/PIC32.X.${IMAGE_TYPE}.${DEBUGGABLE_SUFFIX} ${OBJECTFILES_QUOTED_IF_SPACED}         -Wl,--defsym=__MPLAB_BUILD=1$(MP_EXTRA_LD_POST)$(MP_LINKER_FILE_OPTION),--defsym=_min_heap_size=5000,-L"/C/Program Files/Microchip/MPLAB C32/lib",-L"/C/Program Files/Microchip/MPLAB C32/pic32mx/lib",-Map="${DISTDIR}/PIC32.X.${IMAGE_TYPE}.map"
+	${MP_CC_DIR}\\xc32-bin2hex dist/${CND_CONF}/${IMAGE_TYPE}/PIC32.X.${IMAGE_TYPE}.${DEBUGGABLE_SUFFIX} 
 endif
 
 

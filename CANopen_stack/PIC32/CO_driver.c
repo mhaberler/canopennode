@@ -69,15 +69,11 @@ unsigned int CO_interruptStatus = 0;
 
 /******************************************************************************/
 void memcpySwap2(UNSIGNED8* dest, UNSIGNED8* src){
-   *(dest++) = *(src++);
-   *(dest) = *(src);
+   *((UNSIGNED16*) dest) = *((UNSIGNED16*) src);
 }
 
 void memcpySwap4(UNSIGNED8* dest, UNSIGNED8* src){
-   *(dest++) = *(src++);
-   *(dest++) = *(src++);
-   *(dest++) = *(src++);
-   *(dest) = *(src);
+   *((UNSIGNED32*) dest) = *((UNSIGNED32*) src);
 }
 
 
@@ -181,7 +177,7 @@ INTEGER16 CO_CANmodule_init(
       case 800:  i=6; break;
       case 1000: i=7; break;
    }
-   CAN_REG(CANbaseAddress, C_CFG) = 
+   CAN_REG(CANbaseAddress, C_CFG) =
       ((UNSIGNED32)(CO_CANbitRateData[i].phSeg2 - 1)) << 16 |  //SEG2PH
       0x00008000                                            |  //SEG2PHTS = 1, SAM = 0
       ((UNSIGNED32)(CO_CANbitRateData[i].phSeg1 - 1)) << 11 |  //SEG1PH
@@ -284,6 +280,14 @@ INTEGER16 CO_CANrxBufferInit( CO_CANmodule_t   *CANmodule,
       volatile UNSIGNED8 *pFLTCON;
       UNSIGNED8 selectMask;
 
+      //get correct part of the filter control register
+      pFLTCON = (volatile UNSIGNED8*)(&CAN_REG(addr, C_FLTCON)); //pointer to first filter control register
+      pFLTCON += (index/4) * 0x10;   //now points to the correct C_FLTCONi
+      pFLTCON += index%4;   //now points to correct part of the correct C_FLTCONi
+
+      //disable filter and wait if necessary
+      while(*pFLTCON & 0x80) *pFLTCON &= 0x7F;
+
       //align RXF and RXM with C_RXF and C_RXM registers
       RXF = (UNSIGNED32)ident << 21;
       RXM = (UNSIGNED32)mask << 21 | 0x00080000;
@@ -322,10 +326,7 @@ INTEGER16 CO_CANrxBufferInit( CO_CANmodule_t   *CANmodule,
          selectMask = 0;
          ret = CO_ERROR_OUT_OF_MEMORY;
       }
-      //now write to appropriate filter control register
-      pFLTCON = (volatile UNSIGNED8*)(&CAN_REG(addr, C_FLTCON)); //pointer to first filter control register
-      pFLTCON += (index/4) * 0x10;   //now points to the correct C_FLTCONi
-      pFLTCON += index%4;   //now points to correct part of the correct C_FLTCONi
+      //write to appropriate filter control register
       *pFLTCON = 0x80 | (selectMask << 5); //enable filter and write filter mask select bit
    }
 
@@ -417,7 +418,7 @@ void CO_CANclearPendingSyncPDOs(CO_CANmodule_t *CANmodule){
    if(CANmodule->bufferInhibitFlag){
       *TX_FIFOconClr = 0x0008;   //clear TXREQ
       ENABLE_INTERRUPTS();
-      CO_errorReport((CO_emergencyReport_t*)CANmodule->EM, ERROR_TPDO_OUTSIDE_WINDOW, 0);
+      CO_errorReport((CO_emergencyReport_t*)CANmodule->EM, ERROR_TPDO_OUTSIDE_WINDOW, 1);
    }
    else{
       ENABLE_INTERRUPTS();
@@ -535,6 +536,8 @@ void CO_CANinterrupt(CO_CANmodule_t *CANmodule){
    else if(ICODE == 1){
       //First CAN message (bootup) was sent successfully
       CANmodule->firstCANtxMessage = 0;
+      //clear flag from previous message
+      CANmodule->bufferInhibitFlag = 0;
       //Are there any new messages waiting to be send and buffer is free
       if(CANmodule->CANtxCount > 0){
          UNSIGNED16 index;          //index of transmitting message
@@ -547,10 +550,9 @@ void CO_CANinterrupt(CO_CANmodule_t *CANmodule){
             //if message buffer is full, send it.
             if(buffer->bufferFull){
                //messages with syncFlag set (synchronous PDOs) must be transmited inside preset time window
-               CANmodule->bufferInhibitFlag = 0;
                if(CANmodule->curentSyncTimeIsInsideWindow && buffer->syncFlag){
                   if(!(*CANmodule->curentSyncTimeIsInsideWindow)){
-                     CO_errorReport((CO_emergencyReport_t*)CANmodule->EM, ERROR_TPDO_OUTSIDE_WINDOW, 0);
+                     CO_errorReport((CO_emergencyReport_t*)CANmodule->EM, ERROR_TPDO_OUTSIDE_WINDOW, 2);
                      //release buffer
                      buffer->bufferFull = 0;
                      //exit for loop
@@ -585,38 +587,4 @@ void CO_CANinterrupt(CO_CANmodule_t *CANmodule){
       //Clear interrupt flag
       //(not needed)
    }
-}
-
-
-/******************************************************************************/
-UNSIGNED32 CO_ODF(   void       *object,
-                     UNSIGNED16  index,
-                     UNSIGNED8   subIndex,
-                     UNSIGNED8   length,
-                     UNSIGNED16  attribute,
-                     UNSIGNED8   dir,
-                     void       *dataBuff,
-                     const void *pData)
-{
-   #define CO_ODA_MEM_ROM          0x01   //same attribute is in CO_SDO.h file
-   #define CO_ODA_MEM_RAM          0x02   //same attribute is in CO_SDO.h file
-   #define CO_ODA_MEM_EEPROM       0x03   //same attribute is in CO_SDO.h file
-   #define CO_ODA_MB_VALUE         0x80   //same attribute is in CO_SDO.h file
-   #ifdef __BIG_ENDIAN__
-      #error Function does not work with BIG ENDIAN
-   #endif
-
-   if(dir==0){ //Reading Object Dictionary variable
-      DISABLE_INTERRUPTS();
-      memcpy(dataBuff, pData, length);
-      ENABLE_INTERRUPTS();
-   }
-
-   else{ //Writing Object Dictionary variable
-      DISABLE_INTERRUPTS();
-      memcpy((void*)pData, dataBuff, length);
-      ENABLE_INTERRUPTS();
-   }
-
-   return 0L;
 }

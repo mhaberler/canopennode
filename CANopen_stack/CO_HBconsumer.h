@@ -86,6 +86,8 @@ typedef struct{
       numberOfMonitoredNodes        - Number of monitored nodes.
       allMonitoredOperational       - True, if all monitored nodes are NMT
                                       operational or no node is monitored.
+      CANdevRx                      - CAN device for HB_cons reception <CO_CANmodule_t>.
+      CANdevRxIdxStart              - Index of receive buffer for HB_cons reception.
 *******************************************************************************/
 typedef struct{
    CO_emergencyReport_t   *EM;
@@ -93,6 +95,8 @@ typedef struct{
    CO_HBconsNode_t        *monitoredNodes;
    UNSIGNED8               numberOfMonitoredNodes;
    UNSIGNED8               allMonitoredOperational;
+   CO_CANmodule_t         *CANdevRx;
+   UNSIGNED16              CANdevRxIdxStart;
 }CO_HBconsumer_t;
 
 
@@ -118,7 +122,7 @@ INTEGER16 CO_HBcons_receive(void *object, CO_CANrxMsg_t *msg);
 UNSIGNED32 CO_ODF_1016( void       *object,
                         UNSIGNED16  index,
                         UNSIGNED8   subIndex,
-                        UNSIGNED8   length,
+                        UNSIGNED16 *pLength,
                         UNSIGNED16  attribute,
                         UNSIGNED8   dir,
                         void       *dataBuff,

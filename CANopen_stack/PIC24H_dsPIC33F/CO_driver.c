@@ -656,6 +656,8 @@ void CO_CANinterrupt(CO_CANmodule_t *CANmodule){
       CAN_REG(CANmodule->CANbaseAddress, C_INTF) &= 0xFFFE;
       //First CAN message (bootup) was sent successfully
       CANmodule->firstCANtxMessage = 0;
+      //clear flag from previous message
+      CANmodule->bufferInhibitFlag = 0;
       //Are there any new messages waiting to be send and buffer is free
       if(CANmodule->CANtxCount > 0){
          UNSIGNED16 index;          //index of transmitting message
@@ -667,7 +669,6 @@ void CO_CANinterrupt(CO_CANmodule_t *CANmodule){
             //if message buffer is full, send it.
             if(buffer->bufferFull){
                //messages with syncFlag set (synchronous PDOs) must be transmited inside preset time window
-               CANmodule->bufferInhibitFlag = 0;
                if(CANmodule->curentSyncTimeIsInsideWindow && buffer->syncFlag){
                   if(!(*CANmodule->curentSyncTimeIsInsideWindow)){
                      CO_errorReport((CO_emergencyReport_t*)CANmodule->EM, ERROR_TPDO_OUTSIDE_WINDOW, 0);
@@ -690,38 +691,4 @@ void CO_CANinterrupt(CO_CANmodule_t *CANmodule){
          }//end of for loop
       }
    }
-}
-
-
-/******************************************************************************/
-UNSIGNED32 CO_ODF(   void       *object,
-                     UNSIGNED16  index,
-                     UNSIGNED8   subIndex,
-                     UNSIGNED8   length,
-                     UNSIGNED16  attribute,
-                     UNSIGNED8   dir,
-                     void       *dataBuff,
-                     const void *pData)
-{
-   #define CO_ODA_MEM_ROM          0x01   //same attribute is in CO_SDO.h file
-   #define CO_ODA_MEM_RAM          0x02   //same attribute is in CO_SDO.h file
-   #define CO_ODA_MEM_EEPROM       0x03   //same attribute is in CO_SDO.h file
-   #define CO_ODA_MB_VALUE         0x80   //same attribute is in CO_SDO.h file
-   #ifdef __BIG_ENDIAN__
-      #error Function does not work with BIG ENDIAN
-   #endif
-
-   if(dir==0){ //Reading Object Dictionary variable
-      DISABLE_INTERRUPTS();
-      memcpy(dataBuff, pData, length);
-      ENABLE_INTERRUPTS();
-   }
-
-   else{ //Writing Object Dictionary variable
-      DISABLE_INTERRUPTS();
-      memcpy((void*)pData, dataBuff, length);
-      ENABLE_INTERRUPTS();
-   }
-
-   return 0L;
 }

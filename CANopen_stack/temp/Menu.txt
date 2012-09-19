@@ -47,6 +47,8 @@ Format: 1.4
 
 
 File: CANopenNode  (Readme.txt)
+File: application.h  (application.h)
+File: CANopen.h  (CANopen.h)
 File: CO_Emergency.h  (CO_Emergency.h)
 File: CO_HBconsumer.h  (CO_HBconsumer.h)
 File: CO_NMT_Heartbeat.h  (CO_NMT_Heartbeat.h)
@@ -54,19 +56,6 @@ File: CO_PDO.h  (CO_PDO.h)
 File: CO_SDO.h  (CO_SDO.h)
 File: CO_SDOmaster.h  (CO_SDOmaster.h)
 File: CO_SYNC.h  (CO_SYNC.h)
-
-Group: dsPIC30F  {
-
-   File: CO_driver.h  (dsPIC30F\CO_driver.h)
-   File: eeprom.h  (dsPIC30F\eeprom.h)
-   File: memcpyram2flash.h  (dsPIC30F\memcpyram2flash.h)
-   }  # Group: dsPIC30F
-
-Group: PIC24H_dsPIC33F  {
-
-   File: CO_driver.h  (PIC24H_dsPIC33F\CO_driver.h)
-   File: eeprom.h  (PIC24H_dsPIC33F\eeprom.h)
-   }  # Group: PIC24H_dsPIC33F
 
 Group: PIC32  {
 
@@ -78,15 +67,27 @@ Group: BECK_SC2x3  {
 
    File: CO_driver.h  (BECK_SC2x3\CO_driver.h)
    File: eeprom.h  (BECK_SC2x3\eeprom.h)
+   File: CgiLog.h  (BECK_SC2x3\CgiLog.h)
+   File: CgiOD.h  (BECK_SC2x3\CgiOD.h)
+   File: CgiSend.h  (BECK_SC2x3\CgiSend.h)
    }  # Group: BECK_SC2x3
+
+Group: PIC24H_dsPIC33F  {
+
+   File: CO_driver.h  (PIC24H_dsPIC33F\CO_driver.h)
+   File: eeprom.h  (PIC24H_dsPIC33F\eeprom.h)
+   }  # Group: PIC24H_dsPIC33F
+
+Group: dsPIC30F  {
+
+   File: CO_driver.h  (dsPIC30F\CO_driver.h)
+   File: eeprom.h  (dsPIC30F\eeprom.h)
+   File: memcpyram2flash.h  (dsPIC30F\memcpyram2flash.h)
+   }  # Group: dsPIC30F
 
 Group: Index  {
 
    Index: Everything
-   Constant Index: Constants
    File Index: Files
-   Function Index: Functions
-   Macro Index: Macros
-   Variable Index: Variables
    }  # Group: Index
 

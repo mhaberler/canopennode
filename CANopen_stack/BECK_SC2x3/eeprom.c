@@ -30,6 +30,7 @@
 
 
 #include "eeprom.h"
+#include "CO_SDO.h" // for CO_ODF
 
 #include <string.h> // for memcpy
 #include <stdlib.h> // for malloc, free
@@ -38,7 +39,7 @@
 UNSIGNED32 CO_ODF_1010( void       *object,
                         UNSIGNED16  index,
                         UNSIGNED8   subIndex,
-                        UNSIGNED8   length,
+                        UNSIGNED16 *pLength,
                         UNSIGNED16  attribute,
                         UNSIGNED8   dir,
                         void       *dataBuff,
@@ -53,10 +54,10 @@ UNSIGNED32 CO_ODF_1010( void       *object,
          if(val == 0x65766173){
             //store parameters
             //rename current file to .old
-            remove("OD_ROM01.old");
-            rename("OD_ROM01.dat", "OD_ROM01.old");
+            remove(EE_ROM_FILE_PATH "OD_ROM01.old");
+            rename(EE_ROM_FILE_PATH "OD_ROM01.dat", "OD_ROM01.old");
             //open a file
-            FILE *fp = fopen("OD_ROM01.dat", "wb");
+            FILE *fp = fopen(EE_ROM_FILE_PATH "OD_ROM01.dat", "wb");
             if(!fp) return 0x06060000;   //Access failed due to an hardware error.
 
             //write data to the file
@@ -68,7 +69,7 @@ UNSIGNED32 CO_ODF_1010( void       *object,
             //verify data
             void *buf = malloc(EE->OD_ROMSize + 4);
             if(buf){
-               fp = fopen("OD_ROM01.dat", "rb");
+               fp = fopen(EE_ROM_FILE_PATH "OD_ROM01.dat", "rb");
                UNSIGNED32 cnt = 0;
                UNSIGNED16 CRC2 = 0;
                if(fp){
@@ -91,7 +92,7 @@ UNSIGNED32 CO_ODF_1010( void       *object,
       }
    }
 
-   return CO_ODF(object, index, subIndex, length, attribute, dir, dataBuff, pData);
+   return CO_ODF(object, index, subIndex, pLength, attribute, dir, dataBuff, pData);
 }
 
 
@@ -99,7 +100,7 @@ UNSIGNED32 CO_ODF_1010( void       *object,
 UNSIGNED32 CO_ODF_1011( void       *object,
                         UNSIGNED16  index,
                         UNSIGNED8   subIndex,
-                        UNSIGNED8   length,
+                        UNSIGNED16 *pLength,
                         UNSIGNED16  attribute,
                         UNSIGNED8   dir,
                         void       *dataBuff,
@@ -112,8 +113,8 @@ UNSIGNED32 CO_ODF_1011( void       *object,
          if(val == 0x64616F6C){
             //restore default parameters
             //rename current file to .old, so it no longer exist
-            remove("OD_ROM01.old");
-            rename("OD_ROM01.dat", "OD_ROM01.old");
+            remove(EE_ROM_FILE_PATH "OD_ROM01.old");
+            rename(EE_ROM_FILE_PATH "OD_ROM01.dat", "OD_ROM01.old");
             return 0;
          }
          else
@@ -121,7 +122,7 @@ UNSIGNED32 CO_ODF_1011( void       *object,
       }
    }
 
-   return CO_ODF(object, index, subIndex, length, attribute, dir, dataBuff, pData);
+   return CO_ODF(object, index, subIndex, pLength, attribute, dir, dataBuff, pData);
 }
 
 
@@ -148,6 +149,7 @@ INTEGER16 EE_init_1(
    EE->OD_ROMAddress = OD_ROMAddress;
    EE->OD_ROMSize = OD_ROMSize;
    EE->OD_EEPROMCurrentIndex = 0;
+   EE->OD_EEPROMWriteEnable = 0;
 
    //read the CO_OD_EEPROM from SRAM, first verify, if data are OK
    if(EE->pSRAM == 0) return CO_ERROR_OUT_OF_MEMORY;
@@ -159,12 +161,13 @@ INTEGER16 EE_init_1(
       for(i=0; i<EE->OD_EEPROMSize; i++)
          (EE->OD_EEPROMAddress)[i] = (EE->pSRAM)[i];
    }
+   EE->OD_EEPROMWriteEnable = 1;
 
    //read the CO_OD_ROM from file and verify CRC
    void *buf = malloc(EE->OD_ROMSize);
    if(buf){
       INTEGER16 ret = CO_ERROR_NO;
-      FILE *fp = fopen("OD_ROM01.dat", "rb");
+      FILE *fp = fopen(EE_ROM_FILE_PATH "OD_ROM01.dat", "rb");
       UNSIGNED32 cnt = 0;
       UNSIGNED16 CRC[2];
       if(fp){
@@ -205,13 +208,15 @@ void EE_delete(EE_t **ppEE){
 
 /******************************************************************************/
 void EE_process(EE_t *EE){
-   //verify next word
-   unsigned int i = EE->OD_EEPROMCurrentIndex;
-   if(++i == EE->OD_EEPROMSize) i = 0;
-   EE->OD_EEPROMCurrentIndex = i;
+   if(EE && EE->OD_EEPROMWriteEnable){
+      //verify next word
+      unsigned int i = EE->OD_EEPROMCurrentIndex;
+      if(++i == EE->OD_EEPROMSize) i = 0;
+      EE->OD_EEPROMCurrentIndex = i;
 
-   //update SRAM
-   (EE->pSRAM)[i] = (EE->OD_EEPROMAddress)[i];
+      //update SRAM
+      (EE->pSRAM)[i] = (EE->OD_EEPROMAddress)[i];
+  }
 }
 
 

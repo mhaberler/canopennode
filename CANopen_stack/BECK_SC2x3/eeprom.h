@@ -53,6 +53,16 @@
 
 
 /*******************************************************************************
+   Constant: EE_ROM_FILE_PATH
+
+   Location of the OD_ROM01.dat file, used for storing OD_ROM variables.
+*******************************************************************************/
+#ifndef EE_ROM_FILE_PATH
+   #define EE_ROM_FILE_PATH "A:\\"
+#endif
+
+
+/*******************************************************************************
    Object: EE_t
 
    Variables for eeprom object.
@@ -64,6 +74,7 @@
       OD_ROMSize              - See parameters in <EE_init_1>.
       pSRAM                   - Pointer to start address of the battery powered SRAM
       OD_EEPROMCurrentIndex   - Internal variable controls the OD_EEPROM vrite.
+      OD_EEPROMWriteEnable    - Writing to EEPROM is enabled.
 *******************************************************************************/
 typedef struct{
    UNSIGNED32    *OD_EEPROMAddress;
@@ -72,6 +83,7 @@ typedef struct{
    UNSIGNED32     OD_ROMSize;
    UNSIGNED32    *pSRAM;
    UNSIGNED32     OD_EEPROMCurrentIndex;
+   UNSIGNED8      OD_EEPROMWriteEnable;
 }EE_t;
 
 

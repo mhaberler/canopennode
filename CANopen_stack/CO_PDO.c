@@ -146,6 +146,7 @@ UNSIGNED32 CO_PDOfindMap(  CO_SDO_t      *SDO,
    UNSIGNED16 index;
    UNSIGNED8 subIndex;
    UNSIGNED8 dataLen;
+   UNSIGNED8 objectLen;
    const sCO_OD_object* pODE;
    UNSIGNED8 attr;
 
@@ -163,12 +164,13 @@ UNSIGNED32 CO_PDOfindMap(  CO_SDO_t      *SDO,
    if(*pLength > 8) return 0x06040042L;  //The number and length of the objects to be mapped would exceed PDO length.
 
    //is there a reference to dummy entries
-   if(index >= 2 && index <=7 && subIndex == 0){
+   if(index <=7 && subIndex == 0){
       static UNSIGNED32 dummyTX = 0;
       static UNSIGNED32 dummyRX;
       UNSIGNED8 dummySize = 4;
 
-      if(index==2 || index==5) dummySize = 1;
+      if(index<2) dummySize = 0;
+      else if(index==2 || index==5) dummySize = 1;
       else if(index==3 || index==6) dummySize = 2;
 
       //is size of variable big enough for map
@@ -194,10 +196,20 @@ UNSIGNED32 CO_PDOfindMap(  CO_SDO_t      *SDO,
    if(R_T!=0 && !(attr&CO_ODA_TPDO_MAPABLE && attr&CO_ODA_READABLE)) return 0x06040041L;   //Object cannot be mapped to the PDO.
 
    //is size of variable big enough for map
-   if(CO_OD_getLength(pODE, subIndex) < dataLen) return 0x06040041L;   //Object cannot be mapped to the PDO.
+   objectLen = CO_OD_getLength(pODE, subIndex);
+   if(objectLen < dataLen) return 0x06040041L;   //Object cannot be mapped to the PDO.
+
+   //mark multibyte variable
+   *pIsMultibyteVar = (attr&CO_ODA_MB_VALUE) ? 1 : 0;
 
    //pointer to data
    *ppData = (UNSIGNED8*) CO_OD_getDataPointer(pODE, subIndex);
+#ifdef BIG_ENDIAN
+   //skip unused MSB bytes
+   if(*pIsMultibyteVar){
+      *ppData += objectLen - dataLen;
+   }
+#endif
 
    //setup change of state flags
    if(attr&CO_ODA_TPDO_DETECT_COS){
@@ -206,9 +218,6 @@ UNSIGNED32 CO_PDOfindMap(  CO_SDO_t      *SDO,
          *pSendIfCOSFlags |= 1<<i;
       }
    }
-
-   //mark multibyte variable
-   *pIsMultibyteVar = (attr&CO_ODA_MB_VALUE) ? 1 : 0;
 
    return 0;
 }
@@ -224,7 +233,7 @@ UNSIGNED8 CO_RPDOconfigMap(   CO_RPDO_t* RPDO,
    const UNSIGNED32* pMap = &ObjDict_RPDOMappingParameter->mappedObject1;
 
    for(i=ObjDict_RPDOMappingParameter->numberOfMappedObjects; i>0; i--){
-      INTEGER8 j;
+      UNSIGNED8 j;
       UNSIGNED8* pData;
       UNSIGNED8 dummy = 0;
       UNSIGNED8 prevLength = length;
@@ -280,7 +289,7 @@ UNSIGNED8 CO_TPDOconfigMap(   CO_TPDO_t* TPDO,
    TPDO->sendIfCOSFlags = 0;
 
    for(i=ObjDict_TPDOMappingParameter->numberOfMappedObjects; i>0; i--){
-      INTEGER8 j;
+      UNSIGNED8 j;
       UNSIGNED8* pData;
       UNSIGNED8 prevLength = length;
       UNSIGNED8 MBvar;
@@ -327,7 +336,7 @@ UNSIGNED8 CO_TPDOconfigMap(   CO_TPDO_t* TPDO,
 UNSIGNED32 CO_ODF_RPDOcom( void       *object,
                            UNSIGNED16  index,
                            UNSIGNED8   subIndex,
-                           UNSIGNED8   length,
+                           UNSIGNED16 *pLength,
                            UNSIGNED16  attribute,
                            UNSIGNED8   dir,
                            void       *dataBuff,
@@ -340,7 +349,7 @@ UNSIGNED32 CO_ODF_RPDOcom( void       *object,
 
    //Reading Object Dictionary variable
    if(dir == 0){
-      abortCode = CO_ODF(object, index, subIndex, length, attribute, dir, dataBuff, pData);
+      abortCode = CO_ODF(object, index, subIndex, pLength, attribute, dir, dataBuff, pData);
       if(abortCode==0 && subIndex==1){
          //value in dataBuff is little endian as CANopen, so invert it back
          memcpySwap4((UNSIGNED8*)&dataBuffCopy, (UNSIGNED8*)dataBuff);
@@ -391,7 +400,7 @@ UNSIGNED32 CO_ODF_RPDOcom( void       *object,
       break;
    }
 
-   abortCode = CO_ODF(object, index, subIndex, length, attribute, dir, dataBuff, pData);
+   abortCode = CO_ODF(object, index, subIndex, pLength, attribute, dir, dataBuff, pData);
 
    //Configure RPDO
    if(abortCode == 0 && subIndex == 1)
@@ -405,7 +414,7 @@ UNSIGNED32 CO_ODF_RPDOcom( void       *object,
 UNSIGNED32 CO_ODF_TPDOcom( void       *object,
                            UNSIGNED16  index,
                            UNSIGNED8   subIndex,
-                           UNSIGNED8   length,
+                           UNSIGNED16 *pLength,
                            UNSIGNED16  attribute,
                            UNSIGNED8   dir,
                            void       *dataBuff,
@@ -420,7 +429,7 @@ UNSIGNED32 CO_ODF_TPDOcom( void       *object,
 
    //Reading Object Dictionary variable
    if(dir == 0){
-      abortCode = CO_ODF(object, index, subIndex, length, attribute, dir, dataBuff, pData);
+      abortCode = CO_ODF(object, index, subIndex, pLength, attribute, dir, dataBuff, pData);
       if(abortCode==0){
          switch(subIndex){
           case 1: //COB_ID
@@ -495,7 +504,7 @@ UNSIGNED32 CO_ODF_TPDOcom( void       *object,
       break;
    }
 
-   abortCode = CO_ODF(object, index, subIndex, length, attribute, dir, dataBuff, pData);
+   abortCode = CO_ODF(object, index, subIndex, pLength, attribute, dir, dataBuff, pData);
 
    //Configure TPDO
    if(abortCode == 0){
@@ -527,7 +536,7 @@ UNSIGNED32 CO_ODF_TPDOcom( void       *object,
 UNSIGNED32 CO_ODF_RPDOmap( void       *object,
                            UNSIGNED16  index,
                            UNSIGNED8   subIndex,
-                           UNSIGNED8   length,
+                           UNSIGNED16 *pLength,
                            UNSIGNED16  attribute,
                            UNSIGNED8   dir,
                            void       *dataBuff,
@@ -541,7 +550,7 @@ UNSIGNED32 CO_ODF_RPDOmap( void       *object,
 
    //Reading Object Dictionary variable
    if(dir == 0){
-      abortCode = CO_ODF(object, index, subIndex, length, attribute, dir, dataBuff, pData);
+      abortCode = CO_ODF(object, index, subIndex, pLength, attribute, dir, dataBuff, pData);
       if(abortCode==0 && subIndex==0){
          //If there is error in mapping, dataLength is 0, so numberOfMappedObjects is 0.
          if(!RPDO->dataLength) *((UNSIGNED8*)dataBuff) = 0;
@@ -586,7 +595,7 @@ UNSIGNED32 CO_ODF_RPDOmap( void       *object,
       if(ret) return ret;
    }
 
-   abortCode = CO_ODF(object, index, subIndex, length, attribute, dir, dataBuff, pData);
+   abortCode = CO_ODF(object, index, subIndex, pLength, attribute, dir, dataBuff, pData);
 
    //Configure mapping if subindex 0 was changed
    if(abortCode)
@@ -602,7 +611,7 @@ UNSIGNED32 CO_ODF_RPDOmap( void       *object,
 UNSIGNED32 CO_ODF_TPDOmap( void       *object,
                            UNSIGNED16  index,
                            UNSIGNED8   subIndex,
-                           UNSIGNED8   length,
+                           UNSIGNED16 *pLength,
                            UNSIGNED16  attribute,
                            UNSIGNED8   dir,
                            void       *dataBuff,
@@ -616,7 +625,7 @@ UNSIGNED32 CO_ODF_TPDOmap( void       *object,
 
    //Reading Object Dictionary variable
    if(dir == 0){
-      abortCode = CO_ODF(object, index, subIndex, length, attribute, dir, dataBuff, pData);
+      abortCode = CO_ODF(object, index, subIndex, pLength, attribute, dir, dataBuff, pData);
       if(abortCode==0 && subIndex==0){
          //If there is error in mapping, dataLength is 0, so numberOfMappedObjects is 0.
          if(!TPDO->dataLength) *((UNSIGNED8*)dataBuff) = 0;
@@ -661,7 +670,7 @@ UNSIGNED32 CO_ODF_TPDOmap( void       *object,
       if(ret) return ret;
    }
 
-   abortCode = CO_ODF(object, index, subIndex, length, attribute, dir, dataBuff, pData);
+   abortCode = CO_ODF(object, index, subIndex, pLength, attribute, dir, dataBuff, pData);
 
    //Configure mapping if subindex 0 was changed
    if(abortCode)
@@ -774,7 +783,7 @@ const OD_TPDOMappingParameter_t       *ObjDict_TPDOMappingParameter,
    TPDO->inhibitTimer = 0;
    TPDO->eventTimer = ObjDict_TPDOCommunicationParameter->eventTimer;
    TPDO->SYNCtimerPrevious = 0;
-   TPDO->sendRequest = 1;
+   if(ObjDict_TPDOCommunicationParameter->transmissionType>=254) TPDO->sendRequest = 1;
 
    CO_TPDOconfigMap(TPDO, ObjDict_TPDOMappingParameter);
    CO_TPDOconfigCom(TPDO, ObjDict_TPDOCommunicationParameter->COB_IDUsedByTPDO, ((ObjDict_TPDOCommunicationParameter->transmissionType<=240) ? 1 : 0));
@@ -865,7 +874,7 @@ void CO_TPDO_process(   CO_TPDO_t     *TPDO,
                         UNSIGNED16     timeDifference_100us,
                         UNSIGNED16     timeDifference_ms)
 {
-   UNSIGNED16 i;
+   INTEGER32 i;
 
    if(TPDO->valid && *TPDO->operatingState == CO_NMT_OPERATIONAL){
 
@@ -914,18 +923,19 @@ void CO_TPDO_process(   CO_TPDO_t     *TPDO,
       }
 
    }
+   else{
+      //Not operational or valid. Force TPDO first send after operational or valid.
+      TPDO->sendRequest = 1;
+   }
 
    //update timers
    i = TPDO->inhibitTimer;
-   if(i != 0){
-      TPDO->inhibitTimer = i - timeDifference_100us;
-      if(TPDO->inhibitTimer > i) TPDO->inhibitTimer = 0; //in case of overflow
-   }
+   i -= timeDifference_100us;
+   TPDO->inhibitTimer = (i<=0) ? 0 : (UNSIGNED16)i;
+
    i = TPDO->eventTimer;
-   if(i != 0){
-      TPDO->eventTimer = i - timeDifference_ms;
-      if(TPDO->eventTimer > i) TPDO->eventTimer = 0; //in case of overflow
-   }
+   i -= timeDifference_ms;
+   TPDO->eventTimer = (i<=0) ? 0 : (UNSIGNED16)i;
 
    TPDO->SYNCtimerPrevious = SYNC->timer;
 }

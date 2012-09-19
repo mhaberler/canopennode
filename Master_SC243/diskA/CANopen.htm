@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<!-- ***************************************************************************
+   CANopen Graphical User interface
+   Copyright (C) 2012 Janez Paternoster
+
+   This Source Code Form is subject to the terms of the Mozilla Public
+   License, v. 2.0. If a copy of the MPL was not distributed with this file,
+   You can obtain one at http://mozilla.org/MPL/2.0/.
+**************************************************************************** -->
+<html><head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>CANopen</title>
+<style type="text/css">
+body{
+   background-color: rgb(165, 186, 221);
+}
+body > div{
+   float: left;
+   width: 350px;
+   padding: 5px;
+}
+#EMCYlogDiv{
+   width: 380px;
+}
+footer{
+   display: block;
+   clear: left;
+}
+fieldset{
+   position: relative;
+}
+input[type="text"]{
+   position: absolute;
+   left: 180px;
+   width: 140px;
+}
+textarea{
+   width: 97%;
+   height: 411px;
+   font-size: 12px;
+   resize: vertical;
+}
+.oneBut > input[type="button"]{
+   width: 100%;
+}
+.twoBut > input[type="button"]{
+   width: 47.7%;
+}
+.threeBut > input[type="button"]{
+   width: 30.3%;
+}
+#SDOData{
+   height: 16px;
+}
+
+</style>
+<script type="text/javascript" src="CANopen.js"></script>
+<script type="text/javascript">
+   //<![CDATA[
+   "use strict";
+
+   var CO = new CANopen();
+
+   function SDORead(){
+      var statusLine = document.getElementById("SDOStatus").firstChild;
+      statusLine.nodeValue = "Read requested ...";
+      CO.SDORead(document.getElementById("SDOAddr").value, function(response){
+         if(response.search("OK")>0){
+            document.getElementById("SDOData").value = response.slice(19);
+            statusLine.nodeValue = response.slice(0, 17);
+         }
+         else{
+            statusLine.nodeValue = response;
+         }
+      });
+   }
+
+   function SDOWrite(){
+      var statusLine = document.getElementById("SDOStatus").firstChild;
+      statusLine.nodeValue = "Write requested ...";
+      CO.SDOWrite(document.getElementById("SDOAddr").value, document.getElementById("SDOData").value, function(response){
+         if(response.search("OK")>0){
+            statusLine.nodeValue = response.slice(0, 17);
+         }
+         else{
+            statusLine.nodeValue = response;
+         }
+      });
+   }
+
+   var canLog = new CANLog(
+      1000,                            //textBufSize
+      0,                               //funcProcessMsg
+      function (date, buf){            //funcBoundary
+         if(date){
+            buf.push(date.toLocaleString());
+         }
+         else{
+            var ta = document.getElementById("CANlog");
+            ta.value = buf.join("\n");
+            ta.scrollTop = ta.scrollHeight;
+         }
+      },
+      500,                             //interval in ms
+      0                                //filename
+   );
+
+   function LOGStart(button){
+      switch(button.value){
+         case "Start log":
+            canLog.clearBufferOnServer();
+            canLog.start();
+            button.value = "Stop";
+            break;
+         case "Stop":
+            canLog.stop();
+            button.value = "Continue";
+            break;
+         case "Continue":
+            canLog.start();
+            button.value = "Stop";
+            break;
+      }
+   }
+
+   function LOGFile(){
+      //dir the files in the new window
+      var win = window.open("ftp://" + location.hostname + "/A%3A/dump/", "dumpDirWin");
+
+      var filename = prompt("Enter filename on the server!", "CANlog");
+      if(filename){
+         if(filename != "CANlog") filename = "dump/" + filename;
+         var but = document.getElementById("LOGStartButton");
+         if(but.value == "Stop"){
+            canLog.stop();
+            but.value = "Continue";
+         }
+         var log = new CANLog(
+            100000,                          //textBufSize
+            0,                               //funcProcessMsg
+            function (date, buf){            //funcBoundary
+               if(date){
+                  buf.push(date.toLocaleString());
+               }
+               else{
+                  var ta = document.getElementById("CANlog");
+                  ta.value = buf.join("\n");
+                  ta.scrollTop = ta.scrollHeight;
+               }
+            },
+            0,                               //interval in ms
+            filename                         //filename
+         );
+      }
+   }
+
+   function emcy(filename){
+      CO.readFile(filename, function(response){
+         document.getElementById("EMCYlog").value = response;
+      });
+   }
+   //]]>
+</script>
+</head>
+
+<body>
+   <h3>CANopen configuration interface.</h3>
+   <div>
+      <fieldset class="oneBut"><legend>Send CAN message</legend>
+         CAN ID (000 .. 7FF):<input type="text" id="sendID" value="230"/><br/>
+         data (12 1A 05 00 ...):<input type="text" id="sendData" value="55 33"/><br/><br/>
+         <input type="button" value="Send message" onclick="CO.sendCAN(document.getElementById('sendID').value, document.getElementById('sendData').value);"/>
+      </fieldset>
+      <br/>
+      <fieldset class="twoBut"><legend>NMT master</legend>
+         Node ID (0 for all nodes): <input type="text" id="NMTnodeId" value="0x30"/><br/><br/>
+         <input type="button" value="Enter operational"     onclick="CO.sendNMT(document.getElementById('NMTnodeId').value, '01');"/> &nbsp;
+         <input type="button" value="Reset communication"   onclick="CO.sendNMT(document.getElementById('NMTnodeId').value, '82');"/>
+         <input type="button" value="Enter pre-operational" onclick="CO.sendNMT(document.getElementById('NMTnodeId').value, '80');"/> &nbsp;
+         <input type="button" value="Reset node"            onclick="CO.sendNMT(document.getElementById('NMTnodeId').value, '81');"/>
+         <input type="button" value="Enter stopped"         onclick="CO.sendNMT(document.getElementById('NMTnodeId').value, '02');"/> &nbsp;
+      </fieldset>
+      <br/>
+      <fieldset class="threeBut"><legend>SDO master</legend>
+         SDO addr <span style="font-size: 12px;">(NN IIII SS LLLL)</span>:<input type="text" id="SDOAddr" value="30 1017 00 0002"/><br/>
+         Data (12 05 ...):
+         <textarea id="SDOData">E8 03</textarea>
+         <div id="SDOStatus">SDO status Line.</div><br/>
+         <input type="button" value="Read" onclick="SDORead();"/> &nbsp;
+         <input type="button" value="Write" onclick="SDOWrite();"/> &nbsp;
+         <input type="button" value="Info" onclick="alert('SDO address: 12 or 8 hex characters - NN = NodeId, IIII = Index, SS = Subindex, LLLL = length. Length is required only by write and must match length in data field. Valid length is 0001 to 0379. Whitespaces are ignored.\n\nData: Two hex characters for one byte. CANopen is Little Endian. Whitespaces are ignored.\n\nIn status line is indicated OK in case of successful read or write, otherwise AB with SDO abort code.');"/>
+      </fieldset>
+   </div>
+   <div>
+      <fieldset class="threeBut"><legend>CAN log</legend>
+         <input type="button" value="Start log" onclick="LOGStart(this);" id="LOGStartButton"/> &nbsp;
+         <input type="button" value="Dump" onclick="canLog.dumpBufferOnServer();"/> &nbsp;
+         <input type="button" value="Load file ..." onclick="LOGFile();"/>
+         <textarea id="CANlog">-</textarea>
+      </fieldset>
+   </div>
+   <div id="EMCYlogDiv">
+      <fieldset class="threeBut"><legend>Emergency log</legend>
+         <input type="button" value="Read last" onclick="emcy('emcy');"/> &nbsp;
+         <input type="button" value="Flush" onclick="emcy('emcy?flush');"/> &nbsp;
+         <input type="button" value="Read Log" onclick="emcy('emcy.log');"/>
+         <textarea id="EMCYlog">-</textarea>
+      </fieldset>
+   </div>
+   <footer>
+      <em><a href="http://canopennode.sourceforge.net/">CANopenNode</a></em>
+   </footer>
+</body>
+</html>
