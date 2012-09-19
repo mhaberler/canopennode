@@ -104,7 +104,7 @@ Topic: Receive and transmit high priority interrupt flow chart.
 >  (copy next message to CAN transmit buffer)
 
 *******************************************************************************/
-zvoid programStart(void);
+void programStart(void);
 void communicationReset(void);
 void programEnd(void);
 void programAsync(unsigned int timer1msDiff); //time difference since last call
