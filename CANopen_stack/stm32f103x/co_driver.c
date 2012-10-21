@@ -1,0 +1,655 @@
+/*******************************************************************************
+
+   File: CO_driver.c
+   CAN module object for STM32F103
+   
+   Copyright (C) 2004-2010 	Janez Paternoster
+   Copyright (C) 2012 Ondrej Netik
+
+   License: GNU Lesser General Public License (LGPL).
+
+   <http://canopennode.sourceforge.net>
+*/
+/*
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Lesser General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU Lesser General Public License for more details.
+
+   You should have received a copy of the GNU Lesser General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+   Author of CanOpenNode: 	Janez Paternoster
+   Author of stm32f103x driver: Ondrej Netik
+
+*******************************************************************************/
+
+
+#include <string.h>     // for memcpy
+#include <stdlib.h>     // for malloc, free
+#include <stm32f10x_conf.h>
+#include "CO_driver.h"
+#include "CO_Emergency.h"
+
+
+void InitCanLeds() {
+    GPIO_InitTypeDef GPIO_InitStructure;
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIO_LED, ENABLE);
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_Led_GREEN | GPIO_Pin_Led_RED;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+    GPIO_Init(GPIO_LEDS, &GPIO_InitStructure);
+    CanLedsOff(eCoLed_Green | eCoLed_Red);
+}
+
+void CanLedsSet(eCoLeds led) {
+    if (led & eCoLed_Green)
+        CanLedsOn(eCoLed_Green);
+    else
+        CanLedsOff(eCoLed_Green);
+
+    if (led & eCoLed_Red)
+        CanLedsOn(eCoLed_Red);
+    else
+        CanLedsOff(eCoLed_Red);
+
+
+}
+
+void CanLedsOn(eCoLeds led) {
+    if (led & eCoLed_Green) {
+#ifdef LED_POSITIVE
+        GPIO_SetBits(GPIO_LEDS, GPIO_Pin_Led_GREEN);
+#else
+        GPIO_ResetBits(GPIO_LEDS, GPIO_Pin_Led_GREEN);
+#endif
+    }
+    if (led & eCoLed_Red) {
+#ifdef LED_POSITIVE
+        GPIO_SetBits(GPIO_LEDS, GPIO_Pin_Led_RED);
+#else
+        GPIO_ResetBits(GPIO_LEDS, GPIO_Pin_Led_RED);
+#endif
+    }
+}
+
+void CanLedsOff(eCoLeds led) {
+    if (led & eCoLed_Green) {
+#ifdef LED_POSITIVE
+        GPIO_ResetBits(GPIO_LEDS, GPIO_Pin_Led_GREEN);
+#else
+        GPIO_SetBits(GPIO_LEDS, GPIO_Pin_Led_GREEN);
+#endif
+    }
+    if (led & eCoLed_Red) {
+#ifdef LED_POSITIVE
+        GPIO_ResetBits(GPIO_LEDS, GPIO_Pin_Led_RED);
+#else
+        GPIO_SetBits(GPIO_LEDS, GPIO_Pin_Led_RED);
+#endif
+    }
+}
+
+void memcpySwap2(UNSIGNED8* dest, UNSIGNED8* src) {
+#ifdef __BIG_ENDIAN__
+	*(dest++) = *(src + 1);
+    *(dest) = *(src);
+#else
+    dest[0] = src[0];
+    dest[1] = src[1];
+#endif
+}
+
+void memcpySwap4(UNSIGNED8* dest, UNSIGNED8* src) {
+#ifdef __BIG_ENDIAN__
+    src += 3;
+    *(dest++) = *(src--);
+    *(dest++) = *(src--);
+    *(dest++) = *(src--);
+    *(dest) = *(src);
+#else
+    dest[0] = src[0];
+    dest[1] = src[1];
+    dest[2] = src[2];
+    dest[3] = src[3];
+#endif
+}
+
+
+/*******************************************************************************
+   Macro and Constants - CAN module registers
+ *******************************************************************************/
+void CO_CANsetConfigurationMode(CO_CANmodule_t *can) {
+//    unsigned int wait_ack = 0;
+
+    /* Request initialisation */
+//    can->CANbaseAddress->MCR |= CAN_MCR_INRQ;
+
+    /* Wait the acknowledge */
+//    while (((can->CANbaseAddress->MSR & CAN_MSR_INAK) != CAN_MSR_INAK) && (wait_ack != INAK_TIMEOUT))
+//        wait_ack++;
+
+    /* Check acknowledge */
+//    if ((can->CANbaseAddress->MSR & CAN_MSR_INAK) != CAN_MSR_INAK) {
+        // enter to configuration mode failed
+
+//    }
+
+
+}
+
+/******************************************************************************/
+void CO_CANsetNormalMode(CO_CANmodule_t *can) {
+//    unsigned int wait_ack = 0;
+
+    /* Request leave initialisation */
+//    can->CANbaseAddress->MCR &= ~(uint32_t) CAN_MCR_INRQ;
+
+    /* Wait the acknowledge */
+//    while (((can->CANbaseAddress->MSR & CAN_MSR_INAK) == CAN_MSR_INAK) && (wait_ack != INAK_TIMEOUT))
+//        wait_ack++;
+
+    /* ...and check acknowledged */
+//    if ((can->CANbaseAddress->MSR & CAN_MSR_INAK) == CAN_MSR_INAK) {
+        // leave initialization state failed
+
+//    }
+
+}
+
+/******************************************************************************/
+INTEGER16 CO_CANmodule_init(
+        CO_CANmodule_t **ppCANmodule,
+        CAN_TypeDef *CANbaseAddress,
+        UNSIGNED16 rxSize,
+        UNSIGNED16 txSize,
+        UNSIGNED16 CANbitRate) {
+    CAN_InitTypeDef CAN_InitStruct;
+    CAN_FilterInitTypeDef CAN_FilterInitStruct;
+    GPIO_InitTypeDef GPIO_InitStructure;
+    int i;
+    if ((*ppCANmodule) == NULL) {
+        if (((*ppCANmodule) = (CO_CANmodule_t *) malloc(sizeof (CO_CANmodule_t))) == NULL) {
+            return CO_ERROR_OUT_OF_MEMORY;
+        }
+        if (((*ppCANmodule)->rxArray = (CO_CANrxArray_t *) malloc(rxSize * sizeof (CO_CANrxArray_t))) == NULL) {
+            free(*ppCANmodule);
+            *ppCANmodule = 0;
+            return CO_ERROR_OUT_OF_MEMORY;
+        }
+        if (((*ppCANmodule)->txArray = (CO_CANtxArray_t *) malloc(txSize * sizeof (CO_CANtxArray_t))) == NULL) {
+            free((*ppCANmodule)->rxArray);
+            free(*ppCANmodule);
+            *ppCANmodule = 0;
+            return CO_ERROR_OUT_OF_MEMORY;
+        }
+    } else if ((*ppCANmodule)->rxArray == NULL || (*ppCANmodule)->txArray == NULL) return CO_ERROR_ILLEGAL_ARGUMENT;
+
+    CO_CANmodule_t *CANmodule = *ppCANmodule; //pointer to (newly created) object
+
+    CANmodule->CANbaseAddress = CANbaseAddress;
+    CANmodule->rxSize = rxSize;
+    CANmodule->txSize = txSize;
+    CANmodule->curentSyncTimeIsInsideWindow = 0;
+    CANmodule->bufferInhibitFlag = 0;
+    CANmodule->transmittingAborted = 0;
+    CANmodule->firstCANtxMessage = 1;
+    CANmodule->CANtxCount = 0;
+    CANmodule->errOld = 0;
+    CANmodule->EM = 0;
+
+    CO_CanInterrupt(CANmodule, DISABLE);
+
+    for (i = 0; i < rxSize; i++) {
+        CANmodule->rxArray[i].ident = 0;
+        CANmodule->rxArray[i].pFunct = 0;
+    }
+    for (i = 0; i < txSize; i++) {
+        CANmodule->txArray[i].bufferFull = 0;
+    }
+
+    /* Setting Clock of CAN HW */
+    RCC_APB2PeriphClockCmd(CLOCK_GPIO_CAN | RCC_APB2Periph_AFIO, ENABLE);
+    RCC_APB1PeriphClockCmd(CLOCK_CAN, ENABLE);
+    /* Remap */
+    GPIO_PinRemapConfig(GPIO_Remapping_CAN, GPIO_CAN_Remap_State);
+    /* Configure CAN pin: RX */
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_CAN_RX;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
+    GPIO_Init(GPIO_CAN, &GPIO_InitStructure);
+    /* Configure CAN pin: TX */
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_CAN_TX;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_Init(GPIO_CAN, &GPIO_InitStructure);
+
+    /* Init CAN controler */
+    CAN_DeInit(CANmodule->CANbaseAddress);
+    CAN_StructInit(&CAN_InitStruct);
+    switch (CANbitRate) {
+        case 1000: CAN_InitStruct.CAN_Prescaler = 6;
+            break;
+        case 500: CAN_InitStruct.CAN_Prescaler = 12;
+            break;
+        default:
+        case 250: CAN_InitStruct.CAN_Prescaler = 24;
+            break;
+        case 125: CAN_InitStruct.CAN_Prescaler = 48;
+            break;
+        case 100: CAN_InitStruct.CAN_Prescaler = 60;
+            break;
+        case 50: CAN_InitStruct.CAN_Prescaler = 120;
+            break;
+        case 20: CAN_InitStruct.CAN_Prescaler = 300;
+            break;
+        case 10: CAN_InitStruct.CAN_Prescaler = 600;
+            break;
+    }
+    CAN_InitStruct.CAN_Mode = CAN_Mode_Normal;
+    CAN_InitStruct.CAN_SJW = CAN_SJW_1tq;
+    CAN_InitStruct.CAN_BS1 = CAN_BS1_3tq;
+    CAN_InitStruct.CAN_BS2 = CAN_BS2_2tq;
+    CAN_InitStruct.CAN_TTCM = DISABLE;  // Time Trigger
+    CAN_InitStruct.CAN_ABOM = DISABLE;	// Automatic bus off management
+    CAN_InitStruct.CAN_AWUM = DISABLE;	// Automatic Wakeup mode
+    CAN_InitStruct.CAN_NART = ENABLE;	// No Automatic retransmision
+    CAN_InitStruct.CAN_RFLM = DISABLE;	// Receive FIFO locked mode
+    CAN_InitStruct.CAN_TXFP = DISABLE;	// Transmit FIFO priority 1=chronologically 0=by identifier
+
+    TRACE_DEBUG("CAN_Init ");
+    UNSIGNED8 result;
+    if ((result = CAN_Init(CANmodule->CANbaseAddress, &CAN_InitStruct)) != CAN_InitStatus_Success) {
+        TRACE_DEBUG_WP("res=%d\n\r", result);
+        return result;
+    }
+    // nastavime 1 filtr, ktery prijima vse
+    memset(&CAN_FilterInitStruct, 0, sizeof (CAN_FilterInitStruct));
+    CAN_FilterInitStruct.CAN_FilterNumber = 0;
+    CAN_FilterInitStruct.CAN_FilterIdHigh = 0;
+    CAN_FilterInitStruct.CAN_FilterIdLow = 0;
+    CAN_FilterInitStruct.CAN_FilterMaskIdHigh = 0;
+    CAN_FilterInitStruct.CAN_FilterMaskIdLow = 0;
+    CAN_FilterInitStruct.CAN_FilterFIFOAssignment = 0; // pouzivame jen FIFO0
+    CAN_FilterInitStruct.CAN_FilterMode = CAN_FilterMode_IdMask;
+    CAN_FilterInitStruct.CAN_FilterScale = CAN_FilterScale_32bit;
+    CAN_FilterInitStruct.CAN_FilterActivation = ENABLE;
+    CAN_FilterInit(&CAN_FilterInitStruct);
+
+    // povoleni preruseni od CAN1
+    NVIC_InitTypeDef NVIC_InitStructure;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    // preruseni od prijimace
+    NVIC_InitStructure.NVIC_IRQChannel = USB_LP_CAN1_RX0_IRQn;
+    NVIC_Init(&NVIC_InitStructure);
+    // preruseni od vysilace
+    NVIC_InitStructure.NVIC_IRQChannel = USB_HP_CAN1_TX_IRQn;
+    NVIC_Init(&NVIC_InitStructure);
+    // preruseni od statusu
+    //NVIC_InitStructure.NVIC_IRQChannel = CAN1_SCE_IRQn;
+    //NVIC_Init(&NVIC_InitStructure);
+
+    CAN_OperatingModeRequest(CANmodule->CANbaseAddress, CAN_OperatingMode_Normal);
+
+    CO_CanInterrupt(CANmodule, ENABLE);
+    TRACE_DEBUG_WP("Ok\n\r");
+
+    return CO_ERROR_NO;
+}
+
+void CO_CanInterrupt(CO_CANmodule_t *CANmodule, UNSIGNED8 enb) {
+    CAN_ITConfig(CANmodule->CANbaseAddress,
+    		CAN_IT_TME | // Tx
+            CAN_IT_FMP0  // Rx
+            //CAN_IT_ERR |  // Error Interrupt
+            //CAN_IT_BOF |  // BusOff interrupt
+            //CAN_IT_EPV |  // Error Passive
+            //CAN_IT_EWG    // Error Warning
+            , enb);
+}
+
+/******************************************************************************/
+void CO_CANmodule_delete(CO_CANmodule_t** ppCANmodule) {
+    if (*ppCANmodule) {
+        CAN_DeInit((*ppCANmodule)->CANbaseAddress);
+        free((*ppCANmodule)->txArray);
+        free((*ppCANmodule)->rxArray);
+        free(*ppCANmodule);
+        *ppCANmodule = 0;
+    }
+}
+
+/******************************************************************************/
+UNSIGNED16 CO_CANrxMsg_readIdent(CO_CANrxMsg_t *rxMsg) {
+    return (rxMsg->ident >> 2) & 0x7FF;
+}
+
+/******************************************************************************/
+INTEGER16 CO_CANrxBufferInit(CO_CANmodule_t *CANmodule,
+        UNSIGNED16 index,
+        UNSIGNED16 ident,
+        UNSIGNED16 mask,
+        UNSIGNED8 rtr,
+        void *object,
+        INTEGER16(*pFunct)(void *object, CO_CANrxMsg_t *message)) {
+    CO_CANrxArray_t *rxBuffer;
+    UNSIGNED16 RXF, RXM;
+
+    //safety
+    if (!CANmodule || !object || !pFunct || index >= CANmodule->rxSize) {
+        return CO_ERROR_ILLEGAL_ARGUMENT;
+    }
+
+    //buffer, which will be configured
+    rxBuffer = CANmodule->rxArray + index;
+
+    //Configure object variables
+    rxBuffer->object = object;
+    rxBuffer->pFunct = pFunct;
+
+
+    //CAN identifier and CAN mask, bit aligned with CAN module registers
+    RXF = (ident & 0x07FF) << 2;
+    if (rtr) RXF |= 0x02;
+    RXM = (mask & 0x07FF) << 2;
+    RXM |= 0x02;
+
+    //configure filter and mask
+    if (RXF != rxBuffer->ident || RXM != rxBuffer->mask) {
+        rxBuffer->ident = RXF;
+        rxBuffer->mask = RXM;
+    }
+
+    return CO_ERROR_NO;
+}
+
+/******************************************************************************/
+CO_CANtxArray_t *CO_CANtxBufferInit(
+        CO_CANmodule_t *CANmodule,
+        UNSIGNED16 index,
+        UNSIGNED16 ident,
+        UNSIGNED8 rtr,
+        UNSIGNED8 noOfBytes,
+        UNSIGNED8 syncFlag) {
+    //safety
+    if (!CANmodule || CANmodule->txSize <= index) return 0;
+
+    //get specific buffer
+    CO_CANtxArray_t *buffer = &CANmodule->txArray[index];
+
+    //CAN identifier, bit aligned with CAN module registers
+    UNSIGNED32 TXF;
+    TXF = ident << 21;
+    TXF &= 0xFFE00000;
+    if (rtr) TXF |= 0x02;
+
+    //write to buffer
+    buffer->ident = TXF;
+    buffer->DLC = noOfBytes;
+    buffer->bufferFull = 0;
+    buffer->syncFlag = syncFlag ? 1 : 0;
+
+    return buffer;
+}
+
+INTEGER8 getFreeTxBuff(CO_CANmodule_t *CANmodule) {
+	UNSIGNED8 txBuff = 0;
+	for (txBuff = 0; txBuff <= 3; txBuff++)
+		//if (CAN_TransmitStatus(CANmodule->CANbaseAddress, txBuff) == CAN_TxStatus_Ok)
+		switch (txBuff) {
+		case (CAN_TXMAILBOX_0 ):
+			if (CANmodule->CANbaseAddress->TSR & CAN_TSR_TME0 )
+				return txBuff;
+			else
+				break;
+		case (CAN_TXMAILBOX_1 ):
+			if (CANmodule->CANbaseAddress->TSR & CAN_TSR_TME1 )
+				return txBuff;
+			else
+				break;
+		case (CAN_TXMAILBOX_2 ):
+			if (CANmodule->CANbaseAddress->TSR & CAN_TSR_TME2 )
+				return txBuff;
+			else
+				break;
+		}
+	return -1;
+}
+/******************************************************************************/
+INTEGER16 CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtxArray_t *buffer) {
+   //Code related to CO_CANclearPendingSyncPDOs() function:
+   if(CANmodule->transmittingAborted){
+    //if message was aborted on buffer, set interrupt flag
+    //TODO:  if(CAN_REG(addr, C_TXBUF0 + C_TXCON) & 0x40){CANmodule->transmittingAborted--; CAN_REG(addr, C_INTF) |= 0x04;}
+   }
+
+   //Was previous message sent or it is still waiting?
+   if(buffer->bufferFull){
+      if(!CANmodule->firstCANtxMessage)//don't set error, if bootup message is still on buffers
+         CO_errorReport((CO_emergencyReport_t*)CANmodule->EM, ERROR_CAN_TX_OVERFLOW, 0);
+      return CO_ERROR_TX_OVERFLOW;
+   }
+
+   //messages with syncFlag set (synchronous PDOs) must be transmited inside preset time window
+   if(CANmodule->curentSyncTimeIsInsideWindow && buffer->syncFlag && !(*CANmodule->curentSyncTimeIsInsideWindow)){
+      CO_errorReport((CO_emergencyReport_t*)CANmodule->EM, ERROR_TPDO_OUTSIDE_WINDOW, 0);
+      return CO_ERROR_TX_PDO_WINDOW;
+   }
+
+   //if CAN TB buffer0 is free, copy message to it
+   INTEGER8 txBuff = getFreeTxBuff(CANmodule);
+   if( (txBuff!=-1)  && CANmodule->CANtxCount == 0){
+      CANmodule->bufferInhibitFlag = buffer->syncFlag;
+      CO_CANsendToModule(CANmodule, buffer, txBuff);
+   }
+   //if no buffer is free, message will be sent by interrupt
+   else{
+      buffer->bufferFull = 1;
+      CANmodule->CANtxCount++;
+      // vsechny buffery jsou plny, musime povolit preruseni od vysilace, odvysilat az v preruseni
+      CAN_ITConfig(CANmodule->CANbaseAddress, CAN_IT_TME, ENABLE);
+   }
+
+   return CO_ERROR_NO;
+}
+/******************************************************************************/
+void CO_CANclearPendingSyncPDOs(CO_CANmodule_t *CANmodule) {
+    DISABLE_INTERRUPTS();
+
+    if (CANmodule->bufferInhibitFlag) {
+        CANmodule->CANbaseAddress->TSR |= CAN_TSR_ABRQ0 | CAN_TSR_ABRQ1 | CAN_TSR_ABRQ2;
+        ENABLE_INTERRUPTS();
+        CO_errorReport((CO_emergencyReport_t*) CANmodule->EM, ERROR_TPDO_OUTSIDE_WINDOW, 0);
+    } else
+        ENABLE_INTERRUPTS();
+}
+
+/******************************************************************************/
+void CO_CANverifyErrors(CO_CANmodule_t *CANmodule) {
+   UNSIGNED32 err;
+   CO_emergencyReport_t* EM = (CO_emergencyReport_t*)CANmodule->EM;
+
+   err = CANmodule->CANbaseAddress->ESR;
+   // if(CAN_REG(CANmodule->CANbaseAddress, C_INTF) & 4) err |= 0x80;
+
+   if(CANmodule->errOld != err){
+      CANmodule->errOld = err;
+
+      //CAN RX bus overflow
+      if(CANmodule->CANbaseAddress->RF0R & 0x08){
+         CO_errorReport(EM, ERROR_CAN_RXB_OVERFLOW, err);
+         CANmodule->CANbaseAddress->RF0R &=~0x08;//clear bits
+      }
+
+      //CAN TX bus off
+      if(err & 0x04) CO_errorReport(EM, ERROR_CAN_TX_BUS_OFF, err);
+      else           CO_errorReset(EM, ERROR_CAN_TX_BUS_OFF, err);
+
+      //CAN TX or RX bus passive
+      if(err & 0x02){
+         if(!CANmodule->firstCANtxMessage) CO_errorReport(EM, ERROR_CAN_TX_BUS_PASSIVE, err);
+      }
+      else{
+         INTEGER16 wasCleared;
+         wasCleared =        CO_errorReset(EM, ERROR_CAN_TX_BUS_PASSIVE, err);
+         if(wasCleared == 1) CO_errorReset(EM, ERROR_CAN_TX_OVERFLOW, err);
+      }
+
+
+      //CAN TX or RX bus warning
+      if(err & 0x01){
+         CO_errorReport(EM, ERROR_CAN_BUS_WARNING, err);
+      }
+      else{
+         CO_errorReset(EM, ERROR_CAN_BUS_WARNING, err);
+      }
+   }
+}
+
+/******************************************************************************/
+int CO_CANrecFromModule(CO_CANmodule_t *CANmodule, uint8_t FIFONumber, CO_CANrxMsg_t* RxMessage) {
+    if( (CANmodule->CANbaseAddress->RF0R & CAN_RF0R_FMP0) > 0) {  // opravdu jsme neco prijali
+        RxMessage->IDE = (uint8_t) 0x04 & CANmodule->CANbaseAddress->sFIFOMailBox[FIFONumber].RIR;
+        if (RxMessage->IDE == CAN_Id_Standard) {
+            RxMessage->ident = (uint32_t) 0x000007FF & (CANmodule->CANbaseAddress->sFIFOMailBox[FIFONumber].RIR >> 21);
+        } else {
+            RxMessage->ExtId = (uint32_t) 0x1FFFFFFF & (CANmodule->CANbaseAddress->sFIFOMailBox[FIFONumber].RIR >> 3);
+        }
+
+        RxMessage->RTR = (uint8_t) 0x02 & CANmodule->CANbaseAddress->sFIFOMailBox[FIFONumber].RIR;
+        /* Get the DLC */
+        RxMessage->DLC = (uint8_t) 0x0F & CANmodule->CANbaseAddress->sFIFOMailBox[FIFONumber].RDTR;
+        /* Get the FMI */
+        RxMessage->FMI = (uint8_t) 0xFF & (CANmodule->CANbaseAddress->sFIFOMailBox[FIFONumber].RDTR >> 8);
+        /* Get the data field */
+        RxMessage->data[0] = (uint8_t) 0xFF & CANmodule->CANbaseAddress->sFIFOMailBox[FIFONumber].RDLR;
+        RxMessage->data[1] = (uint8_t) 0xFF & (CANmodule->CANbaseAddress->sFIFOMailBox[FIFONumber].RDLR >> 8);
+        RxMessage->data[2] = (uint8_t) 0xFF & (CANmodule->CANbaseAddress->sFIFOMailBox[FIFONumber].RDLR >> 16);
+        RxMessage->data[3] = (uint8_t) 0xFF & (CANmodule->CANbaseAddress->sFIFOMailBox[FIFONumber].RDLR >> 24);
+        RxMessage->data[4] = (uint8_t) 0xFF & CANmodule->CANbaseAddress->sFIFOMailBox[FIFONumber].RDHR;
+        RxMessage->data[5] = (uint8_t) 0xFF & (CANmodule->CANbaseAddress->sFIFOMailBox[FIFONumber].RDHR >> 8);
+        RxMessage->data[6] = (uint8_t) 0xFF & (CANmodule->CANbaseAddress->sFIFOMailBox[FIFONumber].RDHR >> 16);
+        RxMessage->data[7] = (uint8_t) 0xFF & (CANmodule->CANbaseAddress->sFIFOMailBox[FIFONumber].RDHR >> 24);
+        /* Release the FIFO */
+        /* Release FIFO0 */
+        if (FIFONumber == CAN_FIFO0) {
+            CANmodule->CANbaseAddress->RF0R |= CAN_RF0R_RFOM0;
+        }/* Release FIFO1 */
+        else /* FIFONumber == CAN_FIFO1 */ {
+            CANmodule->CANbaseAddress->RF1R |= CAN_RF1R_RFOM1;
+        }
+        return 0;
+    }
+    return -1;
+}
+
+/******************************************************************************/
+// Interrupt from Receiver
+void CO_CANinterrupt_Rx(CO_CANmodule_t *CANmodule) {
+    // Preruseni od prijmu  
+    CO_CANrxMsg_t rcvMsg;
+    if (CO_CANrecFromModule(CANmodule, CAN_FIFO0, &rcvMsg) == 0) {
+        //CAN module filters are not used, message with any standard 11-bit identifier
+        //has been received. Search rxArray form CANmodule for the same CAN-ID.
+        UNSIGNED16 index;
+        UNSIGNED8 msgMatched = 0;
+        CO_CANrxArray_t *msgBuff = CANmodule->rxArray;
+        for (index = 0; index < CANmodule->rxSize; index++) {
+            UNSIGNED16 msg = (rcvMsg.ident << 2) | (rcvMsg.RTR ? 2 : 0); 
+            if (((msg ^ msgBuff->ident) & msgBuff->mask) == 0) {
+                msgMatched = 1;
+                break;
+            }
+            msgBuff++;
+        }
+        //Call specific function, which will process the message
+        if (msgMatched && msgBuff->pFunct)
+            msgBuff->pFunct(msgBuff->object, &rcvMsg);
+    }
+}
+
+/******************************************************************************/
+// Interrupt from Transeiver
+void CO_CANinterrupt_Tx(CO_CANmodule_t *CANmodule) {
+    //First CAN message (bootup) was sent successfully
+	CAN_ITConfig(CANmodule->CANbaseAddress, CAN_IT_TME, DISABLE); // Transmit mailbox empty interrupt
+
+    CANmodule->firstCANtxMessage = 0;
+    //Are there any new messages waiting to be send and buffer is free
+    if (CANmodule->CANtxCount > 0) {
+        UNSIGNED16 index; //index of transmitting message
+        //search through whole array of pointers to transmit message buffers.
+        for (index = 0; index < CANmodule->txSize; index++) {
+            //get specific buffer
+            CO_CANtxArray_t *buffer = &CANmodule->txArray[index];
+            //if message buffer is full, send it.
+            if (buffer->bufferFull) {
+                // dokud je volny nejaky tx buffer
+                INTEGER8 txBuff = getFreeTxBuff(CANmodule);
+                if (txBuff == -1) {
+                	// neni vse odvysilano a neni volny vysilac
+                	CAN_ITConfig(CANmodule->CANbaseAddress, CAN_IT_TME, ENABLE); // Transmit mailbox empty interrupt
+                	break;
+                }
+                //messages with syncFlag set (synchronous PDOs) must be transmited inside preset time window
+                CANmodule->bufferInhibitFlag = 0;
+                if (CANmodule->curentSyncTimeIsInsideWindow && buffer->syncFlag) {
+                    if (!(*CANmodule->curentSyncTimeIsInsideWindow)) {
+                        CO_errorReport((CO_emergencyReport_t*) CANmodule->EM, ERROR_TPDO_OUTSIDE_WINDOW, 0);
+                        //release buffer
+                        buffer->bufferFull = 0;
+                        CANmodule->CANtxCount--;
+                        continue; // continue with next message
+                    }
+                    CANmodule->bufferInhibitFlag = 1;
+                }
+                //Copy message to CAN buffer
+                CO_CANsendToModule(CANmodule, buffer, txBuff);
+                //release buffer
+                buffer->bufferFull = 0;
+                CANmodule->CANtxCount--;
+            }
+        }//end of for loop
+    }
+}
+
+/******************************************************************************/
+void CO_CANinterrupt_Status(CO_CANmodule_t *CANmodule) {
+  // status is evalved with pooling
+}
+
+/******************************************************************************/
+void CO_CANsendToModule(CO_CANmodule_t *CANmodule, CO_CANtxArray_t *buffer, UNSIGNED8 transmit_mailbox) {
+    if ((transmit_mailbox >= 0) & (transmit_mailbox <= 3)) {
+        /* Set up the Id */
+        CANmodule->CANbaseAddress->sTxMailBox[transmit_mailbox].TIR &= TMIDxR_TXRQ;
+        // RTR is included in ident
+        CANmodule->CANbaseAddress->sTxMailBox[transmit_mailbox].TIR |= buffer->ident;
+        /* Set up the DLC */
+        buffer->DLC &= (uint8_t) 0x0000000F;
+        CANmodule->CANbaseAddress->sTxMailBox[transmit_mailbox].TDTR &= (uint32_t) 0xFFFFFFF0;
+        CANmodule->CANbaseAddress->sTxMailBox[transmit_mailbox].TDTR |= buffer->DLC;
+
+        /* Set up the data field */
+        CANmodule->CANbaseAddress->sTxMailBox[transmit_mailbox].TDLR = (((uint32_t) buffer->data[3] << 24) |
+                ((uint32_t) buffer->data[2] << 16) |
+                ((uint32_t) buffer->data[1] << 8) |
+                ((uint32_t) buffer->data[0]));
+        CANmodule->CANbaseAddress->sTxMailBox[transmit_mailbox].TDHR = (((uint32_t) buffer->data[7] << 24) |
+                ((uint32_t) buffer->data[6] << 16) |
+                ((uint32_t) buffer->data[5] << 8) |
+                ((uint32_t) buffer->data[4]));
+
+        // Transmit mailbox empty interrupt
+        CAN_ITConfig(CANmodule->CANbaseAddress, CAN_IT_TME, ENABLE);
+        /* Request transmission */
+        CANmodule->CANbaseAddress->sTxMailBox[transmit_mailbox].TIR |= TMIDxR_TXRQ;
+    }
+}
