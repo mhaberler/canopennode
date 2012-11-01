@@ -19,14 +19,15 @@ void saveTime(ttimer *tim) {
 	tim->savedTime = gettimerfunc();
 }
 
-unsigned int getTime_ms(ttimer *tim) {
+UNSIGNED32 getTime_ms(ttimer *tim) {
 	if (!tim)
 		return 0;
 	return (gettimerfunc() - tim->savedTime) / 1000;
 }
 
-unsigned int getTime_us(ttimer *tim) {
+UNSIGNED32 getTime_us(ttimer *tim) {
 	if (!tim)
 		return 0;
-	return (gettimerfunc() - tim->savedTime);
+	UNSIGNED32 now = gettimerfunc();
+	return (now - tim->savedTime);
 }

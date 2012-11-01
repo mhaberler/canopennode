@@ -47,20 +47,17 @@ void ClearWDT() {
 
 }
 
-unsigned int gMsCnt = 0;
+UNSIGNED32 gMsCnt = 0;
 
-unsigned int getTimer_us() {
-	static unsigned int tlast = 0;
-	unsigned int t = SysTick ->VAL / SysTick_1us;
-	if (t < tlast) {
-		t = tlast - t;
-		t = (gMsCnt * 1000) + t;
-	} else if (gMsCnt) {
-		t = t - tlast;
-		t = (gMsCnt * 1000) - t;
-	} else
-		t = 0;
-	return t;
+UNSIGNED32 getTimer_us() {
+	UNSIGNED32 tms, t;
+
+	do {
+		tms = gMsCnt;
+		t = SysTick->VAL;
+	}while(tms != gMsCnt);
+
+	return (tms+1)*1000 - (t / SysTick_1us);
 }
 
 /* main ***********************************************************************/
@@ -137,7 +134,7 @@ int main(void) {
 			ClearWDT();
 
 			//(not implemented) eeprom_process(&eeprom);
-			unsigned int t = getTime_us(&tprof);
+			UNSIGNED32 t = getTime_us(&tprof);
 			OD_performance[ODA_performance_mainCycleTime] = t;
 			if (t > OD_performance[ODA_performance_mainCycleMaxTime])
 				OD_performance[ODA_performance_mainCycleMaxTime] = t;
@@ -146,15 +143,15 @@ int main(void) {
 	} // while (reset != 2)
 	/* program exit ***************************************************************/
 	//save variables to eeprom
-	DISABLE_INTERRUPTS()
-	;
+	DISABLE_INTERRUPTS();
+
 	CanLedsSet(eCoLed_None);
 	//(not implemented) eeprom_saveAll(&eeprom);
 	CanLedsSet(eCoLed_Red);
 	//delete CANopen object from memory
 	CO_delete(&CO);
 
-	//reset - na WD
+	//reset - by WD
 	return 0;
 }
 
