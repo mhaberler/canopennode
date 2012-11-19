@@ -48,7 +48,7 @@
 </toolChain>
 </folderInfo>
 <sourceEntries>
-<entry excluding="CANopen_stack/temp|CANopen_stack/PIC32|CANopen_stack/PIC24H_dsPIC33F|CANopen_stack/PIC18|CANopen_stack/dsPIC30F|CANopen_stack/_doc" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="src"/>
+<entry excluding="CANopen_stack/stm32f103x|CANopen_stack/temp|CANopen_stack/PIC32|CANopen_stack/PIC24H_dsPIC33F|CANopen_stack/PIC18|CANopen_stack/dsPIC30F|CANopen_stack/_doc" flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="src"/>
 </sourceEntries>
 </configuration>
 </storageModule>
@@ -182,7 +182,7 @@
 </toolChain>
 </folderInfo>
 <sourceEntries>
-<entry excluding="CANopen_stack/temp|CANopen_stack/PIC32|CANopen_stack/PIC24H_dsPIC33F|CANopen_stack/PIC18|CANopen_stack/dsPIC30F|CANopen_stack/_doc" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
+<entry excluding="CANopen_stack/stm32f103x|CANopen_stack/temp|CANopen_stack/PIC32|CANopen_stack/PIC24H_dsPIC33F|CANopen_stack/PIC18|CANopen_stack/dsPIC30F|CANopen_stack/_doc" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
 </sourceEntries>
 </configuration>
 </storageModule>

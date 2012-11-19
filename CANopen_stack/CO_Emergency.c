@@ -36,61 +36,52 @@
 #include <stdlib.h> // for malloc, free
 
 
-/******************************************************************************/
-UNSIGNED32 CO_ODF_1003( void       *object,
-                        UNSIGNED16  index,
-                        UNSIGNED8   subIndex,
-                        UNSIGNED16 *pLength,
-                        UNSIGNED16  attribute,
-                        UNSIGNED8   dir,
-                        void       *dataBuff,
-                        const void *pData)
-{
-   CO_emergencyProcess_t   *EMpr;
+/* Pre-defined error field - Object dictionary function ***********************/
+UNSIGNED32 CO_ODF_1003(CO_ODF_arg_t *ODF_arg){
+   CO_emergencyProcess_t *EMpr;
+   UNSIGNED8 *value;
 
-   EMpr = (CO_emergencyProcess_t*) object; //this is the correct pointer type of the first argument
+   EMpr = (CO_emergencyProcess_t*) ODF_arg->object;
+   value = (UNSIGNED8*) ODF_arg->data;
 
-   if(subIndex==0) pData = (const void*) &EMpr->preDefinedErrorFieldNumberOfErrors;
+   if(ODF_arg->reading){
+      UNSIGNED8 noOfErrors;
+      noOfErrors = EMpr->preDefinedErrorFieldNumberOfErrors;
 
-   if(dir == 0){  //Reading Object Dictionary variable
-      if(subIndex > EMpr->preDefinedErrorFieldNumberOfErrors) return 0x08000024L;  //No data available.
+      if(ODF_arg->subIndex == 0)
+         *value = noOfErrors;
+      else if(ODF_arg->subIndex > noOfErrors)
+         return 0x08000024L;  //No data available.
    }
-   else{ //Writing Object Dictionary variable
+   else{
       //only '0' may be written to subIndex 0
-      if(subIndex==0){
-         if(*((UNSIGNED8*)dataBuff)!=0)
+      if(ODF_arg->subIndex == 0){
+         if(*value == 0)
+            EMpr->preDefinedErrorFieldNumberOfErrors = 0;
+         else
             return 0x06090030L;  //Invalid value for parameter
       }
       else
          return 0x06010002L;  //Attempt to write a read only object.
    }
 
-   return CO_ODF(object, index, subIndex, pLength, attribute, dir, dataBuff, pData);
+   return 0;
 }
 
 
-/******************************************************************************/
-UNSIGNED32 CO_ODF_1014( void       *object,
-                        UNSIGNED16  index,
-                        UNSIGNED8   subIndex,
-                        UNSIGNED16 *pLength,
-                        UNSIGNED16  attribute,
-                        UNSIGNED8   dir,
-                        void       *dataBuff,
-                        const void *pData)
-{
+/* COB-ID emergency message - Object dictionary function **********************/
+UNSIGNED32 CO_ODF_1014(CO_ODF_arg_t *ODF_arg){
    UNSIGNED8 *nodeId;
-   UNSIGNED32 cobIdEmcy;
-   UNSIGNED32 abortCode = 0;
+   UNSIGNED32 *value;
 
-   nodeId = (UNSIGNED8*) object; //this is the correct pointer type of the first argument
+   nodeId = (UNSIGNED8*) ODF_arg->object;
+   value = (UNSIGNED32*) ODF_arg->data;
 
-   cobIdEmcy = *((UNSIGNED32*) pData); //read from object dictionary
-   cobIdEmcy += *nodeId;
+   //add nodeId to the value
+   if(ODF_arg->reading)
+      *value += *nodeId;
 
-   memcpySwap4((UNSIGNED8*)dataBuff, (UNSIGNED8*)&cobIdEmcy);
-
-   return abortCode;
+   return 0;
 }
 
 
@@ -144,9 +135,9 @@ INTEGER16 CO_emergency_init(
    //clear error status bits
    for(i=0; i<errorStatusBitsSize; i++) EM->errorStatusBits[i] = 0;
 
-   //Configure SDO server for first argument of CO_ODF_1003 and CO_ODF_1014
-   CO_OD_configureArgumentForODF(SDO, 0x1003, (void*)EMpr);
-   CO_OD_configureArgumentForODF(SDO, 0x1014, (void*)&SDO->nodeId);
+   //Configure Object dictionary entry at index 0x1003 and 0x1014
+   CO_OD_configure(SDO, 0x1003, CO_ODF_1003, (void*)EMpr);
+   CO_OD_configure(SDO, 0x1014, CO_ODF_1014, (void*)&SDO->nodeId);
 
    //configure emergency message CAN transmission
    EMpr->CANdev = CANdev;

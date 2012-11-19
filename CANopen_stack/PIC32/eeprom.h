@@ -32,9 +32,6 @@
 #define _EEPROM_H
 
 
-#include "CO_driver.h"
-
-
 /*******************************************************************************
    Topic: EEPROM
 
@@ -105,6 +102,26 @@ typedef struct{
 
 
 /*******************************************************************************
+   Function: CO_ODF_1010
+
+   Function for accessing _Store parameters_ (index 0x1010) from SDO server.
+
+   For more information see topic <Object dictionary function>.
+*******************************************************************************/
+UNSIGNED32 CO_ODF_1010(CO_ODF_arg_t *ODF_arg);
+
+
+/*******************************************************************************
+   Function: CO_ODF_1011
+
+   Function for accessing _Restore default parameters_ (index 0x1011) from SDO server.
+
+   For more information see topic <Object dictionary function>.
+*******************************************************************************/
+UNSIGNED32 CO_ODF_1011(CO_ODF_arg_t *ODF_arg);
+
+
+/*******************************************************************************
    Function: EE_init_1
 
    First part of eeprom initialization. Called once after microcontroller reset.
@@ -159,8 +176,8 @@ void EE_delete(EE_t **ppEE);
       EM          - Pointer to Emergency object <CO_emergencyReport_t>.
 *******************************************************************************/
 #define EE_init_2(EE, EEStatus, SDO, EM)                                   \
-   CO_OD_configureArgumentForODF(SDO, 0x1010, (void*)EE);                  \
-   CO_OD_configureArgumentForODF(SDO, 0x1011, (void*)EE);                  \
+   CO_OD_configure(SDO, 0x1010, CO_ODF_1010, (void*)EE);                   \
+   CO_OD_configure(SDO, 0x1011, CO_ODF_1010, (void*)EE);                   \
    if(EEStatus) CO_errorReport(EM, ERROR_NON_VOLATILE_MEMORY, EEStatus)
 
 
@@ -282,23 +299,6 @@ UNSIGNED8 EE_readStatus();
       True if write is in process.
 *******************************************************************************/
 #define EE_isWriteInProcess()   (EE_readStatus() & 0x01)
-
-
-/*******************************************************************************
-   Function: CRC16
-
-   Calculate 16 bit CRC code from string.
-
-   See DALLAS Application Note 27.
-
-   Parameters:
-      str         - Pointer to array of characters.
-      len         - Length of above array.
-
-   Return:
-      Calculated CRC value of the str.
-*******************************************************************************/
-UNSIGNED16 CRC16(UNSIGNED8 *str, UNSIGNED16 len);
 
 
 #endif

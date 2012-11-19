@@ -415,7 +415,7 @@
 						<button label="U P D A T E   O B J E C T" style="font-weight:bold;font-size:small" oncommand="objectUpdateOrInsertNew();"/>
 					</vbox>
 					<spacer width="20"/>
-					<groupbox orient="vertical" flex="1">
+					<groupbox orient="vertical" flex="1" hidden="true">
 						<caption label="SDO Server access function" image="pict/question.png" dir="reverse" onclick='g_labelDisplay("SDO Server access function", "This feature is CANopenNode specific.\n\nDefault SDO Server access function is CO_ODF().\n\nIf function is external, then object can not be dynamically mapped into PDO.\n\nDefault with user code function is simple, because function code can be entered directly in this editor. \nFor example, verify high and low limit of 16 bit integer variable. Write following code in upper text box:\nif(dir == 1)  //Writing Object Dictionary variable\n{\n  int var = *((int*)dataBuff);\n  if(var &lt; 5) return 0x06090032L;\n  if(var &gt; 15) return 0x06090031L;\n}");'/>
 						<radiogroup id="object_accessFunction" flex="1">
 							<radio label="Default" selected="true" oncommand="document.getElementById('object_accessFunctionCode').hidden = true; document.getElementById('object_accessFunctionNameBox').hidden = true;" />
@@ -475,7 +475,7 @@
 									<menuitem label="0C - TIME_OF_DAY"/>
 									<menuitem label="0D - TIME_DIFFERENCE"/>
 									<menuitem label="0E - (reserved)" disabled="true"/>
-									<menuitem label="0F - DOMAIN" disabled="true"/>
+									<menuitem label="0F - DOMAIN"/>
 									<menuitem label="10 - INTEGER24"/>
 									<menuitem label="11 - REAL64"/>
 									<menuitem label="12 - INTEGER40"/>

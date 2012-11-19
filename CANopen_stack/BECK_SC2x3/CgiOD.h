@@ -44,21 +44,21 @@
    with html get method. CGI function name is "ODcli".
 
    Usage:
-   http://host/odcli?wnniiiissllll=xxxx[&rnniiiissllll=]
+   http://host/odcli?wnniiiissll=xxxx[&rnniiiissll=]
    w    - 'w'rite or 'r'ead.
    nn   - node ID in hex format.
    iiii - Object dictionary index in hex format.
    ss   - Object dictionary subindex in hex format.
-   llll - length of variable (0001 to 0397) in hex format. If reading, this
+   ll   - length of variable (1 to FFFFFFFF) in hex format. If reading, this
           value is ignored.
    xxxx - Value to be written in hex and little endian format. Value is ignored
           when reading.
 
    A text file is returned in following format (AB followed with code means abort):
-   w nn iiii ss llll OK: xx xx
-   w nn iiii ss llll AB: yyyyyyyy
-   r nn iiii ss llll OK: xx xx
-   r nn iiii ss llll AB: yyyyyyyy
+   w nn iiii ss ll OK: xx xx
+   w nn iiii ss ll AB: yyyyyyyy
+   r nn iiii ss ll OK: xx xx
+   r nn iiii ss ll AB: yyyyyyyy
 *******************************************************************************/
 
 

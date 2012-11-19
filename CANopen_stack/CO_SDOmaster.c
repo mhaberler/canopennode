@@ -32,8 +32,41 @@
 #include "CO_driver.h"
 #include "CO_SDO.h"
 #include "CO_SDOmaster.h"
+#include "crc16-ccitt.h"
 
 #include <stdlib.h> // for malloc, free
+
+
+#define SDO_BLOCK_STATE_NOT_ACTIVE                 0x00
+#define SDO_BLOCK_STATE_UPLOAD_INPROGRESS          0x23
+
+#define SDO_BLOCK_CRC 0
+
+#define SDO_BLOCK_SIZE_MAX 10 // number of segments in one block
+
+#define SDO_BLOCK_STATE_END                        0xAA
+#define SDO_BLOCK_STATE_DOWNLOAD_INITIATED         0x11
+#define SDO_BLOCK_STATE_DOWNLOAD_SEGMENT           0x13
+#define SDO_BLOCK_STATE_DOWNLOAD_CRC               0x14
+#define SDO_BLOCK_STATE_DOWNLOAD_WAITING_BLOCK_ACK 0x16
+#define SDO_BLOCK_STATE_DOWNLOAD_WAITING_CRC_ACK   0x17
+#define SDO_BLOCK_STATE_UPLOAD_INITIATE            0x21
+#define SDO_BLOCK_STATE_UPLOAD_WAITING_CRC         0x25
+#define SDO_PST_SIZE                               21
+#define SDO_BLOCK_MASK_DOWNLOAD_HEAD               0xc0
+#define SDO_BLOCK_MASK_UPLOAD_HEAD                 0xa0
+#define SDO_BLOCK_MASK_CC                          0x04
+#define SDO_BLOCK_MASK_S                           0x02
+
+//Server command specifier, see DS301
+#define SCS_DOWNLOAD_INITIATE          3
+#define SCS_DOWNLOAD_SEGMENT           1
+#define SCS_UPLOAD_INITIATE            2
+#define SCS_UPLOAD_SEGMENT             0
+#define SCS_ABORT                      4
+#define SCS_DOWNLOAD_BLOCK             5
+#define SCS_UPLOAD_BLOCK               6
+
 
 /******************************************************************************/
 INTEGER16 CO_SDOclient_receive(void *object, CO_CANrxMsg_t *msg){
@@ -186,7 +219,8 @@ INTEGER8 CO_SDOclientDownloadInitiate( CO_SDOclient_t   *SDO_C,
                                        UNSIGNED16        index,
                                        UNSIGNED8         subIndex,
                                        UNSIGNED8        *dataTx,
-                                       UNSIGNED16        dataSize)
+                                       UNSIGNED32        dataSize,
+                                       UNSIGNED8         blockEnable)
 {
    //verify parameters
    if(dataTx == 0 || dataSize == 0) return -2;
@@ -209,6 +243,8 @@ INTEGER8 CO_SDOclientDownloadInitiate( CO_SDOclient_t   *SDO_C,
    }
 
    //continue: prepare dataBuff for CAN message
+   SDO_C->block_state = SDO_BLOCK_STATE_NOT_ACTIVE;
+
    if(dataSize <= 4){
       UNSIGNED16 i;
       //expedited transfer
@@ -220,6 +256,36 @@ INTEGER8 CO_SDOclientDownloadInitiate( CO_SDOclient_t   *SDO_C,
       SDO_C->CANtxBuff->data[7] = 0;
       //copy data
       for(i=dataSize+3; i>=4; i--) SDO_C->CANtxBuff->data[i] = dataTx[i-4];
+   }
+   else if(blockEnable != 0){ // Try to initiate block transfer
+      // set state of block transfer
+      SDO_C->block_state = SDO_BLOCK_STATE_DOWNLOAD_INITIATED;
+
+      // init HEAD of packet
+      SDO_C->CANtxBuff->data[0] = SDO_BLOCK_MASK_DOWNLOAD_HEAD;
+      // set flag for CRC
+      if(SDO_BLOCK_CRC)
+         SDO_C->CANtxBuff->data[0] |= SDO_BLOCK_MASK_CC;
+
+      // size indicator
+      // TODO: use of size indicator
+      if(0){
+         // size indicator:
+         SDO_C->CANtxBuff->data[0] |= SDO_BLOCK_MASK_S;
+
+         // set length of data
+         SDO_C->CANtxBuff->data[4] = (UNSIGNED8) dataSize;
+         SDO_C->CANtxBuff->data[5] = (UNSIGNED8) (dataSize >> 8);
+         SDO_C->CANtxBuff->data[6] = (UNSIGNED8) (dataSize >> 16);
+         SDO_C->CANtxBuff->data[7] = (UNSIGNED8) (dataSize >> 24);
+      }
+      else{
+         // no size indicator
+         SDO_C->CANtxBuff->data[4] = 0;
+         SDO_C->CANtxBuff->data[5] = 0;
+         SDO_C->CANtxBuff->data[6] = 0;
+         SDO_C->CANtxBuff->data[7] = 0;
+      }
    }
    else{
       UNSIGNED32 len;
@@ -257,54 +323,54 @@ INTEGER8 CO_SDOclientDownload(   CO_SDOclient_t      *SDO_C,
 
    //if nodeIDOfTheSDOServer == node-ID of this node, then exchange data with this node
    if(SDO_C->SDO && SDO_C->ObjDict_SDOClientParameter->nodeIDOfTheSDOServer == SDO_C->SDO->nodeId){
-      const sCO_OD_object* pODE;
-      UNSIGNED16 length;
-      UNSIGNED8 attr;
-      UNSIGNED16 indexOfFoundObject;
-      UNSIGNED16 index = SDO_C->index;
-      UNSIGNED8 subIndex = SDO_C->subIndex;
-
-      pODE = CO_OD_find(SDO_C->SDO, index, &indexOfFoundObject);
-      SDO_C->state = 0;
-      SDO_C->CANrxNew = 0;
-      if(pODE == 0){
-         *pSDOabortCode = 0x06020000L;  //object does not exist in OD
+//      const CO_OD_entry_t* pODE;
+//      UNSIGNED16 length;
+//      UNSIGNED8 attr;
+//      UNSIGNED16 indexOfFoundObject;
+//      UNSIGNED16 index = SDO_C->index;
+//      UNSIGNED8 subIndex = SDO_C->subIndex;
+//
+//      pODE = CO_OD_find(SDO_C->SDO, index, &indexOfFoundObject);
+//      SDO_C->state = 0;
+//      SDO_C->CANrxNew = 0;
+//      if(pODE == 0){
+//         *pSDOabortCode = 0x06020000L;  //object does not exist in OD
+//         return -10;
+//      }
+//      if(subIndex > pODE->maxSubIndex){
+//         *pSDOabortCode = 0x06090011L;  //Sub-index does not exist.
+//         return -10;
+//      }
+//      length = CO_OD_getLength(pODE, subIndex);
+//      if(pODE->pData == 0){
+//         //domain data type
+//         length = SDO_C->bufferSize;
+//      }
+//      if(SDO_C->bufferSize != length || SDO_C->bufferSize > CO_SDO_BUFFER_SIZE){
+//         *pSDOabortCode = 0x06070010L;   //Length of service parameter does not match
+//         return -10;
+//      }
+//      attr = CO_OD_getAttribute(pODE, subIndex);
+//      if(!(attr&CO_ODA_WRITEABLE)){
+//         *pSDOabortCode = 0x06010002L;   //attempt to write a read-only object
+//         return -10;
+//      }
+//      //write to OD variable
+//      *pSDOabortCode = pODE->pFunct(SDO_C->SDO->ObjectDictionaryPointers[indexOfFoundObject],
+//                                    index,
+//                                    subIndex,
+//                                   &length,
+//                                    attr,
+//                                    1,
+//                                    (void*)SDO_C->buffer,
+//                                    CO_OD_getDataPointer(pODE, subIndex));
+//      if(*pSDOabortCode){
          return -10;
-      }
-      if(subIndex > pODE->maxSubIndex){
-         *pSDOabortCode = 0x06090011L;  //Sub-index does not exist.
-         return -10;
-      }
-      length = CO_OD_getLength(pODE, subIndex);
-      if(pODE->pData == 0){
-          //domain data type
-         length = SDO_C->bufferSize;
-      }
-      if(SDO_C->bufferSize != length || SDO_C->bufferSize > CO_OD_MAX_OBJECT_SIZE){
-         *pSDOabortCode = 0x06070010L;   //Length of service parameter does not match
-         return -10;
-      }
-      attr = CO_OD_getAttribute(pODE, subIndex);
-      if(!(attr&CO_ODA_WRITEABLE)){
-         *pSDOabortCode = 0x06010002L;   //attempt to write a read-only object
-         return -10;
-      }
-      //write to OD variable
-      *pSDOabortCode = pODE->pFunct(SDO_C->SDO->ObjectDictionaryPointers[indexOfFoundObject],
-                                    index,
-                                    subIndex,
-                                   &length,
-                                    attr,
-                                    1,
-                                    (void*)SDO_C->buffer,
-                                    CO_OD_getDataPointer(pODE, subIndex));
-      if(*pSDOabortCode){
-         return -10;
-      }
-      return 0;
+//      }
+//      return 0;
    }
-   //check if new SDO object received
-   if(SDO_C->CANrxNew){
+   //check if new SDO segmented or expedited object received
+   if(SDO_C->CANrxNew && SDO_C->block_state == SDO_BLOCK_STATE_NOT_ACTIVE){
       SDO_C->timeoutTimer = 0;
       if(SDO_C->state & 0x20){
          //download initiated
@@ -393,6 +459,101 @@ INTEGER8 CO_SDOclientDownload(   CO_SDOclient_t      *SDO_C,
          return 2;
       }
    }
+   else if(SDO_C->CANrxNew){
+      //block transfer in progres
+      SDO_C->timeoutTimer = 0;
+      switch (SDO_C->block_state){
+         case SDO_BLOCK_STATE_DOWNLOAD_INITIATED:{ //waiting on reply on block download initiated
+            // check index & subindex
+            UNSIGNED16 IndexTmp;
+
+            switch (SDO_C->CANrxData[0] >> 5){
+               case 4: // abort command
+                  SDO_C->CANrxNew = 0;
+                  return -1;
+                  break;
+               case 5: // block
+                  IndexTmp = SDO_C->CANrxData[2];
+                  IndexTmp = IndexTmp << 8;
+                  IndexTmp |= SDO_C->CANrxData[1];
+
+                  if(IndexTmp != SDO_C->index || SDO_C->CANrxData[3] != SDO_C->subIndex) {
+                     // TODO: wrong index
+                  }
+                  // set blksize
+                  SDO_C->block_blksize = SDO_C->CANrxData[4];
+                  printf("DEBUG DW init block_blksize= %d\n", SDO_C->block_blksize);
+
+                  SDO_C->block_seqno = 0;
+                  SDO_C->bufferOffset = 0;
+                  SDO_C->bufferOffsetACK = 0;
+                  SDO_C->block_state = SDO_BLOCK_STATE_DOWNLOAD_SEGMENT;
+
+                  break;
+            }
+            break;
+         }
+         case SDO_BLOCK_STATE_DOWNLOAD_WAITING_BLOCK_ACK:{
+            // check server subcommand
+            if((SDO_C->CANrxData[0] & 0x02) == 0){
+               // TODO:  wrong server sub command insert download interupted and error code
+            }
+            // check number of segments
+            if(SDO_C->CANrxData[1] != SDO_C->block_blksize){
+               // NOT all segments transfert sucesfuly
+               SDO_C->bufferOffsetACK = SDO_C->CANrxData[1] * 7;
+               SDO_C->bufferOffset = SDO_C->bufferOffsetACK;
+            }
+            else{
+               SDO_C->bufferOffsetACK = SDO_C->bufferOffset;
+            }
+            // set size of next block
+            SDO_C->block_blksize = SDO_C->CANrxData[2];
+            SDO_C->block_seqno = 0;
+
+            if(SDO_C->bufferOffset >= SDO_C->bufferSize)
+               SDO_C->block_state = SDO_BLOCK_STATE_DOWNLOAD_CRC;
+            else
+               SDO_C->block_state = SDO_BLOCK_STATE_DOWNLOAD_SEGMENT;
+
+            SDO_C->CANrxNew = 0;
+            return 4;
+         }
+         case SDO_BLOCK_STATE_DOWNLOAD_WAITING_CRC_ACK:{
+            if((SDO_C->CANrxData[0] & 0x01) == 0){
+               // TODO wrong server sub command
+            }
+            // SDO bloct download sucesfuly transferd
+            SDO_C->block_state = SDO_BLOCK_STATE_END;
+            SDO_C->CANrxNew = 0;
+            return 0;
+         }
+         case SDO_BLOCK_STATE_DOWNLOAD_SEGMENT:{ // check if
+            UNSIGNED16 IndexTmp;
+
+            if((SDO_C->CANrxData[0] >> 5) == 4){
+               IndexTmp = SDO_C->CANrxData[2];
+               IndexTmp = IndexTmp << 8;
+               IndexTmp |= SDO_C->CANrxData[1];
+
+               if(SDO_C->index == IndexTmp && SDO_C->subIndex == SDO_C->CANrxData[3]){
+                  // transfer is aborted
+                  SDO_C->block_state
+                        = SDO_BLOCK_STATE_NOT_ACTIVE;
+                  SDO_C->CANrxNew = 0;
+                  return -10;
+               }
+            }
+         }
+
+         default:{
+            // unknown
+            // TODO unknown
+            return -16;
+         }
+      }
+      SDO_C->CANrxNew = 0;
+   }
    else{
       //verify timeout
       if(SDO_C->timeoutTimer < SDOtimeoutTime) SDO_C->timeoutTimer += timeDifference_ms;
@@ -401,19 +562,77 @@ INTEGER8 CO_SDOclientDownload(   CO_SDOclient_t      *SDO_C,
          CO_SDOclient_abort(SDO_C, *pSDOabortCode);
          return -11;
       }
+   }
+
+   if(SDO_C->block_state == SDO_BLOCK_STATE_DOWNLOAD_SEGMENT){
+      SDO_C->block_seqno += 1;
+      SDO_C->CANtxBuff->data[0] = SDO_C->block_seqno;
+
+      printf("DEBUG DW SEG clock_seqno %d, block_blksize %d\n",
+            SDO_C->block_seqno, SDO_C->block_blksize);
+
+      if(SDO_C->block_seqno >= SDO_C->block_blksize){
+         SDO_C->block_state = SDO_BLOCK_STATE_DOWNLOAD_WAITING_BLOCK_ACK;
+      }
+      // set data
+      SDO_C->block_noData = 0;
+      UNSIGNED8 i;
+      for(i = 1; i < 8; i++){
+         if(SDO_C->bufferOffset < SDO_C->bufferSize){
+            SDO_C->CANtxBuff->data[i] = *(SDO_C->buffer
+                  + SDO_C->bufferOffset);
+         }
+         else{
+            SDO_C->CANtxBuff->data[i] = 0;
+            SDO_C->block_noData += 1;
+         }
+         SDO_C->bufferOffset += 1;
+      }
+      if(SDO_C->bufferOffset >= SDO_C->bufferSize){
+         SDO_C->CANtxBuff->data[0] |= 0x80;
+         SDO_C->block_state = SDO_BLOCK_STATE_DOWNLOAD_WAITING_BLOCK_ACK;
+      }
+      // tx data
+      SDO_C->timeoutTimer = 0;
+      CO_CANsend(SDO_C->CANdevTx, SDO_C->CANtxBuff);
+
+      return 1;
+   }
+   else if(SDO_C->block_state == SDO_BLOCK_STATE_DOWNLOAD_CRC){
+      // set head
+      SDO_C->CANtxBuff->data[0] = SDO_BLOCK_MASK_DOWNLOAD_HEAD
+            | (SDO_C->block_noData << 2) | 0x01;
+
+      // TODO calculate CRC
+      SDO_C->CANtxBuff->data[1] = 0x12;
+      SDO_C->CANtxBuff->data[2] = 0x34;
+
+      // reserved
+      SDO_C->CANtxBuff->data[3] = 0;
+      SDO_C->CANtxBuff->data[4] = 0;
+      SDO_C->CANtxBuff->data[5] = 0;
+      SDO_C->CANtxBuff->data[6] = 0;
+      SDO_C->CANtxBuff->data[7] = 0;
+
+      // set state
+      SDO_C->block_state = SDO_BLOCK_STATE_DOWNLOAD_WAITING_CRC_ACK;
+      // tx data
+      SDO_C->timeoutTimer = 0;
+      CO_CANsend(SDO_C->CANdevTx, SDO_C->CANtxBuff);
+
       return 1;
    }
 
-   return 0;
+   return 1;
 }
-
 
 /******************************************************************************/
 INTEGER8 CO_SDOclientUploadInitiate(   CO_SDOclient_t   *SDO_C,
                                        UNSIGNED16        index,
                                        UNSIGNED8         subIndex,
                                        UNSIGNED8        *dataRx,
-                                       UNSIGNED16        dataRxSize)
+                                       UNSIGNED32        dataRxSize,
+                                       UNSIGNED8         blockEnable)
 {
    //verify parameters
    if(dataRx == 0 || dataRxSize < 4) return -2;
@@ -426,14 +645,33 @@ INTEGER8 CO_SDOclientUploadInitiate(   CO_SDOclient_t   *SDO_C,
    //prepare CAN tx message
    SDO_C->index = index;
    SDO_C->subIndex = subIndex;
-   SDO_C->CANtxBuff->data[0] = 0x40;
+
    SDO_C->CANtxBuff->data[1] = index & 0xFF;
    SDO_C->CANtxBuff->data[2] = index >> 8;
    SDO_C->CANtxBuff->data[3] = subIndex;
-   SDO_C->CANtxBuff->data[4] = 0;
-   SDO_C->CANtxBuff->data[5] = 0;
+
    SDO_C->CANtxBuff->data[6] = 0;
    SDO_C->CANtxBuff->data[7] = 0;
+
+   if(blockEnable == 0){
+      SDO_C->block_state = SDO_BLOCK_STATE_NOT_ACTIVE;
+
+      SDO_C->CANtxBuff->data[0] = 0x40;
+      SDO_C->CANtxBuff->data[4] = 0;
+      SDO_C->CANtxBuff->data[5] = 0;
+   }
+   else{
+      SDO_C->block_state = SDO_BLOCK_STATE_UPLOAD_INITIATE;
+
+      // set HEAD of packet
+      SDO_C->CANtxBuff->data[0] = SDO_BLOCK_MASK_UPLOAD_HEAD;
+      // set number of segments in block
+      SDO_C->block_blksize = SDO_BLOCK_SIZE_MAX; // TODO izracunat max block size iz velikosti bufferja
+      SDO_C->CANtxBuff->data[4] = SDO_C->block_blksize;
+      SDO_C->CANtxBuff->data[5] = SDO_PST_SIZE;
+
+      SDO_C->block_seqno = 1;
+   }
 
    //if nodeIDOfTheSDOServer == node-ID of this node, then exchange data with this node
    if(SDO_C->ObjDict_SDOClientParameter->nodeIDOfTheSDOServer == SDO_C->SDO->nodeId){
@@ -453,15 +691,18 @@ INTEGER8 CO_SDOclientUploadInitiate(   CO_SDOclient_t   *SDO_C,
 INTEGER8 CO_SDOclientUpload(  CO_SDOclient_t      *SDO_C,
                               UNSIGNED16           timeDifference_ms,
                               UNSIGNED16           SDOtimeoutTime,
-                              UNSIGNED16          *pDataSize,
+                              UNSIGNED32          *pDataSize,
                               UNSIGNED32          *pSDOabortCode)
 {
+   UNSIGNED32 tmp32;
+   UNSIGNED16 indexTmp;
+
    //clear abort code
    *pSDOabortCode = 0;
 
    //verify parameters
    if(!(SDO_C->state&0x44)){
-      //communication was not properly initiaded
+      //communication was not properly initiated
       SDO_C->state = 0;
       SDO_C->CANrxNew = 0;
       return -3;
@@ -469,52 +710,52 @@ INTEGER8 CO_SDOclientUpload(  CO_SDOclient_t      *SDO_C,
 
    //if nodeIDOfTheSDOServer == node-ID of this node, then exchange data with this node
    if(SDO_C->SDO && SDO_C->ObjDict_SDOClientParameter->nodeIDOfTheSDOServer == SDO_C->SDO->nodeId){
-      const sCO_OD_object* pODE;
-      UNSIGNED16 length;
-      UNSIGNED8 attr;
-      UNSIGNED16 indexOfFoundObject;
-      UNSIGNED16 index = SDO_C->index;
-      UNSIGNED8 subIndex = SDO_C->subIndex;
-
-      pODE = CO_OD_find(SDO_C->SDO, index, &indexOfFoundObject);
-      SDO_C->state = 0;
-      SDO_C->CANrxNew = 0;
-      if(pODE == 0){
-         *pSDOabortCode = 0x06020000L;  //object does not exist in OD
+//      const CO_OD_entry_t* pODE;
+//      UNSIGNED16 length;
+//      UNSIGNED8 attr;
+//      UNSIGNED16 indexOfFoundObject;
+//      UNSIGNED16 index = SDO_C->index;
+//      UNSIGNED8 subIndex = SDO_C->subIndex;
+//
+//      pODE = CO_OD_find(SDO_C->SDO, index, &indexOfFoundObject);
+//      SDO_C->state = 0;
+//      SDO_C->CANrxNew = 0;
+//      if(pODE == 0){
+//         *pSDOabortCode = 0x06020000L;  //object does not exist in OD
+//         return -10;
+//      }
+//      if(subIndex > pODE->maxSubIndex){
+//         *pSDOabortCode = 0x06090011L;  //Sub-index does not exist.
+//         return -10;
+//      }
+//      length = CO_OD_getLength(pODE, subIndex);
+//      if(SDO_C->bufferSize < length){
+//         *pSDOabortCode = 0x05040005L;  //Out of memory
+//         return -10;
+//      }
+//      attr = CO_OD_getAttribute(pODE, subIndex);
+//      if(!(attr&CO_ODA_READABLE)){
+//         *pSDOabortCode = 0x06010001L;  //attempt to read a write-only object
+//         return -10;
+//      }
+//      //set data size
+//      *pDataSize = length;
+//      //copy data from OD
+//      *pSDOabortCode = pODE->pFunct(SDO_C->SDO->ObjectDictionaryPointers[indexOfFoundObject],
+//                                    index,
+//                                    subIndex,
+//                                    pDataSize,
+//                                    attr,
+//                                    0,
+//                                    (void*)SDO_C->buffer,
+//                                    CO_OD_getDataPointer(pODE, subIndex));
+//      if(*pSDOabortCode){
          return -10;
-      }
-      if(subIndex > pODE->maxSubIndex){
-         *pSDOabortCode = 0x06090011L;  //Sub-index does not exist.
-         return -10;
-      }
-      length = CO_OD_getLength(pODE, subIndex);
-      if(SDO_C->bufferSize < length){
-         *pSDOabortCode = 0x05040005L;  //Out of memory
-         return -10;
-      }
-      attr = CO_OD_getAttribute(pODE, subIndex);
-      if(!(attr&CO_ODA_READABLE)){
-         *pSDOabortCode = 0x06010001L;  //attempt to read a write-only object
-         return -10;
-      }
-      //set data size
-      *pDataSize = length;
-      //copy data from OD
-      *pSDOabortCode = pODE->pFunct(SDO_C->SDO->ObjectDictionaryPointers[indexOfFoundObject],
-                                    index,
-                                    subIndex,
-                                    pDataSize,
-                                    attr,
-                                    0,
-                                    (void*)SDO_C->buffer,
-                                    CO_OD_getDataPointer(pODE, subIndex));
-      if(*pSDOabortCode){
-         return -10;
-      }
-      return 0;
+//      }
+//      return 0;
    }
-   //check if new SDO object received
-   if(SDO_C->CANrxNew){
+   //check if new SDO segmented or expedited object received
+   if(SDO_C->CANrxNew && SDO_C->block_state == SDO_BLOCK_STATE_NOT_ACTIVE){
       SDO_C->timeoutTimer = 0;
       if(SDO_C->state & 0x40){
          //upload initiated
@@ -615,13 +856,268 @@ INTEGER8 CO_SDOclientUpload(  CO_SDOclient_t      *SDO_C,
          return 2;
       }
    }
+   else if(SDO_C->CANrxNew){
+      SDO_C->CANrxNew = 0; // TODO premakn dol v funkcije
+      SDO_C->timeoutTimer = 0;
+      // block transfer in progres;
+      if(SDO_C->block_state == SDO_BLOCK_STATE_UPLOAD_INITIATE){
+         // check Initiate ack
+         if((SDO_C->CANrxData[0] >> 5) == 4){
+            // abort
+         }
+         else if((SDO_C->CANrxData[0] >> 5) == 2){
+            // back to segmented transfer
+            SDO_C->block_state = SDO_BLOCK_STATE_NOT_ACTIVE;
+
+            if(SDO_C->CANrxData[0] & 0x02){
+               UNSIGNED8 size;
+               //Expedited transfer
+               if(SDO_C->CANrxData[0] & 0x01)//is size indicated
+                  size = 4 - ((SDO_C->CANrxData[0] >> 2) & 0x03);
+               else
+                  size = 4;
+               *pDataSize = size;
+               //copy data
+               while (size--)
+                  SDO_C->buffer[size] = SDO_C->CANrxData[4 + size];
+               SDO_C->state = 0;
+               SDO_C->CANrxNew = 0;
+               return 0;
+            }
+            else{
+               //segmented transfer - prepare first segment
+               SDO_C->bufferOffset = 0;
+               SDO_C->state = 0x44;
+               //continue with segmented upload
+            }
+         }
+         else if((SDO_C->CANrxData[0] >> 5) == 6){
+            // SCR support
+            if((SDO_C->CANrxData[0] & 0x04) != 0)
+               // CRC suported
+               SDO_C->block_serverCRC = 1;
+            else
+               // CRC not suported
+               SDO_C->block_serverCRC = 0;
+            // chech Index ans subnindex
+            indexTmp = SDO_C->CANrxData[2];
+            indexTmp = indexTmp << 8;
+            indexTmp |= SDO_C->CANrxData[1];
+
+            if(indexTmp != SDO_C->index || SDO_C->CANrxData[3] != SDO_C->subIndex){
+               // wrong index
+               // MTJ TODO insert download interupted and error code
+            }
+            // set length
+            SDO_C->dataSize = SDO_C->CANrxData[7];
+            SDO_C->dataSize = SDO_C->dataSize << 8;
+            SDO_C->dataSize |= SDO_C->CANrxData[6];
+            SDO_C->dataSize = SDO_C->dataSize << 8;
+            SDO_C->dataSize |= SDO_C->CANrxData[5];
+            SDO_C->dataSize = SDO_C->dataSize << 8;
+            SDO_C->dataSize |= SDO_C->CANrxData[4];
+
+            printf("UPLOAD_INITIATE OK, data length = %d\n",
+                  SDO_C->dataSize);
+
+            SDO_C->dataSizeTransfered = 0;
+
+            // head
+            SDO_C->CANtxBuff->data[0]
+                  = SDO_BLOCK_MASK_UPLOAD_HEAD | 0x03;
+
+            SDO_C->CANtxBuff->data[1] = 0;
+            SDO_C->CANtxBuff->data[2] = 0;
+            SDO_C->CANtxBuff->data[3] = 0;
+            SDO_C->CANtxBuff->data[4] = 0;
+            SDO_C->CANtxBuff->data[5] = 0;
+            SDO_C->CANtxBuff->data[6] = 0;
+            SDO_C->CANtxBuff->data[7] = 0;
+
+            // set new state
+            SDO_C->block_state = SDO_BLOCK_STATE_UPLOAD_INPROGRESS;
+
+            //empty receive buffer, reset timeout timer and send message
+            SDO_C->CANrxNew = 0;
+            SDO_C->timeoutTimer = 0;
+            CO_CANsend(SDO_C->CANdevTx, SDO_C->CANtxBuff);
+
+            printf("SDO_C rx DATA exit 1\n");
+            return 3;
+         }
+         else{
+            // TODO check if block is not suported
+            // initiate segmented transfer
+            // chseck if transfer adendend
+            // error
+         }
+      }
+      else if(SDO_C->block_state == SDO_BLOCK_STATE_UPLOAD_INPROGRESS){
+         // check correct seqno
+         if((SDO_C->CANrxData[0] & 0x7f) != (SDO_C->block_seqno)){
+            // wring sect number
+            printf("ERROR: ULOAD_INPROGRES napacna seqno \n");
+         }
+         else{
+            printf("SDO UPLOAD IN PROGRES sector %d  %x%x\n",
+                  SDO_C->block_seqno, SDO_C->CANrxData[1],
+                  SDO_C->CANrxData[2]);
+            // store data into buffer
+            /*  TODO insert data
+
+             *(SDO_C->buffer + SDO_C->bufferOffset++) = SDO_C->CANrxData[1];
+             *(SDO_C->buffer + SDO_C->bufferOffset++) = SDO_C->CANrxData[2];
+             *(SDO_C->buffer + SDO_C->bufferOffset++) = SDO_C->CANrxData[3];
+             *(SDO_C->buffer + SDO_C->bufferOffset++) = SDO_C->CANrxData[4];
+             *(SDO_C->buffer + SDO_C->bufferOffset++) = SDO_C->CANrxData[5];
+             *(SDO_C->buffer + SDO_C->bufferOffset++) = SDO_C->CANrxData[6];
+             *(SDO_C->buffer + SDO_C->bufferOffset++) = SDO_C->CANrxData[7];
+             */
+            SDO_C->dataSizeTransfered += 7;
+
+            // seand block ACK if required
+            if(SDO_C->block_seqno >= SDO_C->block_blksize){
+               // last segment in block
+               printf("DEBUG LAST SEGMENT IN BLOCK \n");
+               //set data to be seand
+               // head
+               SDO_C->CANtxBuff->data[0] = SDO_BLOCK_MASK_UPLOAD_HEAD | 0x02;
+               SDO_C->CANtxBuff->data[1] = SDO_C->block_seqno;
+
+               // set next block size
+               if(SDO_C->dataSizeTransfered >= SDO_C->dataSize){
+                  SDO_C->block_blksize = 0;
+                  SDO_C->block_state = SDO_BLOCK_STATE_UPLOAD_WAITING_CRC;
+                  printf("waiting CRC\n");
+               }
+               else{
+                  tmp32 = ((SDO_C->dataSize - SDO_C->dataSizeTransfered) / 7);
+                  if(tmp32 >= SDO_BLOCK_SIZE_MAX){
+                     SDO_C->block_blksize = SDO_BLOCK_SIZE_MAX;
+                  }
+                  else{
+                     if((SDO_C->dataSize - SDO_C->dataSizeTransfered) % 7 == 0)
+                        SDO_C->block_blksize = tmp32;
+                     else
+                        SDO_C->block_blksize = tmp32 + 1;
+                  }
+
+                  SDO_C->block_state = SDO_BLOCK_STATE_UPLOAD_INPROGRESS;
+                  printf("block upload continue\n");
+               }
+
+               SDO_C->CANtxBuff->data[2] = SDO_C->block_blksize;
+
+               SDO_C->CANtxBuff->data[3] = 0;
+               SDO_C->CANtxBuff->data[4] = 0;
+               SDO_C->CANtxBuff->data[5] = 0;
+               SDO_C->CANtxBuff->data[6] = 0;
+               SDO_C->CANtxBuff->data[7] = 0;
+
+               //empty receive buffer, reset timeout timer and send message
+               SDO_C->CANrxNew = 0;
+               SDO_C->timeoutTimer = 0;
+               SDO_C->block_seqno = 1;
+               CO_CANsend(SDO_C->CANdevTx, SDO_C->CANtxBuff);
+            }
+            else{
+               SDO_C->block_seqno += 1;
+            }
+            SDO_C->CANrxNew = 0;
+            return 1;
+         }
+      }
+      else if(SDO_C->block_state == SDO_BLOCK_STATE_UPLOAD_WAITING_CRC){
+         // check crc
+         printf("waiting CRC start \n");
+
+         if(SDO_C->CANrxData[0] == 0xc1){
+            // MTJ_TODO calculate CRC
+            // return TRUE or FALSE
+
+            // seand CRC ACK
+            // head
+            SDO_C->CANtxBuff->data[0] = SDO_BLOCK_MASK_UPLOAD_HEAD | 0x01;
+
+            SDO_C->CANtxBuff->data[1] = 0;
+            SDO_C->CANtxBuff->data[2] = 0;
+            SDO_C->CANtxBuff->data[3] = 0;
+            SDO_C->CANtxBuff->data[4] = 0;
+            SDO_C->CANtxBuff->data[5] = 0;
+            SDO_C->CANtxBuff->data[6] = 0;
+            SDO_C->CANtxBuff->data[7] = 0;
+
+            // set new state
+            SDO_C->block_state = SDO_BLOCK_STATE_NOT_ACTIVE;
+
+            //empty receive buffer, reset timeout timer and send message
+            SDO_C->CANrxNew = 0;
+            SDO_C->timeoutTimer = 0;
+            CO_CANsend(SDO_C->CANdevTx, SDO_C->CANtxBuff);
+
+            // end of comunication
+            printf("WAITING_CRC send CRC_ACK; END OF TRANSFER\n");
+            return 0;
+         }
+         else{
+            printf("WAITING_CRC wrong head\n");
+         }
+      }
+   }
    else{
       //verify timeout
       if(SDO_C->timeoutTimer < SDOtimeoutTime) SDO_C->timeoutTimer += timeDifference_ms;
-      if(SDO_C->timeoutTimer >= SDOtimeoutTime){
+      if(SDO_C->timeoutTimer >= SDOtimeoutTime &&
+         SDO_C->block_state == SDO_BLOCK_STATE_NOT_ACTIVE)
+      {
          *pSDOabortCode = 0x05040000L;  //SDO protocol timed out
          CO_SDOclient_abort(SDO_C, *pSDOabortCode);
          return -11;
+      }
+      else if(SDO_C->timeoutTimer >= SDOtimeoutTime &&
+         SDO_C->block_state == SDO_BLOCK_STATE_UPLOAD_INPROGRESS &&
+         SDO_C->block_seqno > 1)
+      {
+         SDO_C->timeoutTimer = 0;
+         // ACK transfered segments
+         SDO_C->CANtxBuff->data[0] = SDO_BLOCK_MASK_UPLOAD_HEAD | 0x02;
+         SDO_C->CANtxBuff->data[1] = SDO_C->block_seqno;
+
+         // set next block size
+         if(SDO_C->dataSizeTransfered >= SDO_C->dataSize){
+            SDO_C->block_blksize = 0;
+            SDO_C->block_state = SDO_BLOCK_STATE_UPLOAD_WAITING_CRC;
+            printf("waiting CRC\n");
+         }
+         else{
+            tmp32 = ((SDO_C->dataSize - SDO_C->dataSizeTransfered) / 7);
+            if(tmp32 >= SDO_BLOCK_SIZE_MAX){
+               SDO_C->block_blksize = SDO_BLOCK_SIZE_MAX;
+            }
+            else{
+               if((SDO_C->dataSize - SDO_C->dataSizeTransfered) % 7 == 0)
+                  SDO_C->block_blksize = tmp32;
+               else
+                  SDO_C->block_blksize = tmp32 + 1;
+            }
+
+            SDO_C->block_state = SDO_BLOCK_STATE_UPLOAD_INPROGRESS;
+            printf("block upload continue\n");
+         }
+
+         SDO_C->CANtxBuff->data[2] = SDO_C->block_blksize;
+
+         SDO_C->CANtxBuff->data[3] = 0;
+         SDO_C->CANtxBuff->data[4] = 0;
+         SDO_C->CANtxBuff->data[5] = 0;
+         SDO_C->CANtxBuff->data[6] = 0;
+         SDO_C->CANtxBuff->data[7] = 0;
+
+         //empty receive buffer, reset timeout timer and send message
+         SDO_C->CANrxNew = 0;
+         SDO_C->timeoutTimer = 0;
+         SDO_C->block_seqno = 1;
+         CO_CANsend(SDO_C->CANdevTx, SDO_C->CANtxBuff);
       }
       return 1;
    }

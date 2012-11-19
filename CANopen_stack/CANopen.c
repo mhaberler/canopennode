@@ -36,7 +36,7 @@
 
 
 /* Global variables ***********************************************************/
-extern const sCO_OD_object CO_OD[CO_OD_NoOfElements];  //Object Dictionary array
+extern const CO_OD_entry_t CO_OD[CO_OD_NoOfElements];  //Object Dictionary array
 
 #if defined(__dsPIC33F__) || defined(__PIC24H__)
    //CAN message buffer for one TX and seven RX messages.
@@ -145,6 +145,47 @@ extern const sCO_OD_object CO_OD[CO_OD_NoOfElements];  //Object Dictionary array
 #endif
 
 
+/* CAN node ID - Object dictionary function ***********************************/
+UNSIGNED32 CO_ODF_nodeId(CO_ODF_arg_t *ODF_arg){
+   UNSIGNED8 *value;
+
+   value = (UNSIGNED8*) ODF_arg->data;
+
+   if(!ODF_arg->reading){
+      if(*value < 1)   return 0x06090032L;  //Value of parameter written too low.
+      if(*value > 127) return 0x06090031L;  //Value of parameter written too high.
+   }
+
+   return 0;
+}
+
+
+/* CAN bit rate - Object dictionary function **********************************/
+UNSIGNED32 CO_ODF_bitRate(CO_ODF_arg_t *ODF_arg){
+   UNSIGNED16 *value;
+
+   value = (UNSIGNED16*) ODF_arg->data;
+
+   if(!ODF_arg->reading){
+      switch(*value){
+         case 10:
+         case 20:
+         case 50:
+         case 125:
+         case 250:
+         case 500:
+         case 800:
+         case 1000:
+            break;
+         default:
+            return 0x06090030L;  //Invalid value for the parameter
+      }
+   }
+
+   return 0;
+}
+
+
 /******************************************************************************/
 INTEGER16 CO_init(CO_t **ppCO){
 
@@ -153,6 +194,15 @@ INTEGER16 CO_init(CO_t **ppCO){
    UNSIGNED8 nodeId;
    UNSIGNED16 CANBitRate;	
    enum CO_ReturnError err;
+
+   //Verify parameters from CO_OD
+   if(   sizeof(OD_TPDOCommunicationParameter_t) != sizeof(CO_TPDOCommPar_t)
+      || sizeof(OD_TPDOMappingParameter_t) != sizeof(CO_TPDOMapPar_t)
+      || sizeof(OD_RPDOCommunicationParameter_t) != sizeof(CO_RPDOCommPar_t)
+      || sizeof(OD_RPDOMappingParameter_t) != sizeof(CO_RPDOMapPar_t))
+   {
+      return CO_ERROR_PARAMETERS;
+   }
 
    //Initialize CANopen global variables if set so
    #ifdef CO_GLOBAL_FOR_DEBUG
@@ -273,8 +323,8 @@ INTEGER16 CO_init(CO_t **ppCO){
                         nodeId,
                         ((i<=4) ? (CAN_ID_RPDO0+i*0x100) : 0),
                         0,
-                       &OD_RPDOCommunicationParameter[i],
-                       &OD_RPDOMappingParameter[i],
+                        (CO_RPDOCommPar_t*) &OD_RPDOCommunicationParameter[i],
+                        (CO_RPDOMapPar_t*) &OD_RPDOMappingParameter[i],
                         0x1400+i,
                         0x1600+i,
                         CO->CANmodule[0], CO_RXCAN_RPDO+i);
@@ -290,8 +340,8 @@ INTEGER16 CO_init(CO_t **ppCO){
                         nodeId,
                         ((i<=4) ? (CAN_ID_TPDO0+i*0x100) : 0),
                         0,
-                       &OD_TPDOCommunicationParameter[i],
-                       &OD_TPDOMappingParameter[i],
+                        (CO_TPDOCommPar_t*) &OD_TPDOCommunicationParameter[i],
+                        (CO_TPDOMapPar_t*) &OD_TPDOMappingParameter[i],
                         0x1800+i,
                         0x1A00+i,
                         CO->CANmodule[0], CO_TXCAN_TPDO+i);
@@ -317,6 +367,10 @@ INTEGER16 CO_init(CO_t **ppCO){
                         CO->CANmodule[0], CO_TXCAN_SDO_CLI);
    if(err){CO_delete(ppCO); return err;}
 #endif
+
+   //Configure Object dictionary entry at index 0x2101 and 0x2102
+   CO_OD_configure(CO->SDO, 0x2101, CO_ODF_nodeId, 0);
+   CO_OD_configure(CO->SDO, 0x2102, CO_ODF_bitRate, 0);
 
    return CO_ERROR_NO;
 }

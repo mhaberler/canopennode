@@ -41,8 +41,8 @@
    FILE INFO:
       FileName:     IO
       FileVersion:  3.0
-      CreationTime: 11:24:37
-      CreationDate: 2012-09-14
+      CreationTime: 08:15:03
+      CreationDate: 2012-11-19
       CreatedBy:    -
 *******************************************************************************/
 
@@ -71,7 +71,7 @@
 /*******************************************************************************
    OBJECT DICTIONARY
 *******************************************************************************/
-   #define CO_OD_NoOfElements             55
+   #define CO_OD_NoOfElements             54
 
 
 /*******************************************************************************
@@ -137,6 +137,7 @@
                UNSIGNED64     U64;
                REAL32         R32;
                REAL64         R64;
+               DOMAIN         domain;
                }              OD_testVar_t;
 
 
@@ -162,7 +163,6 @@ struct sCO_OD_RAM{
 /*2109      */ INTEGER16      voltage[1];
 /*2110      */ INTEGER32      variableInt32[16];
 /*2120      */ OD_testVar_t   testVar;
-/*2121      */ DOMAIN         testDomain;
 /*6000      */ UNSIGNED8      readInput8Bit[8];
 /*6200      */ UNSIGNED8      writeOutput8Bit[8];
 /*6401      */ INTEGER16      readAnalogueInput16Bit[12];
@@ -368,9 +368,6 @@ extern CO_OD_ROM_IDENT struct sCO_OD_ROM CO_OD_ROM;
 
 /*2120, Data Type: OD_testVar_t */
       #define OD_testVar                                 CO_OD_RAM.testVar
-
-/*2121, Data Type: DOMAIN */
-      #define OD_testDomain                              CO_OD_RAM.testDomain
 
 /*6000, Data Type: UNSIGNED8, Array[8] */
       #define OD_readInput8Bit                           CO_OD_RAM.readInput8Bit

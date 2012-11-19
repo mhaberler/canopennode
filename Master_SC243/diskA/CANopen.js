@@ -1,5 +1,7 @@
 /*******************************************************************************
-   CANopen basic functions for communication with the master
+   File: CANopen.js
+   CANopen basic functions for communication with the master.
+
    Copyright (C) 2012 Janez Paternoster
 
    This Source Code Form is subject to the terms of the Mozilla Public
@@ -44,31 +46,31 @@
 
 
 /*******************************************************************************
-   Object: CANopen
+   Object: CANopen_t
 
    Constructor for communication with the master.
 
    Variables:
 *******************************************************************************/
-function CANopen(){
+function CANopen_t(){
 
 }
 
-CANopen.prototype = {
-   constructor: CANopen,
+CANopen_t.prototype = {
+   constructor: CANopen_t,
 
 
    /****************************************************************************
       Function: readFile
 
       Read file from html server.
-      
+
       Any file from web directory can be read.
-      
+
       Readig emergency temporary buffer (For details see file <CgiLog.h>.):
        - filename = "emcy"
        - Messages are maximum one day old, then are automatically stored to log file.
-      
+
       Reading emergency log file:
        - filename = "emcy.log"
        - Log file contains all Emergency messages, except messages, that are
@@ -191,7 +193,7 @@ CANopen.prototype = {
 
 
 /*******************************************************************************
-   Object: CANLog
+   Object: CANLog_t
 
    Constructor for retriving CAN log data from the master.
 
@@ -201,15 +203,6 @@ CANopen.prototype = {
       textBufSize    - Each CAN message is stored as text in internal array buffer,
                        which can be used to display log of CAN messages.
                        'textBufSize' indicates maximum number of messages in the buffer.
-      funcProcessMsg - Optional external function, which is called for each CAN
-                       message with the following arguments: *time* offset from
-                       date in milliseconds; *id*, *length*, *data* of the message.
-      funcBoundary   - Optional external function, which is called on two events:
-                       date time stamp has changed for one minute. In that case
-                       function passes the argument *logDate* typeof Date rounded
-                       to minutes. Second event is finish of capturing one message
-                       block from the server. Null is passed in the first argument.
-                       Second argument is always refference to textBuffer array.
       interval       - Interval of CANmessage capturing from the server. If zero,
                        complete RAM buffer is captured once with history CAN
                        messages. If nonzero, capturing must be started with
@@ -218,10 +211,13 @@ CANopen.prototype = {
                        captured from current RAM buffer. If filename is set,
                        interval is set to 0.
 *******************************************************************************/
-function CANLog(textBufSize, funcProcessMsg, funcBoundary, interval, filename){
+function CANLog_t(textBufSize, interval, filename){
    this.textBufSize = textBufSize;
-   this.funcProcessMsg = funcProcessMsg;
-   this.funcBoundary = funcBoundary;
+   this.callbacksProcessMsg = [];
+   this.callbacksBoundary = [];
+   this.callbacksProcessMsgIDs = [];
+   this.callbacksBoundaryIDs = [];
+   this.callbacksID = 0;
 
    this.interval = 0;
    this.runInterval = false;
@@ -234,7 +230,7 @@ function CANLog(textBufSize, funcProcessMsg, funcBoundary, interval, filename){
       this.filename = filename;
    }
    else{
-      this.filename = "CANlog";
+      this.filename = "CANLog";
       this.interval = interval;
    }
 
@@ -242,23 +238,126 @@ function CANLog(textBufSize, funcProcessMsg, funcBoundary, interval, filename){
    if(interval == 0) this.capture(this);
 }
 
-CANLog.prototype = {
-   constructor: CANLog,
+CANLog_t.prototype = {
+   constructor: CANLog_t,
 
    /****************************************************************************
-      Function: start, stop
+      Function: registerCallbackProcessMsg
 
-      Start or stop capturing of the CAN messages.
+      Register external function, which will be called for each CAN message.
+
+      It is possible to register multiple functions. Parameter to this function
+      is external function. This function returns ID, which can be used inside
+      <removeCallback>.
+
+      Registered external function is called with arguments:
+         time     - Offset from previous date in milliseconds.
+         id       - Id of the CAN message.
+         length   - Length of the CAN message.
+         data     - Data of the CAN message as JavaScript DataView object.
+
+      Example usage:
+      >  var CANLog = new CANLog_t( ... );
+      >  function logProcessMsg(time, id, length, data){
+      >     if(id == ....){
+      >        var xyVar = data.getUint32(4, 1);//4=byteOffset, 1=littleEndian
+      >        ....
+      >     }
+      >  }
+      >  CANLog.registerCallbackProcessMsg(logProcessMsg);
+
+      Example usage with anonymous function:
+      >  CANLog.registerCallbackProcessMsg(function(time, id, length, data){
+      >     if(id == ....){
+      >        var xyVar = data.getUint32(4, 1);//4=byteOffset, 1=littleEndian
+      >        ....
+      >     }
+      >  });
+   ****************************************************************************/
+   registerCallbackProcessMsg: function(func){
+      this.callbacksProcessMsg.push(func);
+      this.callbacksProcessMsgIDs.push(++this.callbacksID);
+      return this.callbacksID;
+   },
+
+   /****************************************************************************
+      Function: registerCallbackBoundary
+
+      Register external function, which will be called on two CANLog events.
+
+      First event is change of date for one minute. Second event is finish of
+      capturing one message block from the server. It is possible to register
+      multiple functions. Parameter to this function is external function.
+      This function returns ID, which can be used inside <removeCallback>.
+
+      Registered external function is called with arguments:
+         logDate  - Date rounded to minutes as JavaScript Date object. Argument
+                    is NULL if event is finish of capturing one message block.
+         textBuf  - Refference to array of loged CAN messages as texsts.
+
+      Example usage:
+      >  function logBoundary(logDate, textBuf){
+      >        ....
+   ****************************************************************************/
+   registerCallbackBoundary: function(func){
+      this.callbacksBoundary.push(func);
+      this.callbacksBoundaryIDs.push(++this.callbacksID);
+      return this.callbacksID;
+   },
+
+   /****************************************************************************
+      Function: removeCallback
+
+      Remove previously registered external callback function.
+
+      Parameter:
+         ID       - ID value returned from <registerCallbackProcessMsg> or
+                    <registerCallbackProcessMsg>.
+
+      Return:
+         0 - No removal.
+         1 - Callback removed from callbacksProcessMsg.
+         2 - Callback removed from callbacksBoundary.
+   ****************************************************************************/
+   removeCallback: function(ID){
+      for(var i=0; i<this.callbacksProcessMsgIDs.length; i++){
+         if(this.callbacksProcessMsgIDs[i] == ID){
+            //delete the array entries
+            this.callbacksProcessMsg.splice(i, 1);
+            this.callbacksProcessMsgIDs.splice(i, 1);
+            return 1;
+         }
+      }
+      for(var i=0; i<this.callbacksBoundaryIDs.length; i++){
+         if(this.callbacksBoundaryIDs[i] == ID){
+            //delete the array entries
+            this.callbacksBoundary.splice(i, 1);
+            this.callbacksBoundaryIDs.splice(i, 1);
+            return 2;
+         }
+      }
+      return 0;
+   },
+
+   /****************************************************************************
+      Function: start
+
+      Start capturing of the CAN messages.
    ****************************************************************************/
    start: function(){
       this.runInterval = true;
       this.capture(this);
    },
 
+   /****************************************************************************
+      Function: stop
+
+      Stop capturing of the CAN messages.
+   ****************************************************************************/
    stop: function(){
       this.runInterval = false;
    },
-   
+
    /****************************************************************************
       Function: clearBufferOnServer
 
@@ -266,7 +365,7 @@ CANLog.prototype = {
    ****************************************************************************/
    clearBufferOnServer: function(){
       var req = new XMLHttpRequest();
-      req.open("GET", "CANlog?clear", true);
+      req.open("GET", "CANLog?clear", true);
       req.send(null);
    },
 
@@ -277,7 +376,7 @@ CANLog.prototype = {
    ****************************************************************************/
    dumpBufferOnServer: function(){
       var req = new XMLHttpRequest();
-      req.open("GET", "CANlog?dump", true);
+      req.open("GET", "CANLog?dump", true);
       req.send(null);
    },
 
@@ -292,14 +391,14 @@ CANLog.prototype = {
       req.responseType = "arraybuffer";
 
       req.onload = function (oEvent){
-         var CANlogBinaryFile = req.response;
-         if(!CANlogBinaryFile) return;
+         var CANLogBinaryFile = req.response;
+         if(!CANLogBinaryFile) return;
 
          //number of CAN messages + 1(head)
-         var msgNo = parseInt(CANlogBinaryFile.byteLength / 16);
+         var msgNo = parseInt(CANLogBinaryFile.byteLength / 16);
 
          //decode head TTTTMMMMYMDHMSmm - two timestamps of the time for refference. MMMM is offset of the oldest message.
-         var logHead = new DataView(CANlogBinaryFile, 0, 16);
+         var logHead = new DataView(CANLogBinaryFile, 0, 16);
          var logTime = logHead.getUint32(0, 1) -             //Millisecond time stamp rounded to minutes
                        logHead.getUint8(13)*1000 -
                        logHead.getUint16(14, 1);
@@ -315,14 +414,16 @@ CANLog.prototype = {
          //send on minute change
          if(log.date.getTime() != logDate.getTime()){
             log.date.setTime(logDate.getTime());
-            if(log.funcBoundary) log.funcBoundary(log.date, log.textBuf);
+            //call registered external functions
+            for(var i=0; i<log.callbacksBoundary.length; i++)
+               log.callbacksBoundary[i](log.date, log.textBuf);
          }
 
          //Process can messages
-         for (var i = 1; i < msgNo; i++){
+         for (var msgCnt = 1; msgCnt < msgNo; msgCnt++){
             //decode message TTTTAA0N dddddddd
-            var recordHead = new DataView(CANlogBinaryFile, msgOffset, 8);
-            var recordData = new DataView(CANlogBinaryFile, msgOffset+8, 8);
+            var recordHead = new DataView(CANLogBinaryFile, msgOffset, 8);
+            var recordData = new DataView(CANLogBinaryFile, msgOffset+8, 8);
             msgOffset += 16;
             if(msgOffset >= msgOffsetMax) msgOffset = 16; //in case of overflowed buffer
 
@@ -334,7 +435,9 @@ CANLog.prototype = {
                logTime += 60000;
                if(logTime >= 0x100000000) logTime -= 0x100000000;
                log.date.setSeconds(60);
-               if(log.funcBoundary) log.funcBoundary(log.date, log.textBuf);
+               //call registered external functions
+               for(var i=0; i<log.callbacksBoundary.length; i++)
+                  log.callbacksBoundary[i](log.date, log.textBuf);
             }
             var id = recordHead.getUint16(4, 1);
             var len = recordHead.getUint8(7);
@@ -354,13 +457,14 @@ CANLog.prototype = {
                while(log.textBuf.length > log.textBufSize) log.textBuf.shift();
             }
 
-            //call user function if available
-            if(log.funcProcessMsg)
-               log.funcProcessMsg(time, id ,len, recordData);
+            //call registered external functions
+            for(var i=0; i<log.callbacksProcessMsg.length; i++)
+               log.callbacksProcessMsg[i](time, id ,len, recordData);
          }
 
-         //call user function if available
-         if(log.funcBoundary) log.funcBoundary(0, log.textBuf);
+         //call registered external functions
+         for(var i=0; i<log.callbacksBoundary.length; i++)
+            log.callbacksBoundary[i](0, log.textBuf);
 
          //call this function periodically, if set so
          if(log.runInterval)

@@ -127,16 +127,9 @@ INTEGER16 CO_SYNC_receive(void *object, CO_CANrxMsg_t *msg);
 
    Function for accessing _COB ID SYNC Message_ (index 0x1005) from SDO server.
 
-   For more information see topic <SDO server access function> in CO_SDO.h file.
+   For more information see topic <Object dictionary function>.
 *******************************************************************************/
-UNSIGNED32 CO_ODF_1005( void       *object,
-                        UNSIGNED16  index,
-                        UNSIGNED8   subIndex,
-                        UNSIGNED16 *pLength,
-                        UNSIGNED16  attribute,
-                        UNSIGNED8   dir,
-                        void       *dataBuff,
-                        const void *pData);
+UNSIGNED32 CO_ODF_1005(CO_ODF_arg_t *ODF_arg);
 
 
 /*******************************************************************************
@@ -144,16 +137,9 @@ UNSIGNED32 CO_ODF_1005( void       *object,
 
    Function for accessing _Communication cycle period_ (index 0x1006) from SDO server.
 
-   For more information see topic <SDO server access function> in CO_SDO.h file.
+   For more information see topic <Object dictionary function>.
 *******************************************************************************/
-UNSIGNED32 CO_ODF_1006( void       *object,
-                        UNSIGNED16  index,
-                        UNSIGNED8   subIndex,
-                        UNSIGNED16 *pLength,
-                        UNSIGNED16  attribute,
-                        UNSIGNED8   dir,
-                        void       *dataBuff,
-                        const void *pData);
+UNSIGNED32 CO_ODF_1006(CO_ODF_arg_t *ODF_arg);
 
 
 /*******************************************************************************
@@ -161,16 +147,9 @@ UNSIGNED32 CO_ODF_1006( void       *object,
 
    Function for accessing _Synchronous counter overflow value_ (index 0x1019) from SDO server.
 
-   For more information see topic <SDO server access function> in CO_SDO.h file.
+   For more information see topic <Object dictionary function>.
 *******************************************************************************/
-UNSIGNED32 CO_ODF_1019( void       *object,
-                        UNSIGNED16  index,
-                        UNSIGNED8   subIndex,
-                        UNSIGNED16 *pLength,
-                        UNSIGNED16  attribute,
-                        UNSIGNED8   dir,
-                        void       *dataBuff,
-                        const void *pData);
+UNSIGNED32 CO_ODF_1019(CO_ODF_arg_t *ODF_arg);
 
 
 /*******************************************************************************

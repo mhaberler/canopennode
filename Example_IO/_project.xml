@@ -753,14 +753,14 @@ main cycle max time - maximum mainline function cycle time in percent of timer p
       <CANopenSubObject subIndex="0F" name="int32" objectType="7" defaultValue="0"/>
       <CANopenSubObject subIndex="10" name="int32" objectType="7" defaultValue="0"/>
     </CANopenObject>
-    <CANopenObject index="2120" name="test var" objectType="9" subNumber="5" memoryType="RAM">
-      <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" PDOmapping="no" defaultValue="4"/>
+    <CANopenObject index="2120" name="test var" objectType="9" subNumber="6" memoryType="RAM">
+      <CANopenSubObject subIndex="00" name="max sub-index" objectType="7" dataType="05" accessType="ro" PDOmapping="no" defaultValue="5"/>
       <CANopenSubObject subIndex="01" name="I64" objectType="7" dataType="15" accessType="rw" PDOmapping="optional" defaultValue="0x1234567890ABCDEFLL"/>
       <CANopenSubObject subIndex="02" name="U64" objectType="7" dataType="1B" accessType="rw" PDOmapping="optional" defaultValue="0x234567890ABCDEF1LL"/>
       <CANopenSubObject subIndex="03" name="R32" objectType="7" dataType="08" accessType="rw" PDOmapping="optional" defaultValue="12.345"/>
       <CANopenSubObject subIndex="04" name="R64" objectType="7" dataType="11" accessType="rw" PDOmapping="optional" defaultValue="456.789"/>
+      <CANopenSubObject subIndex="05" name="domain" objectType="7" dataType="0F" accessType="rw" PDOmapping="no" defaultValue="0"/>
     </CANopenObject>
-    <CANopenObject index="2121" name="test domain" objectType="7" memoryType="RAM" dataType="0F" accessType="rw" PDOmapping="optional" defaultValue="0" accessFunctionName="ODF_testDomain"/>
     <CANopenObject index="6000" name="Read input 8 bit" objectType="8" subNumber="9" memoryType="RAM" dataType="05" accessType="ro" PDOmapping="optional" TPDOdetectCOS="true">
       <label lang="en">Read input 8 bit</label>
       <description lang="en">Digital inputs from hardware.</description>
@@ -819,7 +819,7 @@ main cycle max time - maximum mainline function cycle time in percent of timer p
     </CANopenObject>
   </CANopenObjectList>
   <other>
-    <file fileName="IO" fileCreator="-" fileCreationDate="2012-09-14" fileCreationTime="11:24:37" fileVersion="3.0"/>
+    <file fileName="IO" fileCreator="-" fileCreationDate="2012-11-19" fileCreationTime="08:15:03" fileVersion="3.0"/>
     <DeviceIdentity>
       <vendorName>Paternoster</vendorName>
       <productName>CANopenNode</productName>

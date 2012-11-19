@@ -143,11 +143,11 @@ UNSIGNED32 CO_PDOfindMap(  CO_SDO_t      *SDO,
                            UNSIGNED8     *pLength,
                            UNSIGNED8     *pSendIfCOSFlags,
                            UNSIGNED8     *pIsMultibyteVar){
+   UNSIGNED16 entryNo;
    UNSIGNED16 index;
    UNSIGNED8 subIndex;
    UNSIGNED8 dataLen;
    UNSIGNED8 objectLen;
-   const sCO_OD_object* pODE;
    UNSIGNED8 attr;
 
    index = (UNSIGNED16)(map>>16);
@@ -184,26 +184,27 @@ UNSIGNED32 CO_PDOfindMap(  CO_SDO_t      *SDO,
    }
 
    //find object in Object Dictionary
-   pODE = CO_OD_find(SDO, index, 0);
+   entryNo = CO_OD_find(SDO, index);
 
    //Does object exist in OD?
-   if(!pODE || subIndex > pODE->maxSubIndex) return 0x06020000L;   //Object does not exist in the object dictionary.
+   if(entryNo == 0xFFFF || subIndex > SDO->OD[entryNo].maxSubIndex)
+      return 0x06020000L;   //Object does not exist in the object dictionary.
 
-   attr = CO_OD_getAttribute(pODE, subIndex);
+   attr = CO_OD_getAttribute(SDO, entryNo, subIndex);
    //Is object Mappable for RPDO?
    if(R_T==0 && !(attr&CO_ODA_RPDO_MAPABLE && attr&CO_ODA_WRITEABLE && attr&CO_ODA_MEM_RAM)) return 0x06040041L;   //Object cannot be mapped to the PDO.
    //Is object Mappable for TPDO?
    if(R_T!=0 && !(attr&CO_ODA_TPDO_MAPABLE && attr&CO_ODA_READABLE)) return 0x06040041L;   //Object cannot be mapped to the PDO.
 
    //is size of variable big enough for map
-   objectLen = CO_OD_getLength(pODE, subIndex);
+   objectLen = CO_OD_getLength(SDO, entryNo, subIndex);
    if(objectLen < dataLen) return 0x06040041L;   //Object cannot be mapped to the PDO.
 
    //mark multibyte variable
    *pIsMultibyteVar = (attr&CO_ODA_MB_VALUE) ? 1 : 0;
 
    //pointer to data
-   *ppData = (UNSIGNED8*) CO_OD_getDataPointer(pODE, subIndex);
+   *ppData = (UNSIGNED8*) CO_OD_getDataPointer(SDO, entryNo, subIndex);
 #ifdef BIG_ENDIAN
    //skip unused MSB bytes
    if(*pIsMultibyteVar){
@@ -224,15 +225,13 @@ UNSIGNED32 CO_PDOfindMap(  CO_SDO_t      *SDO,
 
 
 /******************************************************************************/
-UNSIGNED8 CO_RPDOconfigMap(   CO_RPDO_t* RPDO,
-                        const OD_RPDOMappingParameter_t *ObjDict_RPDOMappingParameter)
-{
+UNSIGNED32 CO_RPDOconfigMap(CO_RPDO_t* RPDO, UNSIGNED8 noOfMappedObjects){
    UNSIGNED8 i;
    UNSIGNED8 length = 0;
    UNSIGNED32 ret = 0;
-   const UNSIGNED32* pMap = &ObjDict_RPDOMappingParameter->mappedObject1;
+   const UNSIGNED32* pMap = &RPDO->RPDOMapPar->mappedObject1;
 
-   for(i=ObjDict_RPDOMappingParameter->numberOfMappedObjects; i>0; i--){
+   for(i=noOfMappedObjects; i>0; i--){
       UNSIGNED8 j;
       UNSIGNED8* pData;
       UNSIGNED8 dummy = 0;
@@ -278,17 +277,15 @@ UNSIGNED8 CO_RPDOconfigMap(   CO_RPDO_t* RPDO,
 
 
 /******************************************************************************/
-UNSIGNED8 CO_TPDOconfigMap(   CO_TPDO_t* TPDO,
-                        const OD_TPDOMappingParameter_t *ObjDict_TPDOMappingParameter)
-{
+UNSIGNED32 CO_TPDOconfigMap(CO_TPDO_t* TPDO, UNSIGNED8 noOfMappedObjects){
    UNSIGNED8 i;
    UNSIGNED8 length = 0;
    UNSIGNED32 ret = 0;
-   const UNSIGNED32* pMap = &ObjDict_TPDOMappingParameter->mappedObject1;
+   const UNSIGNED32* pMap = &TPDO->TPDOMapPar->mappedObject1;
 
    TPDO->sendIfCOSFlags = 0;
 
-   for(i=ObjDict_TPDOMappingParameter->numberOfMappedObjects; i>0; i--){
+   for(i=noOfMappedObjects; i>0; i--){
       UNSIGNED8 j;
       UNSIGNED8* pData;
       UNSIGNED8 prevLength = length;
@@ -332,36 +329,25 @@ UNSIGNED8 CO_TPDOconfigMap(   CO_TPDO_t* TPDO,
 }
 
 
-/******************************************************************************/
-UNSIGNED32 CO_ODF_RPDOcom( void       *object,
-                           UNSIGNED16  index,
-                           UNSIGNED8   subIndex,
-                           UNSIGNED16 *pLength,
-                           UNSIGNED16  attribute,
-                           UNSIGNED8   dir,
-                           void       *dataBuff,
-                           const void *pData)
-{
+/* RPDO communication parameter - Object dictionary function ******************/
+UNSIGNED32 CO_ODF_RPDOcom(CO_ODF_arg_t *ODF_arg){
    CO_RPDO_t *RPDO;
-   UNSIGNED32 dataBuffCopy, abortCode;
 
-   RPDO = (CO_RPDO_t*)object;   //this is the correct pointer type of the first argument
+   RPDO = (CO_RPDO_t*) ODF_arg->object;
 
    //Reading Object Dictionary variable
-   if(dir == 0){
-      abortCode = CO_ODF(object, index, subIndex, pLength, attribute, dir, dataBuff, pData);
-      if(abortCode==0 && subIndex==1){
-         //value in dataBuff is little endian as CANopen, so invert it back
-         memcpySwap4((UNSIGNED8*)&dataBuffCopy, (UNSIGNED8*)dataBuff);
+   if(ODF_arg->reading){
+      if(ODF_arg->subIndex == 1){
+         UNSIGNED32 *value = (UNSIGNED32*) ODF_arg->data;
+
          //if default COB ID is used, write default value here
-         if((UNSIGNED16)dataBuffCopy == RPDO->defaultCOB_ID && RPDO->defaultCOB_ID)
-            dataBuffCopy += RPDO->nodeId;
+         if(((*value)&0xFFFF) == RPDO->defaultCOB_ID && RPDO->defaultCOB_ID)
+            *value += RPDO->nodeId;
 
          //If PDO is not valid, set bit 31
-         if(!RPDO->valid) dataBuffCopy |= 0x80000000L;
-         memcpySwap4((UNSIGNED8*)dataBuff, (UNSIGNED8*)&dataBuffCopy);
+         if(!RPDO->valid) *value |= 0x80000000L;
       }
-      return abortCode;
+      return 0;
    }
 
    //Writing Object Dictionary variable
@@ -370,81 +356,59 @@ UNSIGNED32 CO_ODF_RPDOcom( void       *object,
    if(*RPDO->operatingState == CO_NMT_OPERATIONAL && (RPDO->restrictionFlags & 0x01))
       return 0x08000022L;   //Data cannot be transferred or stored to the application because of the present device state.
 
-   switch(subIndex){
-      UNSIGNED32 curentData;
-    case 1: //COB_ID
-      memcpySwap4((UNSIGNED8*)&dataBuffCopy, (UNSIGNED8*)dataBuff);
-      curentData = *((const UNSIGNED32*)pData);
+   if(ODF_arg->subIndex == 1){   //COB_ID
+      UNSIGNED32 *value = (UNSIGNED32*) ODF_arg->data;
 
       //bits 11...29 must be zero
-      if(dataBuffCopy&0x3FFF8000L)
+      if(*value & 0x3FFF8000L)
          return 0x06090030L;  //Invalid value for parameter (download only).
 
       //if default COB-ID is being written, write defaultCOB_ID without nodeId
-      if((UNSIGNED16)dataBuffCopy == (RPDO->defaultCOB_ID + RPDO->nodeId)){
-         dataBuffCopy &= 0xC0000000L;
-         dataBuffCopy += RPDO->defaultCOB_ID;
+      if(((*value)&0xFFFF) == (RPDO->defaultCOB_ID + RPDO->nodeId)){
+         *value &= 0xC0000000L;
+         *value += RPDO->defaultCOB_ID;
       }
-      //if PDO is valid, bits 0..29 can not be changed
-      if(RPDO->valid && ((dataBuffCopy^curentData)&0x3FFFFFFFL))
-         return 0x06090030L;  //Invalid value for parameter (download only).
-      //write dataBuff back to CANopens little endian format
-      memcpySwap4((UNSIGNED8*)dataBuff, (UNSIGNED8*)&dataBuffCopy);
-      break;
 
-    case 2: //Transmission_type
-      dataBuffCopy = *((UNSIGNED8*)dataBuff);
-      //values from 241...253 are not valid
-      if(dataBuffCopy>=241 && dataBuffCopy<=253)
+      //if PDO is valid, bits 0..29 can not be changed
+      if(RPDO->valid && ((*value ^ RPDO->RPDOCommPar->COB_IDUsedByRPDO) & 0x3FFFFFFFL))
          return 0x06090030L;  //Invalid value for parameter (download only).
-      break;
+
+      //configure RPDO
+      CO_RPDOconfigCom(RPDO, *value);
+   }
+   else if(ODF_arg->subIndex == 2){   //Transmission_type
+      UNSIGNED8 *value = (UNSIGNED8*) ODF_arg->data;
+
+      //values from 241...253 are not valid
+      if(*value >= 241 && *value <= 253)
+         return 0x06090030L;  //Invalid value for parameter (download only).
    }
 
-   abortCode = CO_ODF(object, index, subIndex, pLength, attribute, dir, dataBuff, pData);
-
-   //Configure RPDO
-   if(abortCode == 0 && subIndex == 1)
-      CO_RPDOconfigCom(RPDO, dataBuffCopy);
-
-   return abortCode;
+   return 0;
 }
 
 
-/******************************************************************************/
-UNSIGNED32 CO_ODF_TPDOcom( void       *object,
-                           UNSIGNED16  index,
-                           UNSIGNED8   subIndex,
-                           UNSIGNED16 *pLength,
-                           UNSIGNED16  attribute,
-                           UNSIGNED8   dir,
-                           void       *dataBuff,
-                           const void *pData)
-{
+/* TPDO communication parameter - Object dictionary function ******************/
+UNSIGNED32 CO_ODF_TPDOcom(CO_ODF_arg_t *ODF_arg){
    CO_TPDO_t *TPDO;
-   UNSIGNED32 dataBuffCopy, abortCode;
 
-   TPDO = (CO_TPDO_t*)object;   //this is the correct pointer type of the first argument
+   TPDO = (CO_TPDO_t*) ODF_arg->object;
 
-   if(subIndex==4) return 0x06090011L;  //Sub-index does not exist.
+   if(ODF_arg->subIndex == 4) return 0x06090011L;  //Sub-index does not exist.
 
    //Reading Object Dictionary variable
-   if(dir == 0){
-      abortCode = CO_ODF(object, index, subIndex, pLength, attribute, dir, dataBuff, pData);
-      if(abortCode==0){
-         switch(subIndex){
-          case 1: //COB_ID
-            //value in dataBuff is little endian as CANopen, so invert it back
-            memcpySwap4((UNSIGNED8*)&dataBuffCopy, (UNSIGNED8*)dataBuff);
-            //if default COB ID is used, write default value here
-            if((UNSIGNED16)dataBuffCopy == TPDO->defaultCOB_ID && TPDO->defaultCOB_ID)
-               dataBuffCopy += TPDO->nodeId;
-            //If PDO is not valid, set bit 31
-            if(!TPDO->valid) dataBuffCopy |= 0x80000000L;
-            memcpySwap4((UNSIGNED8*)dataBuff, (UNSIGNED8*)&dataBuffCopy);
-            break;
-         }
+   if(ODF_arg->reading){
+      if(ODF_arg->subIndex == 1){   //COB_ID
+         UNSIGNED32 *value = (UNSIGNED32*) ODF_arg->data;
+
+         //if default COB ID is used, write default value here
+         if(((*value)&0xFFFF) == TPDO->defaultCOB_ID && TPDO->defaultCOB_ID)
+            *value += TPDO->nodeId;
+
+         //If PDO is not valid, set bit 31
+         if(!TPDO->valid) *value |= 0x80000000L;
       }
-      return abortCode;
+      return 0;
    }
 
    //Writing Object Dictionary variable
@@ -453,109 +417,79 @@ UNSIGNED32 CO_ODF_TPDOcom( void       *object,
    if(*TPDO->operatingState == CO_NMT_OPERATIONAL && (TPDO->restrictionFlags & 0x01))
       return 0x08000022L;   //Data cannot be transferred or stored to the application because of the present device state.
 
-   switch(subIndex){
-      UNSIGNED32 curentData;
-    case 1: //COB_ID
-      memcpySwap4((UNSIGNED8*)&dataBuffCopy, (UNSIGNED8*)dataBuff);
-      curentData = *((const UNSIGNED32*)pData);
+   if(ODF_arg->subIndex == 1){   //COB_ID
+      UNSIGNED32 *value = (UNSIGNED32*) ODF_arg->data;
 
       //bits 11...29 must be zero
-      if(dataBuffCopy&0x3FFF8000L)
+      if(*value & 0x3FFF8000L)
          return 0x06090030L;  //Invalid value for parameter (download only).
 
       //if default COB-ID is being written, write defaultCOB_ID without nodeId
-      if((UNSIGNED16)dataBuffCopy == (TPDO->defaultCOB_ID + TPDO->nodeId)){
-         dataBuffCopy &= 0xC0000000L;
-         dataBuffCopy += TPDO->defaultCOB_ID;
+      if(((*value)&0xFFFF) == (TPDO->defaultCOB_ID + TPDO->nodeId)){
+         *value &= 0xC0000000L;
+         *value += TPDO->defaultCOB_ID;
       }
+
       //if PDO is valid, bits 0..29 can not be changed
-      if(TPDO->valid && ((dataBuffCopy^curentData)&0x3FFFFFFFL))
+      if(TPDO->valid && ((*value ^ TPDO->TPDOCommPar->COB_IDUsedByTPDO) & 0x3FFFFFFFL))
          return 0x06090030L;  //Invalid value for parameter (download only).
-      //write dataBuff back to CANopens little endian format
-      memcpySwap4((UNSIGNED8*)dataBuff, (UNSIGNED8*)&dataBuffCopy);
-      break;
 
-    case 2: //Transmission_type
-      dataBuffCopy = *((UNSIGNED8*)dataBuff);
+      //configure TPDO
+      CO_TPDOconfigCom(TPDO, *value, TPDO->CANtxBuff->syncFlag);
+      TPDO->syncCounter = 255;
+   }
+   else if(ODF_arg->subIndex == 2){   //Transmission_type
+      UNSIGNED8 *value = (UNSIGNED8*) ODF_arg->data;
+
       //values from 241...253 are not valid
-      if(dataBuffCopy>=241 && dataBuffCopy<=253)
+      if(*value >= 241 && *value <= 253)
          return 0x06090030L;  //Invalid value for parameter (download only).
-      break;
-
-    case 3: //Inhibit_Time
-      memcpySwap2((UNSIGNED8*)&dataBuffCopy, (UNSIGNED8*)dataBuff);
+      TPDO->CANtxBuff->syncFlag = (*value <= 240) ? 1 : 0;
+      TPDO->syncCounter = 255;
+   }
+   else if(ODF_arg->subIndex == 3){   //Inhibit_Time
       //if PDO is valid, value can not be changed
       if(TPDO->valid)
          return 0x06090030L;  //Invalid value for parameter (download only).
-      break;
 
-    case 5: //Event_Timer
-      memcpySwap2((UNSIGNED8*)&dataBuffCopy, (UNSIGNED8*)dataBuff);
-      break;
+      TPDO->inhibitTimer = 0;
+   }
+   else if(ODF_arg->subIndex == 5){   //Event_Timer
+      UNSIGNED16 *value = (UNSIGNED16*) ODF_arg->data;
 
-    case 6: //SYNC start value
-      dataBuffCopy = *((UNSIGNED8*)dataBuff);
+      TPDO->eventTimer = *value;
+   }
+   else if(ODF_arg->subIndex == 6){   //SYNC start value
+      UNSIGNED8 *value = (UNSIGNED8*) ODF_arg->data;
+
       //if PDO is valid, value can not be changed
       if(TPDO->valid)
          return 0x06090030L;  //Invalid value for parameter (download only).
+
       //values from 240...255 are not valid
-      if(dataBuffCopy>240)
+      if(*value > 240)
          return 0x06090030L;  //Invalid value for parameter (download only).
-      break;
    }
 
-   abortCode = CO_ODF(object, index, subIndex, pLength, attribute, dir, dataBuff, pData);
-
-   //Configure TPDO
-   if(abortCode == 0){
-      switch(subIndex){
-       case 1: //COB_ID
-         CO_TPDOconfigCom(TPDO, dataBuffCopy, TPDO->CANtxBuff->syncFlag);
-         TPDO->syncCounter = 255;
-         break;
-
-       case 2: //Transmission_type
-         TPDO->CANtxBuff->syncFlag = ((UNSIGNED8)dataBuffCopy<=240) ? 1 : 0;
-         TPDO->syncCounter = 255;
-         break;
-
-       case 3: //Inhibit_Time
-         TPDO->inhibitTimer = 0;
-         break;
-
-       case 5: //Event_Timer
-         TPDO->eventTimer = (UNSIGNED16)dataBuffCopy;
-         break;
-      }
-   }
-   return abortCode;
+   return 0;
 }
 
 
-/******************************************************************************/
-UNSIGNED32 CO_ODF_RPDOmap( void       *object,
-                           UNSIGNED16  index,
-                           UNSIGNED8   subIndex,
-                           UNSIGNED16 *pLength,
-                           UNSIGNED16  attribute,
-                           UNSIGNED8   dir,
-                           void       *dataBuff,
-                           const void *pData)
-{
+/* RPDO mapping parameter - Object dictionary function ************************/
+UNSIGNED32 CO_ODF_RPDOmap(CO_ODF_arg_t *ODF_arg){
    CO_RPDO_t *RPDO;
-   UNSIGNED32 abortCode;
-   UNSIGNED32 dataBuffCopy;
 
-   RPDO = (CO_RPDO_t*)object;   //this is the correct pointer type of the first argument
+   RPDO = (CO_RPDO_t*) ODF_arg->object;
 
    //Reading Object Dictionary variable
-   if(dir == 0){
-      abortCode = CO_ODF(object, index, subIndex, pLength, attribute, dir, dataBuff, pData);
-      if(abortCode==0 && subIndex==0){
+   if(ODF_arg->reading){
+      UNSIGNED8 *value = (UNSIGNED8*) ODF_arg->data;
+
+      if(ODF_arg->subIndex == 0){
          //If there is error in mapping, dataLength is 0, so numberOfMappedObjects is 0.
-         if(!RPDO->dataLength) *((UNSIGNED8*)dataBuff) = 0;
+         if(!RPDO->dataLength) *value = 0;
       }
-      return abortCode;
+      return 0;
    }
 
    //Writing Object Dictionary variable
@@ -567,70 +501,56 @@ UNSIGNED32 CO_ODF_RPDOmap( void       *object,
       return 0x06090030L;  //Invalid value for parameter (download only).
 
    //numberOfMappedObjects
-   if(subIndex == 0){
-      if(*((UNSIGNED8*)dataBuff) > 8)
+   if(ODF_arg->subIndex == 0){
+      UNSIGNED8 *value = (UNSIGNED8*) ODF_arg->data;
+
+      if(*value > 8)
          return 0x06090031L;  //Value of parameter written too high.
+      
+      //configure mapping
+      return CO_RPDOconfigMap(RPDO, *value);
    }
 
    //mappedObject
    else{
+      UNSIGNED32 *value = (UNSIGNED32*) ODF_arg->data;
       UNSIGNED8* pData;
       UNSIGNED8 length = 0;
       UNSIGNED8 dummy = 0;
       UNSIGNED8 MBvar;
-      UNSIGNED32 ret;
 
       if(RPDO->dataLength)
          return 0x06090030L;  //Invalid value for parameter (download only).
 
       //verify if mapping is correct
-      memcpySwap4((UNSIGNED8*)&dataBuffCopy, (UNSIGNED8*)dataBuff);
-      ret = CO_PDOfindMap( RPDO->SDO,
-                           dataBuffCopy,
+      return CO_PDOfindMap(RPDO->SDO,
+                           *value,
                            0,
                            &pData,
                            &length,
                            &dummy,
                            &MBvar);
-      if(ret) return ret;
    }
 
-   abortCode = CO_ODF(object, index, subIndex, pLength, attribute, dir, dataBuff, pData);
-
-   //Configure mapping if subindex 0 was changed
-   if(abortCode)
-      RPDO->dataLength = 0;
-   else if(subIndex == 0)
-      abortCode = CO_RPDOconfigMap(RPDO, (OD_RPDOMappingParameter_t*) pData);
-
-   return abortCode;
+   return 0;
 }
 
 
-/******************************************************************************/
-UNSIGNED32 CO_ODF_TPDOmap( void       *object,
-                           UNSIGNED16  index,
-                           UNSIGNED8   subIndex,
-                           UNSIGNED16 *pLength,
-                           UNSIGNED16  attribute,
-                           UNSIGNED8   dir,
-                           void       *dataBuff,
-                           const void *pData)
-{
+/* TPDO mapping parameter - Object dictionary function ************************/
+UNSIGNED32 CO_ODF_TPDOmap(CO_ODF_arg_t *ODF_arg){
    CO_TPDO_t *TPDO;
-   UNSIGNED32 abortCode;
-   UNSIGNED32 dataBuffCopy;
 
-   TPDO = (CO_TPDO_t*)object;   //this is the correct pointer type of the first argument
+   TPDO = (CO_TPDO_t*) ODF_arg->object;
 
    //Reading Object Dictionary variable
-   if(dir == 0){
-      abortCode = CO_ODF(object, index, subIndex, pLength, attribute, dir, dataBuff, pData);
-      if(abortCode==0 && subIndex==0){
+   if(ODF_arg->reading){
+      UNSIGNED8 *value = (UNSIGNED8*) ODF_arg->data;
+
+      if(ODF_arg->subIndex == 0){
          //If there is error in mapping, dataLength is 0, so numberOfMappedObjects is 0.
-         if(!TPDO->dataLength) *((UNSIGNED8*)dataBuff) = 0;
+         if(!TPDO->dataLength) *value = 0;
       }
-      return abortCode;
+      return 0;
    }
 
    //Writing Object Dictionary variable
@@ -642,43 +562,38 @@ UNSIGNED32 CO_ODF_TPDOmap( void       *object,
       return 0x06090030L;  //Invalid value for parameter (download only).
 
    //numberOfMappedObjects
-   if(subIndex == 0){
-      if(*((UNSIGNED8*)dataBuff) > 8)
+   if(ODF_arg->subIndex == 0){
+      UNSIGNED8 *value = (UNSIGNED8*) ODF_arg->data;
+
+      if(*value > 8)
          return 0x06090031L;  //Value of parameter written too high.
+
+      //configure mapping
+      return CO_TPDOconfigMap(TPDO, *value);
    }
 
    //mappedObject
    else{
+      UNSIGNED32 *value = (UNSIGNED32*) ODF_arg->data;
       UNSIGNED8* pData;
       UNSIGNED8 length = 0;
       UNSIGNED8 dummy = 0;
       UNSIGNED8 MBvar;
-      UNSIGNED32 ret;
 
       if(TPDO->dataLength)
          return 0x06090030L;  //Invalid value for parameter (download only).
 
       //verify if mapping is correct
-      memcpySwap4((UNSIGNED8*)&dataBuffCopy, (UNSIGNED8*)dataBuff);
-      ret = CO_PDOfindMap( TPDO->SDO,
-                           dataBuffCopy,
+      return CO_PDOfindMap(TPDO->SDO,
+                           *value,
                            1,
                            &pData,
                            &length,
                            &dummy,
                            &MBvar);
-      if(ret) return ret;
    }
 
-   abortCode = CO_ODF(object, index, subIndex, pLength, attribute, dir, dataBuff, pData);
-
-   //Configure mapping if subindex 0 was changed
-   if(abortCode)
-      TPDO->dataLength = 0;
-   else if(subIndex == 0)
-      abortCode = CO_TPDOconfigMap(TPDO, (OD_TPDOMappingParameter_t*) pData);
-
-   return abortCode;
+   return 0;
 }
 
 
@@ -691,10 +606,10 @@ INTEGER16 CO_RPDO_init(
       UNSIGNED8                        nodeId,
       UNSIGNED16                       defaultCOB_ID,
       UNSIGNED8                        restrictionFlags,
-const OD_RPDOCommunicationParameter_t *ObjDict_RPDOCommunicationParameter,
-const OD_RPDOMappingParameter_t       *ObjDict_RPDOMappingParameter,
-      UNSIGNED16                       ObjDictIndex_RPDOCommunicationParameter,
-      UNSIGNED16                       ObjDictIndex_RPDOMappingParameter,
+      const CO_RPDOCommPar_t          *RPDOCommPar,
+      const CO_RPDOMapPar_t           *RPDOMapPar,
+      UNSIGNED16                       ObjDictIndex_RPDOCommPar,
+      UNSIGNED16                       ObjDictIndex_RPDOMapPar,
       CO_CANmodule_t *CANdevRx, UNSIGNED16 CANdevRxIdx)
 {
    CO_RPDO_t *RPDO;
@@ -709,22 +624,24 @@ const OD_RPDOMappingParameter_t       *ObjDict_RPDOMappingParameter,
    //Configure object variables
    RPDO->EM = EM;
    RPDO->SDO = SDO;
+   RPDO->RPDOCommPar = RPDOCommPar;
+   RPDO->RPDOMapPar = RPDOMapPar;
    RPDO->operatingState = operatingState;
    RPDO->nodeId = nodeId;
    RPDO->defaultCOB_ID = defaultCOB_ID;
    RPDO->restrictionFlags = restrictionFlags;
 
-   //Configure SDO server for first argument of CO_ODF_RPDOcom and CO_ODF_RPDOmap
-   CO_OD_configureArgumentForODF(SDO, ObjDictIndex_RPDOCommunicationParameter, (void*)RPDO);
-   CO_OD_configureArgumentForODF(SDO, ObjDictIndex_RPDOMappingParameter, (void*)RPDO);
+   //Configure Object dictionary entry at index 0x1400+ and 0x1600+
+   CO_OD_configure(SDO, ObjDictIndex_RPDOCommPar, CO_ODF_RPDOcom, (void*)RPDO);
+   CO_OD_configure(SDO, ObjDictIndex_RPDOMapPar, CO_ODF_RPDOmap, (void*)RPDO);
 
    //configure communication and mapping
    RPDO->CANrxNew = 0;
    RPDO->CANdevRx = CANdevRx;
    RPDO->CANdevRxIdx = CANdevRxIdx;
 
-   CO_RPDOconfigMap(RPDO, ObjDict_RPDOMappingParameter);
-   CO_RPDOconfigCom(RPDO, ObjDict_RPDOCommunicationParameter->COB_IDUsedByRPDO);
+   CO_RPDOconfigMap(RPDO, RPDOMapPar->numberOfMappedObjects);
+   CO_RPDOconfigCom(RPDO, RPDOCommPar->COB_IDUsedByRPDO);
 
    return CO_ERROR_NO;
 }
@@ -748,10 +665,10 @@ INTEGER16 CO_TPDO_init(
       UNSIGNED8                        nodeId,
       UNSIGNED16                       defaultCOB_ID,
       UNSIGNED8                        restrictionFlags,
-const OD_TPDOCommunicationParameter_t *ObjDict_TPDOCommunicationParameter,
-const OD_TPDOMappingParameter_t       *ObjDict_TPDOMappingParameter,
-      UNSIGNED16                       ObjDictIndex_TPDOCommunicationParameter,
-      UNSIGNED16                       ObjDictIndex_TPDOMappingParameter,
+      const CO_TPDOCommPar_t          *TPDOCommPar,
+      const CO_TPDOMapPar_t           *TPDOMapPar,
+      UNSIGNED16                       ObjDictIndex_TPDOCommPar,
+      UNSIGNED16                       ObjDictIndex_TPDOMapPar,
       CO_CANmodule_t *CANdevTx, UNSIGNED16 CANdevTxIdx)
 {
    CO_TPDO_t *TPDO;
@@ -766,31 +683,32 @@ const OD_TPDOMappingParameter_t       *ObjDict_TPDOMappingParameter,
    //Configure object variables
    TPDO->EM = EM;
    TPDO->SDO = SDO;
+   TPDO->TPDOCommPar = TPDOCommPar;
+   TPDO->TPDOMapPar = TPDOMapPar;
    TPDO->operatingState = operatingState;
    TPDO->nodeId = nodeId;
    TPDO->defaultCOB_ID = defaultCOB_ID;
    TPDO->restrictionFlags = restrictionFlags;
-   TPDO->ObjDict_TPDOCommunicationParameter = ObjDict_TPDOCommunicationParameter;
 
-   //Configure SDO server for first argument of CO_ODF_TPDOcom and CO_ODF_TPDOmap
-   CO_OD_configureArgumentForODF(SDO, ObjDictIndex_TPDOCommunicationParameter, (void*)TPDO);
-   CO_OD_configureArgumentForODF(SDO, ObjDictIndex_TPDOMappingParameter, (void*)TPDO);
+   //Configure Object dictionary entry at index 0x1800+ and 0x1A00+
+   CO_OD_configure(SDO, ObjDictIndex_TPDOCommPar, CO_ODF_TPDOcom, (void*)TPDO);
+   CO_OD_configure(SDO, ObjDictIndex_TPDOMapPar, CO_ODF_TPDOmap, (void*)TPDO);
 
    //configure communication and mapping
    TPDO->CANdevTx = CANdevTx;
    TPDO->CANdevTxIdx = CANdevTxIdx;
    TPDO->syncCounter = 255;
    TPDO->inhibitTimer = 0;
-   TPDO->eventTimer = ObjDict_TPDOCommunicationParameter->eventTimer;
+   TPDO->eventTimer = TPDOCommPar->eventTimer;
    TPDO->SYNCtimerPrevious = 0;
-   if(ObjDict_TPDOCommunicationParameter->transmissionType>=254) TPDO->sendRequest = 1;
+   if(TPDOCommPar->transmissionType>=254) TPDO->sendRequest = 1;
 
-   CO_TPDOconfigMap(TPDO, ObjDict_TPDOMappingParameter);
-   CO_TPDOconfigCom(TPDO, ObjDict_TPDOCommunicationParameter->COB_IDUsedByTPDO, ((ObjDict_TPDOCommunicationParameter->transmissionType<=240) ? 1 : 0));
+   CO_TPDOconfigMap(TPDO, TPDOMapPar->numberOfMappedObjects);
+   CO_TPDOconfigCom(TPDO, TPDOCommPar->COB_IDUsedByTPDO, ((TPDOCommPar->transmissionType<=240) ? 1 : 0));
 
-   if((ObjDict_TPDOCommunicationParameter->transmissionType>240 &&
-       ObjDict_TPDOCommunicationParameter->transmissionType<254) ||
-       ObjDict_TPDOCommunicationParameter->SYNCStartValue>240){
+   if((TPDOCommPar->transmissionType>240 &&
+       TPDOCommPar->transmissionType<254) ||
+       TPDOCommPar->SYNCStartValue>240){
          TPDO->valid = 0;
    }
 
@@ -879,12 +797,12 @@ void CO_TPDO_process(   CO_TPDO_t     *TPDO,
    if(TPDO->valid && *TPDO->operatingState == CO_NMT_OPERATIONAL){
 
       //Send PDO by application request or by Event timer
-      if(TPDO->ObjDict_TPDOCommunicationParameter->transmissionType >= 253){
-         if(TPDO->inhibitTimer == 0 && (TPDO->sendRequest || (TPDO->ObjDict_TPDOCommunicationParameter->eventTimer && TPDO->eventTimer == 0))){
+      if(TPDO->TPDOCommPar->transmissionType >= 253){
+         if(TPDO->inhibitTimer == 0 && (TPDO->sendRequest || (TPDO->TPDOCommPar->eventTimer && TPDO->eventTimer == 0))){
             if(CO_TPDOsend(TPDO) == CO_ERROR_NO){
                //successfully sent
-               TPDO->inhibitTimer = TPDO->ObjDict_TPDOCommunicationParameter->inhibitTime;
-               TPDO->eventTimer = TPDO->ObjDict_TPDOCommunicationParameter->eventTimer;
+               TPDO->inhibitTimer = TPDO->TPDOCommPar->inhibitTime;
+               TPDO->eventTimer = TPDO->TPDOCommPar->eventTimer;
             }
          }
       }
@@ -894,28 +812,28 @@ void CO_TPDO_process(   CO_TPDO_t     *TPDO,
          //detect SYNC message
          if(SYNC->timer < TPDO->SYNCtimerPrevious){
             //send synchronous acyclic PDO
-            if(TPDO->ObjDict_TPDOCommunicationParameter->transmissionType == 0){
+            if(TPDO->TPDOCommPar->transmissionType == 0){
                if(TPDO->sendRequest) CO_TPDOsend(TPDO);
             }
             //send synchronous cyclic PDO
             else{
                //is the start of synchronous TPDO transmission
                if(TPDO->syncCounter == 255){
-                  if(SYNC->counterOverflowValue && TPDO->ObjDict_TPDOCommunicationParameter->SYNCStartValue)
+                  if(SYNC->counterOverflowValue && TPDO->TPDOCommPar->SYNCStartValue)
                      TPDO->syncCounter = 254;   //SYNCStartValue is in use
                   else
-                     TPDO->syncCounter = TPDO->ObjDict_TPDOCommunicationParameter->transmissionType;
+                     TPDO->syncCounter = TPDO->TPDOCommPar->transmissionType;
                }
                //if the SYNCStartValue is in use, start first TPDO after SYNC with matched SYNCStartValue.
                if(TPDO->syncCounter == 254){
-                  if(SYNC->counter == TPDO->ObjDict_TPDOCommunicationParameter->SYNCStartValue){
-                     TPDO->syncCounter = TPDO->ObjDict_TPDOCommunicationParameter->transmissionType;
+                  if(SYNC->counter == TPDO->TPDOCommPar->SYNCStartValue){
+                     TPDO->syncCounter = TPDO->TPDOCommPar->transmissionType;
                      CO_TPDOsend(TPDO);
                   }
                }
                //Send PDO after every N-th Sync
                else if(--TPDO->syncCounter == 0){
-                  TPDO->syncCounter = TPDO->ObjDict_TPDOCommunicationParameter->transmissionType;
+                  TPDO->syncCounter = TPDO->TPDOCommPar->transmissionType;
                   CO_TPDOsend(TPDO);
                }
             }

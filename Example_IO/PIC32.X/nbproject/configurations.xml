@@ -16,10 +16,10 @@
         <itemPath>../../CANopen_stack/CO_NMT_Heartbeat.h</itemPath>
         <itemPath>../../CANopen_stack/CO_PDO.h</itemPath>
         <itemPath>../../CANopen_stack/CO_SDO.h</itemPath>
-        <itemPath>../../CANopen_stack/CO_SDOmaster.h</itemPath>
         <itemPath>../../CANopen_stack/CO_SYNC.h</itemPath>
         <itemPath>../../CANopen_stack/application.h</itemPath>
         <itemPath>../../CANopen_stack/CANopen.h</itemPath>
+        <itemPath>../../CANopen_stack/crc16-ccitt.h</itemPath>
       </logicalFolder>
       <itemPath>../CO_OD.h</itemPath>
     </logicalFolder>
@@ -44,8 +44,8 @@
         <itemPath>../../CANopen_stack/CO_PDO.c</itemPath>
         <itemPath>../../CANopen_stack/CO_SDO.c</itemPath>
         <itemPath>../../CANopen_stack/CO_SYNC.c</itemPath>
-        <itemPath>../../CANopen_stack/CO_SDOmaster.c</itemPath>
         <itemPath>../../CANopen_stack/CANopen.c</itemPath>
+        <itemPath>../../CANopen_stack/crc16-ccitt.c</itemPath>
       </logicalFolder>
       <itemPath>../appl_PIC32_explorer16_IO.c</itemPath>
       <itemPath>../CO_OD.c</itemPath>

@@ -54,20 +54,23 @@ textarea{
 }
 
 </style>
-<script type="text/javascript" src="CANopen.js"></script>
+<script type="text/javascript" src="lib/CANopen.js"></script>
 <script type="text/javascript">
    //<![CDATA[
    "use strict";
 
-   var CO = new CANopen();
+   var CO;
+   var CANLog;
+   var CANLogCallbackID;
 
    function SDORead(){
       var statusLine = document.getElementById("SDOStatus").firstChild;
       statusLine.nodeValue = "Read requested ...";
       CO.SDORead(document.getElementById("SDOAddr").value, function(response){
-         if(response.search("OK")>0){
-            document.getElementById("SDOData").value = response.slice(19);
-            statusLine.nodeValue = response.slice(0, 17);
+         var OK = response.search("OK");
+         if(OK > 0){
+            document.getElementById("SDOData").value = response.slice(OK+4);
+            statusLine.nodeValue = response.slice(0, OK+2);
          }
          else{
             statusLine.nodeValue = response;
@@ -79,8 +82,9 @@ textarea{
       var statusLine = document.getElementById("SDOStatus").firstChild;
       statusLine.nodeValue = "Write requested ...";
       CO.SDOWrite(document.getElementById("SDOAddr").value, document.getElementById("SDOData").value, function(response){
-         if(response.search("OK")>0){
-            statusLine.nodeValue = response.slice(0, 17);
+         var OK = response.search("OK");
+         if(OK > 0){
+            statusLine.nodeValue = response.slice(0, OK+2);
          }
          else{
             statusLine.nodeValue = response;
@@ -88,36 +92,30 @@ textarea{
       });
    }
 
-   var canLog = new CANLog(
-      1000,                            //textBufSize
-      0,                               //funcProcessMsg
-      function (date, buf){            //funcBoundary
-         if(date){
-            buf.push(date.toLocaleString());
-         }
-         else{
-            var ta = document.getElementById("CANlog");
-            ta.value = buf.join("\n");
-            ta.scrollTop = ta.scrollHeight;
-         }
-      },
-      500,                             //interval in ms
-      0                                //filename
-   );
+   function logBoundary(logDate, textBuf){
+      if(logDate){
+         textBuf.push(logDate.toLocaleString());
+      }
+      else{
+         var ta = document.getElementById("CANLog");
+         ta.value = textBuf.join("\n");
+         ta.scrollTop = ta.scrollHeight;
+      }
+   }
 
    function LOGStart(button){
       switch(button.value){
          case "Start log":
-            canLog.clearBufferOnServer();
-            canLog.start();
+            CANLog.clearBufferOnServer();
+            CANLog.start();
             button.value = "Stop";
             break;
          case "Stop":
-            canLog.stop();
+            CANLog.stop();
             button.value = "Continue";
             break;
          case "Continue":
-            canLog.start();
+            CANLog.start();
             button.value = "Stop";
             break;
       }
@@ -127,30 +125,16 @@ textarea{
       //dir the files in the new window
       var win = window.open("ftp://" + location.hostname + "/A%3A/dump/", "dumpDirWin");
 
-      var filename = prompt("Enter filename on the server!", "CANlog");
+      var filename = prompt("Enter filename on the server!", "CANLog");
       if(filename){
-         if(filename != "CANlog") filename = "dump/" + filename;
+         if(filename != "CANLog") filename = "dump/" + filename;
          var but = document.getElementById("LOGStartButton");
          if(but.value == "Stop"){
-            canLog.stop();
+            CANLog.stop();
             but.value = "Continue";
          }
-         var log = new CANLog(
-            100000,                          //textBufSize
-            0,                               //funcProcessMsg
-            function (date, buf){            //funcBoundary
-               if(date){
-                  buf.push(date.toLocaleString());
-               }
-               else{
-                  var ta = document.getElementById("CANlog");
-                  ta.value = buf.join("\n");
-                  ta.scrollTop = ta.scrollHeight;
-               }
-            },
-            0,                               //interval in ms
-            filename                         //filename
-         );
+         var log = new CANLog_t(100000, 0, filename);
+         log.registerCallbackBoundary(logBoundary);
       }
    }
 
@@ -159,11 +143,27 @@ textarea{
          document.getElementById("EMCYlog").value = response;
       });
    }
+   
+   function CO_load(){
+      CO = new CANopen_t();
+
+      if(window.opener && typeof(window.opener.CANLog) == "object"){
+         CANLog = window.opener.CANLog;
+      }
+      else{
+         CANLog = new CANLog_t(1000, 500, 0);
+      }
+      CANLogCallbackID = CANLog.registerCallbackBoundary(logBoundary);
+   }
+   
+   function CO_unload(){
+      CANLog.removeCallback(CANLogCallbackID);
+   }
    //]]>
 </script>
 </head>
 
-<body>
+<body onload="CO_load();" onunload="CO_unload();">
    <h3>CANopen configuration interface.</h3>
    <div>
       <fieldset class="oneBut"><legend>Send CAN message</legend>
@@ -194,9 +194,9 @@ textarea{
    <div>
       <fieldset class="threeBut"><legend>CAN log</legend>
          <input type="button" value="Start log" onclick="LOGStart(this);" id="LOGStartButton"/> &nbsp;
-         <input type="button" value="Dump" onclick="canLog.dumpBufferOnServer();"/> &nbsp;
+         <input type="button" value="Dump" onclick="CANLog.dumpBufferOnServer();"/> &nbsp;
          <input type="button" value="Load file ..." onclick="LOGFile();"/>
-         <textarea id="CANlog">-</textarea>
+         <textarea id="CANLog">-</textarea>
       </fieldset>
    </div>
    <div id="EMCYlogDiv">

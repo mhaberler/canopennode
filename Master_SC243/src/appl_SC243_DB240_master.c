@@ -174,53 +174,80 @@ void program1ms(void){
 }
 
 
+#ifdef OD_testVar
 /******************************************************************************/
-//Function passes data to SDO server on testDomain variable access
-UNSIGNED32 ODF_testDomain( void       *object,
-                           UNSIGNED16  index,
-                           UNSIGNED8   subIndex,
-                           UNSIGNED16 *pLength,
-                           UNSIGNED16  attribute,
-                           UNSIGNED8   dir,
-                           void       *dataBuff,
-                           const void *pData){
-   //pData is not valid here
+//Function passes some data to SDO server on testDomain variable access
+UNSIGNED32 ODF_testDomain(CO_ODF_arg_t *ODF_arg){
 
-   if(dir == 0){  //reading object dictionary
+   //domain data type is on subIndex 5, nothing to do on other subObjects
+   if(ODF_arg->subIndex != 5) return 0;
+
+   //reading object dictionary
+   if(ODF_arg->reading){
+      //SDO buffer is filled with sequence 0x01, 0x02, ...
+      //If domainFileSize is greater than SDObufferSize, this function will
+      //be called multiple times during one SDO communication cycle
+
+      const UNSIGNED32 domainFileSize = 800;
+      static UNSIGNED32 offset = 0;
+
       UNSIGNED16 i;
-      UNSIGNED16 dataSize = 889; //889 = 127*7 = 0x379 = maximum block transfer
+      UNSIGNED16 SDObufferSize = ODF_arg->dataLength;
 
-      //verify max buffer size
-      if(dataSize > CO_OD_MAX_OBJECT_SIZE) //default is 32. Redefine macro in CO_driver.h to 889.
-         return 0x06040047L;  //general internal incompatibility in the device
+      //new SDO read cycle
+      if(ODF_arg->firstSegment){
+         ODF_arg->dataLengthTotal = domainFileSize;
+         offset = 0;
+      }
 
-      //fill buffer
-      for(i=0; i<dataSize; i++)
-         ((UNSIGNED8*) dataBuff)[i] = i+1;
+      //fill SDO buffer
+      for(i = 0; offset < domainFileSize; i++, offset++){
+         if(i >= SDObufferSize){
+            //SDO buffer is full
+            ODF_arg->lastSegment = 0;
+            break;
+         }
+         ODF_arg->data[i] = (UNSIGNED8)(offset+1);
+      }
 
-      //indicate length
-      *pLength = dataSize;
+      //all data was copied
+      if(offset == domainFileSize){
+         ODF_arg->lastSegment = 1;
+         ODF_arg->dataLength = i;
+      }
 
       //return OK
       return 0;
    }
 
-   else{          //writing object dictionary
+   //writing object dictionary
+   else{
       UNSIGNED16 i;
       UNSIGNED16 err = 0;
-      UNSIGNED16 dataSize = *pLength;
+      UNSIGNED16 dataSize = ODF_arg->dataLength;
+      static UNSIGNED32 offset = 0;
+
+      //new SDO read cycle
+      if(ODF_arg->firstSegment){
+         //if(ODF_arg->dataLengthTotal) printf("\nWill receive %d bytes of data.\n", ODF_arg->dataLengthTotal);
+         offset = 0;
+      }
 
       //do something with data, here just verify if they are the same as above
-      //printf("\nData received, %d bytes:\n", dataSize);
-      for(i=0; i<dataSize; i++){
-         UNSIGNED8 b = ((UNSIGNED8*) dataBuff)[i];
-         if(b != ((i+1)&0xFF)) err++;
+      for(i=0; i<dataSize; i++, offset++){
+         UNSIGNED8 b = ODF_arg->data[i];
+         if(b != (UNSIGNED8)(offset+1)) err++;
          //printf("%02X ", b);
       }
 
       if(err) return 0x06090030; //Invalid value for parameter (download only).
 
+      //end of transfer
+      //if(ODF_arg->lastSegment)
+         //printf("\nReceived %d bytes of data.\n", offset);
+
       //return OK
       return 0;
    }
 }
+#endif

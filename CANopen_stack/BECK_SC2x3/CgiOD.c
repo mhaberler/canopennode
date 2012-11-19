@@ -51,7 +51,7 @@
       0     - Operation completed successfully.
       -1    - Error in string.
 *******************************************************************************/
-int hex2dec(char *str, int len, int *val){
+int hex2dec(char *str, int len, unsigned int *val){
    *val = 0;
    int i;
    for(i=0; i<len; i++){
@@ -91,21 +91,21 @@ void huge _pascal CgiCliFunction(rpCgiPtr CgiRequest){
       while(CGI_GetArgument(&name, &val, CgiRequest) == 0){
          //decode and verify name
          char rw = name[0];
-         int nodeId, idx, sidx, len;
+         unsigned int nodeId, idx, sidx, len;
          char err = 0;
          #define DATA_MAX_LEN 889
-         UNSIGNED8 data[DATA_MAX_LEN]; //data sent or received on CANopen
-         UNSIGNED16 dataLen = 0;
+         unsigned char data[DATA_MAX_LEN]; //data sent or received on CANopen
+         unsigned int dataLen = 0;
 
          if(!name) err++;
          len = strlen(name);
          if (rw == 'r' || rw == 'R'){
             rw = 'r';
-            if(len!=9 && len!=13) err++;
+            if(len < 9 || len > 17) err++;
          }
          else if(rw == 'w' || rw == 'W'){
             rw = 'w';
-            if(len!=13) err++;
+            if(len < 10 || len > 17) err++;
          }
          else{
             err++;
@@ -115,7 +115,7 @@ void huge _pascal CgiCliFunction(rpCgiPtr CgiRequest){
          err += hex2dec(&name[3],  4, &idx);
          err += hex2dec(&name[7],  2, &sidx);
          if(rw == 'w'){
-            err += hex2dec(&name[9], 4, &len);
+            err += hex2dec(&name[9], len-9, &len);
 
             //decode value
             int i;
@@ -123,7 +123,7 @@ void huge _pascal CgiCliFunction(rpCgiPtr CgiRequest){
             if(val) valLen = strlen(val);
             else    valLen = 0;
             for(i=0; i<valLen; i=i+2){
-               int dc;
+               unsigned int dc;
                err += hex2dec(&val[i], 2, &dc);
                data[dataLen] = dc;
                if(++dataLen >= DATA_MAX_LEN) break;
@@ -136,25 +136,25 @@ void huge _pascal CgiCliFunction(rpCgiPtr CgiRequest){
          //SDO clinet access
          UNSIGNED32 SDOabortCode = 0;
          if(err){
-            buf += sprintf(buf, "Error in argument: %s=%s", name, val);
+            buf += sprintf(buf, "Error in argument: %s=%s\n", name, val);
          }
          //read object dictionary
          else if(rw == 'r'){
             INTEGER8 ret;
             CO_SDOclient_setup(SDO_C, 0, 0, nodeId);
-            CO_SDOclientUploadInitiate(SDO_C, idx, sidx, data, DATA_MAX_LEN);
+            CO_SDOclientUploadInitiate(SDO_C, idx, sidx, data, DATA_MAX_LEN, 0);
             do{
                RTX_Sleep_Time(10);
                ret = CO_SDOclientUpload(SDO_C, 10, 500, &dataLen, &SDOabortCode);
             }while(ret > 0);
 
             if(SDOabortCode){
-               buf += sprintf(buf, "R %02X%04X%02X%04X AB: %08X\n",
+               buf += sprintf(buf, "R %02X%04X%02X%X AB: %08X\n",
                               nodeId, idx, sidx, dataLen, (unsigned int)SDOabortCode);
             }
             else{
-               int i;
-               buf += sprintf(buf, "R %02X%04X%02X%04X OK:", nodeId, idx, sidx, dataLen);
+               unsigned int i;
+               buf += sprintf(buf, "R %02X%04X%02X%X OK:", nodeId, idx, sidx, dataLen);
                for(i=0; i<dataLen; i++) buf += sprintf(buf, " %02X", data[i]);
                buf += sprintf(buf, "\n");
             }
@@ -163,19 +163,19 @@ void huge _pascal CgiCliFunction(rpCgiPtr CgiRequest){
          else if(rw == 'w'){
             INTEGER8 ret;
             CO_SDOclient_setup(SDO_C, 0, 0, nodeId);
-            CO_SDOclientDownloadInitiate(SDO_C, idx, sidx, data, dataLen);
+            CO_SDOclientDownloadInitiate(SDO_C, idx, sidx, data, dataLen, 0);
             do{
                RTX_Sleep_Time(10);
                ret = CO_SDOclientDownload(SDO_C, 10, 500, &SDOabortCode);
             }while(ret > 0);
 
             if(SDOabortCode){
-               buf += sprintf(buf, "W %02X%04X%02X%04X AB: %08X\n",
+               buf += sprintf(buf, "W %02X%04X%02X%X AB: %08X\n",
                               nodeId, idx, sidx, dataLen, (unsigned int)SDOabortCode);
             }
             else{
-               int i;
-               buf += sprintf(buf, "W %02X%04X%02X%04X OK:", nodeId, idx, sidx, dataLen);
+               unsigned int i;
+               buf += sprintf(buf, "W %02X%04X%02X%X OK:", nodeId, idx, sidx, dataLen);
                for(i=0; i<dataLen; i++) buf += sprintf(buf, " %02X", data[i]);
                buf += sprintf(buf, "\n");
             }
@@ -192,12 +192,12 @@ void huge _pascal CgiCliFunction(rpCgiPtr CgiRequest){
       sprintf(CgiCli->buf,
          "CGI function provides access to object dictionary on any device on the CANopen network.\n\n"
          "Usage:\n"
-         "  odcli?wnniiiissllll=xxxx[&rnniiiissllll=]\n"
+         "  odcli?wnniiiissll=xxxx[&rnniiiissll=]\n"
          "  w    - 'w'rite or 'r'ead.\n"
          "  nn   - node ID in hex format.\n"
          "  iiii - Object dictionary index in hex format.\n"
          "  ss   - Object dictionary subindex in hex format.\n"
-         "  llll - length of variable (0001 to 0397) in hex format. If reading, this value is ignored.\n"
+         "  ll   - length of variable (1 to FFFFFFFF) in hex format. If reading, this value is ignored.\n"
          "  xxxx - Value to be written in hex and little endian format. If reading, this value is ignored.\n");
       bufLen = strlen(CgiCli->buf);
    }

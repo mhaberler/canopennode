@@ -91,53 +91,41 @@ void CO_HBconsumer_monitoredNodeConfig(
 }
 
 
-/******************************************************************************/
-UNSIGNED32 CO_ODF_1016( void       *object,
-                        UNSIGNED16  index,
-                        UNSIGNED8   subIndex,
-                        UNSIGNED16 *pLength,
-                        UNSIGNED16  attribute,
-                        UNSIGNED8   dir,
-                        void       *dataBuff,
-                        const void *pData)
-{
-   UNSIGNED32 abortCode;
+/* Consumer heartbeat time - Object dictionary function ***********************/
+UNSIGNED32 CO_ODF_1016(CO_ODF_arg_t *ODF_arg){
    CO_HBconsumer_t *HBcons;
+   UNSIGNED32 *value;
 
-   HBcons = (CO_HBconsumer_t*) object; //this is the correct pointer type of the first argument
+   HBcons = (CO_HBconsumer_t*) ODF_arg->object;
+   value = (UNSIGNED32*) ODF_arg->data;
 
-   if(dir == 1){  //Writing Object Dictionary variable
-      UNSIGNED8 i;
-      UNSIGNED32 dataBuffCopy;
+   if(!ODF_arg->reading){
       UNSIGNED8 NodeID;
       UNSIGNED16 HBconsTime;
+      UNSIGNED8 i;
 
-      memcpySwap4((UNSIGNED8*)&dataBuffCopy, (UNSIGNED8*)dataBuff);
-      NodeID = (dataBuffCopy>>16) & 0xFF;
-      HBconsTime = dataBuffCopy & 0xFFFF;
+      NodeID = (*value >> 16) & 0xFF;
+      HBconsTime = *value & 0xFFFF;
 
-      if(dataBuffCopy & 0xFF800000)
+      if(*value & 0xFF800000)
          return 0x06040043L;  //General parameter incompatibility reason.
 
       if(HBconsTime && NodeID){
          //there must not be more entries with same index and time different than zero
          for(i = 0; i<HBcons->numberOfMonitoredNodes; i++){
             UNSIGNED32 objectCopy = HBcons->ObjDict_consumerHeartbeatTime[i];
-            UNSIGNED8 NodeIDObj = (objectCopy>>16) & 0xFF;
+            UNSIGNED8 NodeIDObj = (objectCopy >> 16) & 0xFF;
             UNSIGNED16 HBconsTimeObj = objectCopy & 0xFFFF;
-            if((subIndex-1)!=i && HBconsTimeObj && (NodeID == NodeIDObj))
+            if((ODF_arg->subIndex-1)!=i && HBconsTimeObj && (NodeID == NodeIDObj))
                return 0x06040043L;  //General parameter incompatibility reason.
          }
       }
+
+      //Configure
+      CO_HBconsumer_monitoredNodeConfig(HBcons, ODF_arg->subIndex-1);
    }
 
-   abortCode = CO_ODF(object, index, subIndex, pLength, attribute, dir, dataBuff, pData);
-
-   //Configure
-   if(dir == 1 && abortCode == 0 && subIndex >= 1)
-      CO_HBconsumer_monitoredNodeConfig(HBcons, subIndex-1);
-
-   return abortCode;
+   return 0;
 }
 
 
@@ -173,8 +161,8 @@ const UNSIGNED32             *ObjDict_consumerHeartbeatTime,
    for(i=0; i<HBcons->numberOfMonitoredNodes; i++)
       CO_HBconsumer_monitoredNodeConfig(HBcons, i);
 
-   //Configure SDO server for first argument of CO_ODF_1016
-   CO_OD_configureArgumentForODF(SDO, 0x1016, (void*)HBcons);
+   //Configure Object dictionary entry at index 0x1016
+   CO_OD_configure(SDO, 0x1016, CO_ODF_1016, (void*)HBcons);
 
    return CO_ERROR_NO;
 }

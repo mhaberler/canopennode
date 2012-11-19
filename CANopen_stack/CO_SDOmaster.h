@@ -90,7 +90,8 @@
 
       CANdevRx       - CAN device for SDO client reception <CO_CANmodule_t>.
       CANdevRxIdx    - Index of receive buffer for SDO client reception.
-      CANrxNew       - Variable indicates, if new SDO message received from CAN bus.
+      CANrxNew       - Flag indicates, if new SDO message received from CAN bus.
+                       It is not cleared, untill received message is completely processed.
       CANrxData      - 8 data bytes of the received message.
 
       pFunctSignal   - Pointer to optional external function. If defined, it is
@@ -109,8 +110,15 @@ typedef struct{
 
    UNSIGNED8               state;
    UNSIGNED8              *buffer;
-   UNSIGNED16              bufferSize;
-   UNSIGNED16              bufferOffset;
+
+   UNSIGNED32              dataSize;
+   UNSIGNED32              dataSizeTransfered;
+
+   UNSIGNED32              bufferSize;
+   UNSIGNED32              bufferOffset;
+   UNSIGNED32              bufferOffsetACK;
+
+
    UNSIGNED16              timeoutTimer;
    UNSIGNED16              index;
    UNSIGNED8               subIndex;
@@ -126,8 +134,16 @@ typedef struct{
    CO_CANmodule_t         *CANdevTx;
    CO_CANtxArray_t        *CANtxBuff;
    UNSIGNED16              CANdevTxIdx;
-}CO_SDOclient_t;
 
+// MTJ ADD 4 SDO BLOCK TRANSFERE
+   UNSIGNED8      block_state;    // state of block transfere
+   UNSIGNED8       block_seqno;
+   UNSIGNED8      block_blksize;
+//   UNSIGNED8      block_blkcount;
+   UNSIGNED8      block_noData;
+   UNSIGNED8      block_serverCRC;
+
+}CO_SDOclient_t;
 
 
 /*******************************************************************************
@@ -235,6 +251,7 @@ INTEGER8 CO_SDOclient_setup(  CO_SDOclient_t            *SDO_C,
                  format, because CANopen itself uses little-endian. Take care,
                  when using processors with big-endian.
       dataSize - Size of data in dataTx.
+      blockEneable - Try to initiate block transfer.
 
    Return:
       0  - Success.
@@ -244,7 +261,8 @@ INTEGER8 CO_SDOclientDownloadInitiate( CO_SDOclient_t   *SDO_C,
                                        UNSIGNED16        index,
                                        UNSIGNED8         subIndex,
                                        UNSIGNED8        *dataTx,
-                                       UNSIGNED16        dataSize);
+                                       UNSIGNED32        dataSize,
+                                       UNSIGNED8         blockEnable);
 
 
 /*******************************************************************************
@@ -267,6 +285,7 @@ INTEGER8 CO_SDOclientDownloadInitiate( CO_SDOclient_t   *SDO_C,
       2  - Server responded, new client request was sent.
       1  - Waiting for server response.
       0  - End of communication.
+     -1  - SDO BLOCK initiate faild, try segmented.
      -3  - Error: communication was not properly initiaded.
      -10 - Error in SDO communication. SDO abort code is in value pointed by pSDOabortCode.
      -11 - Error: timeout in SDO communication, SDO abort code is in value pointed by pSDOabortCode.
@@ -291,10 +310,11 @@ INTEGER8 CO_SDOclientDownload(   CO_SDOclient_t      *SDO_C,
       index       - Index of object in object dictionary in remote node.
       subIndex    - Subindex of object in object dictionary in remote node.
       dataRx      - Pointer to data buffer data will be written. Buffer must be
-                    valid untill end of communication. Note that data are aligned
+                    valid until end of communication. Note that data are aligned
                     in little-endian format, because CANopen itself uses
                     little-endian. Take care, when using processors with big-endian.
       dataRxSize  - Size of dataRx.
+      blockEneable - Try to initiate block transfer.
 
    Return:
       0  - Success.
@@ -304,7 +324,8 @@ INTEGER8 CO_SDOclientUploadInitiate(   CO_SDOclient_t   *SDO_C,
                                        UNSIGNED16        index,
                                        UNSIGNED8         subIndex,
                                        UNSIGNED8        *dataRx,
-                                       UNSIGNED16        dataRxSize);
+                                       UNSIGNED32        dataRxSize,
+                                       UNSIGNED8         blockEnable);
 
 
 /*******************************************************************************
@@ -312,7 +333,7 @@ INTEGER8 CO_SDOclientUploadInitiate(   CO_SDOclient_t   *SDO_C,
 
    Process SDO upload communication.
 
-   Function must be called cyclically untill it returns <=0. It Proceeds SDO
+   Function must be called cyclically until it returns <=0. It Proceeds SDO
    upload communication initiated with <CO_SDOclientUploadInitiate()>.
    Function is nonblocking.
 
@@ -326,6 +347,7 @@ INTEGER8 CO_SDOclientUploadInitiate(   CO_SDOclient_t   *SDO_C,
                           in case of error in communication.
 
    Return:
+      3  - Block upload in progress.
       2  - Server responded, new client request was sent.
       1  - Waiting for server response.
       0  - End of communication.
@@ -336,7 +358,7 @@ INTEGER8 CO_SDOclientUploadInitiate(   CO_SDOclient_t   *SDO_C,
 INTEGER8 CO_SDOclientUpload(  CO_SDOclient_t      *SDO_C,
                               UNSIGNED16           timeDifference_ms,
                               UNSIGNED16           SDOtimeoutTime,
-                              UNSIGNED16          *pDataSize,
+                              UNSIGNED32          *pDataSize,
                               UNSIGNED32          *pSDOabortCode);
 
 #endif

@@ -39,7 +39,8 @@
 		var CO_OD_C_initEEPROM = [];
 		var CO_OD_C_initROM = [];
 		var CO_OD_C_records = [];
-		var CO_OD_C_functions = ["UNSIGNED32 CO_ODF(void*, UNSIGNED16, UNSIGNED8, UNSIGNED16*, UNSIGNED16, UNSIGNED8, void*, const void*);\n"];
+                //MCO
+		var CO_OD_C_functions = [];
 		var CO_OD_C_OD = [];
 	//fileEDSspec
 		var EDSspec_info = [];
@@ -52,7 +53,6 @@
 		var DOCidentity = <></>;
 		var DOCfeaturesIndex = <></>;
 		var DOCfeatures = <></>;
-		var DOCobjDictIndex = <></>;
 		var DOCobjDictCommIndex = <></>;
 		var DOCobjDictComm = <></>;
 		var DOCobjDictManufIndex = <></>;
@@ -62,6 +62,7 @@
 
 	//other
 		var fileName;
+		var ODfileNameReference;
 		var errorMessages = [];
 		//following object is used with advanced and useful feature of Object dictionary editor. It enables combining
 		//multiple objects into 'c' array. For example PDO mapping or communication parameters. Another example is 
@@ -99,6 +100,15 @@ function generateFiles(){
 
 	//set title to fileName
 	fileName = g_project.other.file.@fileName.toString();
+	if (fileName[0] == '_')
+	{
+		ODfileNameReference = fileName;
+		//ODfileNameReference[0] = '_';
+	}
+	else
+	{
+		ODfileNameReference = "";
+	}	
 //	document.title = fileName + " output - CANopenNode";
 
 	//output g_project directly
@@ -287,7 +297,7 @@ function calculateFeatures(){
 			ao = "//Associated objects: " + ao.join(", ");
 		else
 			ao = "";
-		CO_OD_H_macros.push("   #define CO_NO_" + indent(macroName, 25) + indent(value.toString(), 4) + ao);
+		CO_OD_H_macros.push("   #define CO"+ODfileNameReference+"_NO_" + indent(macroName, 25) + indent(value.toString(), 4) + ao);
 
 		/*** Generate contents for Documentation ***/
 		if(value != "0"){
@@ -338,7 +348,21 @@ function calculateObjects(){
 	var combinedInitializationsRAM = [];
 	var combinedInitializationsEEPROM = [];
 	var combinedInitializationsROM = [];
+	
+   var buttons = 
+         <li>
+            <input type="button" pf="butReadAll" value="Read All"/>
+            <input type="button" pf="butReadRR" value="Read RAM"/>
+            <input type="button" pf="butRead" value="Read marked"/>
+            <input type="button" pf="butWrite" value="Write marked"/>
+         </li>
+   DOCobjDictCommIndex += buttons;
+   DOCobjDictManufIndex += buttons;
+   DOCobjDictProfileIndex += buttons;
 
+	//MCO	
+	CO_OD_C_functions.push("UNSIGNED32 CO_ODF"+ODfileNameReference+"(void*, UNSIGNED16, UNSIGNED8, UNSIGNED16*, UNSIGNED16, UNSIGNED8, void*, const void*);\n");
+	
 	for each(var object in g_project.CANopenObjectList.CANopenObject){
 		if(object.@disabled != "true"){
 			var index = object.@index.toString().toUpperCase();
@@ -362,6 +386,8 @@ function calculateObjects(){
 			/*** SDO Server access function ***/
 			var DOCaccessSDOoverride = <></>;
 			if(accessFunctionName){ //external function
+			    //MCO
+				accessFunctionName = accessFunctionName;
 				DOCaccessSDOoverride = <h4>{"Default SDO Server access to object is replaced by external function: \""+accessFunctionName+"\"."}</h4>;
 				if(accessFunctionNameArray.indexOf(accessFunctionName)<0){ //prevent duplicate decalrations
 					CO_OD_C_functions.push("UNSIGNED32 "+accessFunctionName+"(void*, UNSIGNED16, UNSIGNED8, UNSIGNED16*, UNSIGNED16, UNSIGNED8, void*, const void*);\n");
@@ -373,7 +399,7 @@ function calculateObjects(){
 				if(accessFunctionPreCode) accessFunctionPreCode = accessFunctionPreCode.replace(/^(.*)/gm, "  $1") + "\n";
 				if(accessFunctionPostCode) accessFunctionPostCode = accessFunctionPostCode.replace(/^(.*)/gm, "  $1") + "\n";
 				var func =
-					"UNSIGNED32 CO_ODF_"+index+"(void *object, UNSIGNED16 index, UNSIGNED8 subIndex, UNSIGNED16* pLength,\n" +
+					"UNSIGNED32 CO_ODF_"+index+ODfileNameReference+"(void *object, UNSIGNED16 index, UNSIGNED8 subIndex, UNSIGNED16* pLength,\n" +
 					"                       UNSIGNED16 attribute, UNSIGNED8 dir, void* dataBuff, const void* pData){\n" +
 					"  UNSIGNED32 abortCode;\n" +
 					accessFunctionPreCode +
@@ -386,7 +412,7 @@ function calculateObjects(){
 						<pre>{func}</pre>
 					</div>
 				CO_OD_C_functions.push(func+"\n");
-				accessFunctionName = "CO_ODF_"+index;
+				accessFunctionName = "CO_ODF_"+index+ODfileNameReference;
 			}
 			else{
 				accessFunctionName = "CO_ODF";
@@ -461,7 +487,7 @@ function calculateObjects(){
 
 						//alias for object
 						CO_OD_H_aliases.push(indexRange.replace(/\s/g,"") + ", Data Type: " + dt + (arr?", Array"+arr:"") + " */");
-						CO_OD_H_aliases.push("      #define OD_" + indent(nameNoSpace, 40) + "CO_OD_" + memoryType + "." + nameNoSpace);
+						CO_OD_H_aliases.push("      #define OD"+ODfileNameReference+"_" + indent(nameNoSpace, 40) + "CO"+ODfileNameReference+"_OD_" + memoryType + "." + nameNoSpace);
 					}
 					else{
 						//next combined objects
@@ -479,12 +505,13 @@ function calculateObjects(){
 					if(dataType=="09" || dataType=="0A"){
 						arrayType = "[0]";
 						if(combinedObjects[index].firstIndex == "" || combinedObjects[index].firstIndex == index)
-							CO_OD_H_aliases.push("      #define ODL_" + indent(nameNoSpace+"_stringLength",39) + defaultValueMemorySize.replace(" ", ""));
+							CO_OD_H_aliases.push("      #define ODL"+ODfileNameReference+"_" + indent(nameNoSpace+"_stringLength",39) + defaultValueMemorySize.replace(" ", ""));
 					}
-               var varPtr = "(const void*)&CO_OD_"+memoryType+"."+nameNoSpace+combinedObjects[index].curentCount+arrayType;
+               var varPtr = "(void*)&CO"+ODfileNameReference+"_OD_"+memoryType+"."+nameNoSpace+combinedObjects[index].curentCount+arrayType;
                if (dataType=="0F") varPtr = "0";   //DOMAIN data type
 					CO_OD_C_OD.push("{0x"+index+", 0x00, 0x"+g_byteToHexString(attribute)+", "+defaultValueMemorySize+", "+
-													indent(varPtr+", ", 63)+accessFunctionName+"},");
+                                    varPtr+"},");
+//													indent(varPtr+", ", 63)+accessFunctionName+"},");
 					if(combinedObjects[index].firstIndex == "" || combinedObjects[index].firstIndex == index) CO_OD_H_aliases.push("");
 					break;
 				case "8":	//Array
@@ -512,8 +539,8 @@ function calculateObjects(){
 
 						//alias for object
 						CO_OD_H_aliases.push(indexRange.replace(/\s/g,"") + ", Data Type: " + dt + (arr?", Array"+arr:"") + " */");
-						CO_OD_H_aliases.push("      #define OD_" + indent(nameNoSpace, 40) + "CO_OD_" + memoryType + "." + nameNoSpace);
-						CO_OD_H_aliases.push("      #define ODL_" + indent(nameNoSpace+"_arrayLength", 39) + (subNumberVal-1).toString());
+						CO_OD_H_aliases.push("      #define OD"+ODfileNameReference+"_" + indent(nameNoSpace, 40) + "CO"+ODfileNameReference+"_OD_" + memoryType + "." + nameNoSpace);
+						CO_OD_H_aliases.push("      #define ODL"+ODfileNameReference+"_" + indent(nameNoSpace+"_arrayLength", 39) + (subNumberVal-1).toString());
 					}
 					else{
 						//next combined objects
@@ -525,7 +552,7 @@ function calculateObjects(){
 					//subObjects
 					var subAlias = [];
 					var subInitials = [];
-					var subDefaultValueMemorySize = 0;
+					var subDefaultValueMemorySize = " 0";
 					for(var i=1; i<subNumberVal; i++){
 						var subObject = object.CANopenSubObject[i];
 						if(subObject.@subIndex.toString() != g_byteToHexString(i))
@@ -535,7 +562,7 @@ function calculateObjects(){
 						var subNameNoSpace = name2c_code(subName);
 						var subDefaultValue = subObject.@defaultValue.toString();
 						var ms = dataType2c_codeSize(dataType, subDefaultValue);
-						if(ms > subDefaultValueMemorySize) subDefaultValueMemorySize = ms;
+						if(parseInt(ms) > parseInt(subDefaultValueMemorySize)) subDefaultValueMemorySize = ms;
 
 						//initial value
 						subInitials.push(value2c_code(subDefaultValue, dataType, index+", "+g_byteToHexString(i)));
@@ -561,10 +588,13 @@ function calculateObjects(){
 					if(dataType=="09" || dataType=="0A"){
 						arrayType += "[0]";
 						if(combinedObjects[index].firstIndex == "" || combinedObjects[index].firstIndex == index)
-							CO_OD_H_aliases.push("      #define ODL_" + indent(nameNoSpace+"_stringLength", 39) + subDefaultValueMemorySize.replace(" ", ""));
+							CO_OD_H_aliases.push("      #define ODL"+ODfileNameReference+"_" + indent(nameNoSpace+"_stringLength", 39) + subDefaultValueMemorySize.replace(" ", ""));
 					}
-					CO_OD_C_OD.push("{0x"+index+", 0x"+g_byteToHexString(subNumberVal-1)+", 0x"+g_byteToHexString(attribute)+", "+subDefaultValueMemorySize+", (const void*)&"+
-													indent("CO_OD_"+memoryType+"."+nameNoSpace+combinedObjects[index].curentCount+arrayType+", ", 49)+accessFunctionName+"},");
+               var varPtr = "(void*)&CO"+ODfileNameReference+"_OD_"+memoryType+"."+nameNoSpace+combinedObjects[index].curentCount+arrayType;
+               if (dataType=="0F") varPtr = "0";   //DOMAIN data type
+					CO_OD_C_OD.push("{0x"+index+", 0x"+g_byteToHexString(subNumberVal-1)+", 0x"+g_byteToHexString(attribute)+", "+subDefaultValueMemorySize+", "+
+                                    varPtr+"},");
+//													indent(varPtr+", ", 49)+accessFunctionName+"},");
 
 					//make aliases for subObjects (for each array member)
 					if(combinedObjects[index].firstIndex == "" || combinedObjects[index].firstIndex == index){
@@ -575,7 +605,7 @@ function calculateObjects(){
 								if(subAlias[i] == subAlias[j]) makeAliases = false;
 						if(makeAliases)
 							for(var i=0; i<subAlias.length; i++)
-								CO_OD_H_aliases.push("      #define ODA_" + indent(nameNoSpace+"_"+subAlias[i], 39) + i.toString());
+								CO_OD_H_aliases.push("      #define ODA"+ODfileNameReference+"_" + indent(nameNoSpace+"_"+subAlias[i], 39) + i.toString());
 					}
 
 					if(combinedObjects[index].firstIndex == "" || combinedObjects[index].firstIndex == index) CO_OD_H_aliases.push("");
@@ -618,8 +648,9 @@ function calculateObjects(){
 						//output
 						subDefinitions.push("               " + indent(dt, 15) + subNameNoSpace + arr + ";");
 						subAttributes.push(subAttribute);
-						subStructure.push("           {(const void*)&CO_OD_" + memoryType + "." + nameNoSpace+combinedObjects[index].curentCount+
-															"."+subNameNoSpace+(arr?"[0]":"")+", 0x"+g_byteToHexString(subAttribute)+", "+subDefaultValueMemorySize+"}");
+                  var varPtr = "(void*)&CO"+ODfileNameReference+"_OD_"+memoryType+"."+nameNoSpace+combinedObjects[index].curentCount+"."+subNameNoSpace+(arr?"[0]":"");
+                  if (subDataType=="0F") varPtr = "0";   //DOMAIN data type
+						subStructure.push("           {"+varPtr+", 0x"+g_byteToHexString(subAttribute)+", "+subDefaultValueMemorySize+"}");
 						subInitials.push(value2c_code(subDefaultValue, subDataType, index+", "+g_byteToHexString(i)));
 					}
 
@@ -636,14 +667,14 @@ function calculateObjects(){
 						//typedef for record
 						CO_OD_H_typedefs.push(indexRange + "*/ typedef struct{");
 						CO_OD_H_typedefs.push(subDefinitions.join("\n"));
-						CO_OD_H_typedefs.push("               }              OD_" + nameNoSpace + "_t;\n");
+						CO_OD_H_typedefs.push("               }              OD"+ODfileNameReference+"_" + nameNoSpace + "_t;\n");
 
 						//object definition
-						varDefinition = indexRange + "*/ " + indent("OD_"+nameNoSpace+"_t", 15) + nameNoSpace + combinedObjects[index].count + ";"
+						varDefinition = indexRange + "*/ " + indent("OD"+ODfileNameReference+"_"+nameNoSpace+"_t", 15) + nameNoSpace + combinedObjects[index].count + ";"
 
 						//alias for object
 						CO_OD_H_aliases.push(indexRange.replace(/\s/g,"") + ", Data Type: " + "OD_"+nameNoSpace + "_t" + (combinedObjects[index].count?", Array"+combinedObjects[index].count:"") + " */");
-						CO_OD_H_aliases.push("      #define OD_" + indent(nameNoSpace, 40) + "CO_OD_" + memoryType + "." + nameNoSpace);
+						CO_OD_H_aliases.push("      #define OD"+ODfileNameReference+"_" + indent(nameNoSpace, 40) + "CO"+ODfileNameReference+"_OD_" + memoryType + "." + nameNoSpace);
 					}
 					else{
 						//next combined objects
@@ -655,12 +686,13 @@ function calculateObjects(){
 					varInitialization = "/*" + index + "*/"+ combinedObjects[index].br1 + "{" + subInitials.join(", ") + "}" + combinedObjects[index].br2 + ",";
 
 					//Information obout record for object dictionary
-					CO_OD_C_records.push("/*0x"+index+"*/ const CO_ODrecord_t ODrecord"+index+"["+subNumberVal+"] = {");
+					CO_OD_C_records.push("/*0x"+index+"*/ const CO_OD_entryRecord_t OD"+ODfileNameReference+"_record"+index+"["+subNumberVal+"] = {");
 					CO_OD_C_records.push(subStructure.join(",\n") + "};");
 
 					//put object into Object Dictionary
-					CO_OD_C_OD.push("{0x"+index+", 0x"+g_byteToHexString(subNumberVal-1)+", 0x00,  0, (const void*)&"+
-													indent("ODrecord"+index+", ", 49)+accessFunctionName+"},");
+					CO_OD_C_OD.push("{0x"+index+", 0x"+g_byteToHexString(subNumberVal-1)+", 0x00,  0, (void*)&"+
+													"OD"+ODfileNameReference+"_record"+index+"},");
+//													indent("OD"+ODfileNameReference+"_record"+index+", ", 49)+accessFunctionName+"},");
 
 					if(combinedObjects[index].firstIndex == "" || combinedObjects[index].firstIndex == index) CO_OD_H_aliases.push("");
 					break;
@@ -807,8 +839,23 @@ function calculateObjects(){
 
 			/*** Generate contents for Documentation ***/
 			var DOCcontents;
+			var DOChref = fileName + "_" + index.toString().replace(/\W/g, "_");
+			var DOCobjectIndex;
 			switch(objectType){
 				case "7":	//Variable
+               var size = dataType2c_codeSize(dataType, defaultValue).replace(" ", "0");
+               var format = dataType2pfFormat(dataType, defaultValue);
+               var docAccType = accessType;
+               if(docAccType == "const") docAccType = "ro";
+               if(memoryType == "RAM" && docAccType.search("r") >= 0) docAccType = "r" + docAccType;
+               DOCobjectIndex = 
+                  <li>
+                     <a docref={DOChref}>{index}</a> - {name}:
+                     <input addr={index+"00"+"00"+size}
+                            format={format}
+                            pf={docAccType}
+                            value={defaultValue}/>
+                  </li>
 					DOCcontents =
 						<table>
 							<tr>
@@ -835,6 +882,7 @@ function calculateObjects(){
 					break;
 				case "8":	//Array
 					var DOCcontSubidx = <></>
+					var DOCobjectSubIdx = <></>
 					for(var i=0; i<subNumberVal; i++){
 						var subObject = object.CANopenSubObject[i];
 						DOCcontSubidx +=
@@ -844,7 +892,26 @@ function calculateObjects(){
 								<td>{subObject.@defaultValue}</td>
 								<td>{subObject.@actualValue}</td>
 							</tr>
+                  if(i==0){
+                     var size = "01";
+                     var format = "U08";
+                  }
+                  else{
+                     var size = dataType2c_codeSize(dataType, subObject.@defaultValue).replace(" ", "0");
+                     var format = dataType2pfFormat(dataType, subObject.@defaultValue);
+                  }
+                  var docAccType = accessType;
+                  if(docAccType == "const") docAccType = "ro";
+                  if(memoryType == "RAM" && docAccType.search("r") >= 0) docAccType = "r" + docAccType;
+                  DOCobjectSubIdx += 
+                     <li>{subObject.@subIndex} - {subObject.@name}:
+                        <input addr={index+subObject.@subIndex+"00"+size}
+                               format={format}
+                               pf={docAccType}
+                               value={subObject.@defaultValue}/>
+                     </li>
 					}
+               DOCobjectIndex = <li class="expandable"><a docref={DOChref}>{index} - {name}</a><ul>{DOCobjectSubIdx}</ul></li>
 					DOCcontents =
 						<table>
 							<tr>
@@ -879,6 +946,7 @@ function calculateObjects(){
 					break;
 				case "9":	//Record
 					var DOCcontSubidx = <></>
+					var DOCobjectSubIdx = <></>
 					for(var i=0; i<subNumberVal; i++){
 						var subObject = object.CANopenSubObject[i];
 						DOCcontSubidx +=
@@ -892,7 +960,20 @@ function calculateObjects(){
 								<td>{subObject.@defaultValue}</td>
 								<td>{subObject.@actualValue}</td>
 							</tr>
+                  var size = dataType2c_codeSize(subObject.@dataType.toString(), subObject.@defaultValue).replace(" ", "0");
+                  var format = dataType2pfFormat(subObject.@dataType.toString(), subObject.@defaultValue);
+                  var docAccType = subObject.@accessType;
+                  if(docAccType == "const") docAccType = "ro";
+                  if(memoryType == "RAM" && docAccType.search("r") >= 0) docAccType = "r" + docAccType;
+                  DOCobjectSubIdx +=
+                     <li>{subObject.@subIndex} - {subObject.@name}:
+                        <input addr={index+subObject.@subIndex+"00"+size}
+                               format={format}
+                               pf={docAccType}
+                               value={subObject.@defaultValue}/>
+                     </li>
 					}
+               DOCobjectIndex = <li class="expandable"><a docref={DOChref}>{index} - {name}</a><ul>{DOCobjectSubIdx}</ul></li>
 					DOCcontents =
 						<table>
 							<tr>
@@ -931,17 +1012,12 @@ function calculateObjects(){
 			XMLspec_objList += XMLcontents;
 
 			//Documentation
-			var DOChref = "object_" + index.toString().replace(/\W/g, "_");
-			var DOCobjectIndex = <li><a href={"#"+DOChref}>{index}</a> - {name}</li>
 			var DOCobject =
-				<div id={DOChref} class="elements">
+				<li id={DOChref}>
 					<h3>{index} - {name}</h3>
 					{DOCcontents}
-					{DOCaccessSDOoverride}
 					{extractLabels(object)}
-				</div>
-
-			DOCobjDictIndex += <a href={"#"+DOChref} title={name}>{index}</a>
+				</li>
 
 			if(indexVal < 0x2000){
 				DOCobjDictCommIndex += DOCobjectIndex;
@@ -1048,6 +1124,40 @@ function dataType2c_codeSize(dataType, value){
 			return " 0";
 		default:
 			return "??";
+	}
+}
+
+function dataType2pfFormat(dataType, value){
+   var isHex = value.toLowerCase().search("x") >= 0;
+	switch(dataType){
+		case "02": return "I08";
+		case "05": return isHex ? "X08" : "U08";
+		case "03": return "I16";
+		case "06": return isHex ? "X16" : "U16";
+		case "10": return "I24";
+		case "16": return isHex ? "X24" : "U24";
+		case "04": return "I32";
+		case "07": return isHex ? "X32" : "U32";
+		case "08": return "R32";
+		case "15": return "I64";
+		case "1B": return isHex ? "X64" : "U64";
+		case "11": return "R64";
+		case "09": //VISIBLE_STRING
+			var str = value.length.toString(16);
+			if(str.length==1) str = "0" + str;
+			return "S" + str;
+		case "0A": //OCTET_STRING
+			var str = (value.replace(/\s/g, "").length/2).toString(16);
+			if(str.length==1) str = "0" + str;
+			return "O" + str;
+		case "0B": //UNICODE_STRING
+			var str = (value.replace(/\s/g, "").length/4).toString(16);
+			if(str.length==1) str = "0" + str;
+			return "C" + str;
+		case "0F": //DOMAIN
+			return "Dxx";
+		default:
+			return "???";
 	}
 }
 
@@ -1182,7 +1292,7 @@ function generateCO_OD_H(){
 	var text = "ODH"+
 		"/*******************************************************************************\n"+
 		"\n"+
-		"   File: CO_OD.h\n"+
+		"   File: CO"+ODfileNameReference+"_OD.h\n"+
 		"   CANopen Object Dictionary.\n"+
 		"\n"+
 		"   Copyright (C) 2004-2008 Janez Paternoster\n"+
@@ -1216,8 +1326,8 @@ function generateCO_OD_H(){
 		"\n"+
 		"*******************************************************************************/\n"+
 		"\n"+
-		"#ifndef _CO_OD_H\n"+
-		"#define _CO_OD_H\n"+
+		"#ifndef _CO_OD"+ODfileNameReference+"_H\n"+
+		"#define _CO_OD"+ODfileNameReference+"_H\n"+
 		"\n"+
 		"/*******************************************************************************\n"+
 		"   FILE INFO:\n"+
@@ -1244,7 +1354,7 @@ function generateCO_OD_H(){
 		"/*******************************************************************************\n"+
 		"   OBJECT DICTIONARY\n"+
 		"*******************************************************************************/\n"+
-		"   #define CO_OD_NoOfElements             "+CO_OD_C_OD.length.toString()+"\n"+
+		"   #define CO"+ODfileNameReference+"_OD_NoOfElements             "+CO_OD_C_OD.length.toString()+"\n"+
 		"\n"+
 		"\n"+
 		"/*******************************************************************************\n"+
@@ -1256,10 +1366,10 @@ function generateCO_OD_H(){
 		"/*******************************************************************************\n"+
 		"   STRUCTURES FOR VARIABLES IN DIFFERENT MEMORY LOCATIONS\n"+
 		"*******************************************************************************/\n"+
-		"#define  CO_OD_FIRST_LAST_WORD     0x55 //Any value from 0x01 to 0xFE. If changed, EEPROM will be reinitialized.\n"+
+		"#define  CO"+ODfileNameReference+"_OD_FIRST_LAST_WORD     0x55 //Any value from 0x01 to 0xFE. If changed, EEPROM will be reinitialized.\n"+
 		"\n"+
 		"/***** Structure for RAM variables ********************************************/\n"+
-		"struct sCO_OD_RAM{\n"+
+		"struct sCO"+ODfileNameReference+"_OD_RAM{\n"+
 		"               UNSIGNED32     FirstWord;\n"+
 		"\n"+
 		CO_OD_H_RAM.join("\n")+"\n"+
@@ -1268,7 +1378,7 @@ function generateCO_OD_H(){
 		"};\n"+
 		"\n"+
 		"/***** Structure for EEPROM variables *****************************************/\n"+
-		"struct sCO_OD_EEPROM{\n"+
+		"struct sCO"+ODfileNameReference+"_OD_EEPROM{\n"+
 		"               UNSIGNED32     FirstWord;\n"+
 		"\n"+
 		CO_OD_H_EEPROM.join("\n")+"\n"+
@@ -1278,7 +1388,7 @@ function generateCO_OD_H(){
 		"\n"+
 		"\n"+
 		"/***** Structure for ROM variables ********************************************/\n"+
-		"struct sCO_OD_ROM{\n"+
+		"struct sCO"+ODfileNameReference+"_OD_ROM{\n"+
 		"               UNSIGNED32     FirstWord;\n"+
 		"\n"+
 		CO_OD_H_ROM.join("\n")+"\n"+
@@ -1288,11 +1398,11 @@ function generateCO_OD_H(){
 		"\n"+
 		"\n"+
 		"/***** Declaration of Object Dictionary variables *****************************/\n"+
-		"extern struct sCO_OD_RAM CO_OD_RAM;\n"+
+		"extern struct sCO"+ODfileNameReference+"_OD_RAM CO"+ODfileNameReference+"_OD_RAM;\n"+
 		"\n"+
-		"extern struct sCO_OD_EEPROM CO_OD_EEPROM;\n"+
+		"extern struct sCO"+ODfileNameReference+"_OD_EEPROM CO"+ODfileNameReference+"_OD_EEPROM;\n"+
 		"\n"+
-		"extern CO_OD_ROM_IDENT struct sCO_OD_ROM CO_OD_ROM;\n"+
+		"extern CO_OD_ROM_IDENT struct sCO"+ODfileNameReference+"_OD_ROM CO"+ODfileNameReference+"_OD_ROM;\n"+
 		"\n"+
 		"\n"+
 		"/*******************************************************************************\n"+
@@ -1309,7 +1419,7 @@ function generateCO_OD_C(){
 	var text = "ODC"+
 		"/*******************************************************************************\n"+
 		"\n"+
-		"   File - CO_OD.c\n"+
+		"   File - CO"+ODfileNameReference+"_OD.c\n"+
 		"   CANopen Object Dictionary.\n"+
 		"\n"+
 		"   Copyright (C) 2004-2008 Janez Paternoster\n"+
@@ -1345,7 +1455,7 @@ function generateCO_OD_C(){
 		"\n"+
 		"\n"+
 		"#include \"CO_driver.h\"\n"+
-		"#include \"CO_OD.h\"\n"+
+		"#include \"CO"+ODfileNameReference+"_OD.h\"\n"+
 		"#include \"CO_SDO.h\"\n"+
 		"\n"+
 		"\n"+
@@ -1354,32 +1464,32 @@ function generateCO_OD_C(){
 		"*******************************************************************************/\n"+
 		"\n"+
 		"/***** Definition for RAM variables *******************************************/\n"+
-		"struct sCO_OD_RAM CO_OD_RAM = {\n"+
-		"           CO_OD_FIRST_LAST_WORD,\n"+
+		"struct sCO"+ODfileNameReference+"_OD_RAM CO"+ODfileNameReference+"_OD_RAM = {\n"+
+		"           CO"+ODfileNameReference+"_OD_FIRST_LAST_WORD,\n"+
 		"\n"+
 		CO_OD_C_initRAM.join("\n")+"\n"+
 		"\n"+
-		"           CO_OD_FIRST_LAST_WORD,\n"+
+		"           CO"+ODfileNameReference+"_OD_FIRST_LAST_WORD,\n"+
 		"};\n"+
 		"\n"+
 		"\n"+
 		"/***** Definition for EEPROM variables ****************************************/\n"+
-		"struct sCO_OD_EEPROM CO_OD_EEPROM = {\n"+
-		"           CO_OD_FIRST_LAST_WORD,\n"+
+		"struct sCO"+ODfileNameReference+"_OD_EEPROM CO"+ODfileNameReference+"_OD_EEPROM = {\n"+
+		"           CO"+ODfileNameReference+"_OD_FIRST_LAST_WORD,\n"+
 		"\n"+
 		CO_OD_C_initEEPROM.join("\n")+"\n"+
 		"\n"+
-		"           CO_OD_FIRST_LAST_WORD,\n"+
+		"           CO"+ODfileNameReference+"_OD_FIRST_LAST_WORD,\n"+
 		"};\n"+
 		"\n"+
 		"\n"+
 		"/***** Definition for ROM variables *******************************************/\n"+
-		"   CO_OD_ROM_IDENT struct sCO_OD_ROM CO_OD_ROM = {    //constant variables, stored in flash\n"+
-		"           CO_OD_FIRST_LAST_WORD,\n"+
+		"   CO_OD_ROM_IDENT struct sCO"+ODfileNameReference+"_OD_ROM CO"+ODfileNameReference+"_OD_ROM = {    //constant variables, stored in flash\n"+
+		"           CO"+ODfileNameReference+"_OD_FIRST_LAST_WORD,\n"+
 		"\n"+
 		CO_OD_C_initROM.join("\n")+"\n"+
 		"\n"+
-		"           CO_OD_FIRST_LAST_WORD\n"+
+		"           CO"+ODfileNameReference+"_OD_FIRST_LAST_WORD\n"+
 		"};\n"+
 		"\n"+
 		"\n"+
@@ -1389,18 +1499,18 @@ function generateCO_OD_C(){
 		CO_OD_C_records.join("\n")+"\n"+
 		"\n"+
 		"\n"+
-		"/*******************************************************************************\n"+
-		"   SDO SERVER ACCESS FUNCTIONS WITH USER CODE\n"+
-		"*******************************************************************************/\n"+
-		"#define WRITING (dir == 1)\n"+
-		"#define READING (dir == 0)\n"+
-		CO_OD_C_functions.join("\n")+
-		"\n"+
-		"\n"+
+		// "/*******************************************************************************\n"+
+		// "   SDO SERVER ACCESS FUNCTIONS WITH USER CODE\n"+
+		// "*******************************************************************************/\n"+
+		// "#define WRITING (dir == 1)\n"+
+		// "#define READING (dir == 0)\n"+
+		// CO_OD_C_functions.join("\n")+
+		// "\n"+
+		// "\n"+
 		"/*******************************************************************************\n"+
 		"   OBJECT DICTIONARY\n"+
 		"*******************************************************************************/\n"+
-		"const sCO_OD_object CO_OD[CO_OD_NoOfElements] = {\n"+
+		"const CO_OD_entry_t CO"+ODfileNameReference+"_OD[CO"+ODfileNameReference+"_OD_NoOfElements] = {\n"+
 		CO_OD_C_OD.join("\n")+"\n"+
 		"};\n";
 
@@ -1526,174 +1636,150 @@ function generateXMLspec(){
 }
 
 function generateDOC(){
-	var stylesheets =
-		"  <style type=\"text/css\">\n"+
-		"  /*Styles for 'object_index' fixed on the left*/\n"+
-		"    body {\n"+
-		"    	margin-left: 6em;\n"+
-		"    }\n"+
-				"\n"+
-		"    div#object_index {\n"+
-		"    	position: fixed;\n"+
-		"    	width: 5em;\n"+
-		"    	height: 100%;\n"+
-		"    	background-color: rgb(165, 186, 221);\n"+
-		"    	border-right: 1px solid black;\n"+
-		"    	top: 0px;\n"+
-		"    	left: 0px;\n"+
-		"    	text-align: center;\n"+
-		"    	overflow: auto;\n"+
-		"    }\n"+
-				"\n"+
-		"    div#object_index a {\n"+
-		"    	display: block;\n"+
-		"    	width: 99%;\n"+
-		"    	text-decoration: none;\n"+
-		"    }\n"+
-				"\n"+
-		"    div#object_index a:link {color: black;}\n"+
-		"    div#object_index a:visited {color: maroon;}\n"+
-		"    div#object_index a:hover {font-weight: bold;}\n"+
-				"\n"+
-		"    @media print {\n"+
-		"    	div#object_index {display: none;}\n"+
-		"    	body {margin-left: 0;}\n"+
-		"    }\n"+
-		"  </style>\n"+
-		"  <!--[if lt IE 7]>\n"+
-		"    <style type=\"text/css\">\n"+
-		"      div#object_index {display: none;}\n"+
-		"      body {margin-left: 0.5em;}\n"+
-		"    </style>\n"+
-		"  <![endif]-->\n"+
-		"  <link rel=\"stylesheet\" type=\"text/css\" href=\"stylesheet.css\"/>";
 	var htmlBody =
 		<body>
-			<div id="title" class="main_chapters">
-				<h1>Documentation for CANopen device</h1>
-				<h2>{fileName}</h2>
-			</div>
-			<div id="object_index">
-				<a href="#" title="Top"><b>Index:</b></a>
-				{DOCobjDictIndex}
-			</div>
-			<div id="contents" class="main_chapters">
-				<h2>Contents</h2>
-				<ul>
-					<li><a href="#intro">Introduction</a></li>
-					<li><a href="#identity">Device Identity</a></li>
-					<li><a href="#features">CANopen features</a></li>
-
-					<ul>{DOCfeaturesIndex}</ul>
-
-					<li><a href="#objDict">Object Dictionary</a></li>
-					<ul>
-						<li><a href="#objDictComm">Communication Profile</a></li>
-
-						<ul>{DOCobjDictCommIndex}</ul>
-
-						<li><a href="#objDictManuf">Manufacturer specific</a></li>
-
-						<ul>{DOCobjDictManufIndex}</ul>
-
-						<li><a href="#objDictProfile">Device Profile</a></li>
-
-						<ul>{DOCobjDictProfileIndex}</ul>
-
-					</ul>
-				</ul>
-			</div>
-			<div id="intro" class="main_chapters">
-				<h2>Introduction</h2>
-				<p>This document contains description for CANopen Device specified in Device Identity section.</p>
-				<p>File information:
-					<table>
-						<tr>
-							<th>File Name</th>
-							<td>{g_project.other.file.@fileName.toString()}</td>
-						</tr>
-						<tr>
-							<th>File Version</th>
-							<td>{g_project.other.file.@fileVersion.toString()}</td>
-						</tr>
-						<tr>
-							<th>Creation Time</th>
-							<td>{g_project.other.file.@fileCreationTime.toString()}</td>
-						</tr>
-						<tr>
-							<th>Creation Date</th>
-							<td>{g_project.other.file.@fileCreationDate.toString()}</td>
-						</tr>
-						<tr>
-							<th>Created By</th>
-							<td>{g_project.other.file.@fileCreator.toString()}</td>
-						</tr>
-					</table>
-				</p>
-				<p>This document was generated by CANopenNode Object Dictionary Editor. For more information on CANopenNode see <a href="http://canopennode.sourceforge.net/">Project home page</a>.</p>
-			</div>
-			<div id="identity" class="main_chapters">
-				<h2>Device Identity</h2>
-
-				{DOCidentity}
-
-			</div>
-			<div id="features" class="main_chapters">
-				<h2>CANopen features</h2>
-
-				{DOCfeatures}
-				
-			</div>
-			<div id="objDict" class="main_chapters">
-				<h2>Object Dictionary</h2>
-				<div id="objDictComm">
-					<h3>Communication Profile</h3>
-
-					{DOCobjDictComm}
-
-				</div>
-				<div id="objDictManuf">
-					<h3>Manufacturer specific</h3>
-
-					{DOCobjDictManuf}
-
-				</div>
-				<div id="objDictProfile">
-					<h3>Device Profile</h3>
-
-					{DOCobjDictProfile}
-
-				</div>
-			</div>
-			<div id="footer" class="main_chapters">
-				<hr/>
+         <h3>CANopen object dictionary for {fileName}</h3>
+         <ul id="ODList">
+            <li class="expandable">
+               <h2>Device information</h2>
+               <ul>
+                  <li class="expandable">
+                     <div><h3>File information</h3></div>
+                     <ul><table>
+                        <tr>
+                           <th>File Name</th>
+                           <td>{g_project.other.file.@fileName.toString()}</td>
+                        </tr>
+                        <tr>
+                           <th>File Version</th>
+                           <td>{g_project.other.file.@fileVersion.toString()}</td>
+                        </tr>
+                        <tr>
+                           <th>Creation Time</th>
+                           <td>{g_project.other.file.@fileCreationTime.toString()}</td>
+                        </tr>
+                        <tr>
+                           <th>Creation Date</th>
+                           <td>{g_project.other.file.@fileCreationDate.toString()}</td>
+                        </tr>
+                        <tr>
+                           <th>Created By</th>
+                           <td>{g_project.other.file.@fileCreator.toString()}</td>
+                        </tr>
+                     </table></ul>
+                  </li>
+                  <li class="expandable">
+                     <div><h3>Device Identity</h3></div>
+                     <ul>{DOCidentity}</ul>
+                  </li>
+                  <li class="expandable">
+                     <div><h3>CANopen features</h3></div>
+                     <ul>{DOCfeatures}</ul>
+                  </li>
+               </ul>
+            </li>
+            <li class="expandable">
+               <h2>Communication Profile</h2>
+      			<ul class="PFContainer" style="display:block;">{DOCobjDictCommIndex}</ul>
+            </li>
+            <li class="expandable">
+               <h2>Manufacturer specific</h2>
+					<ul class="PFContainer">{DOCobjDictManufIndex}</ul>
+            </li>
+            <li class="expandable">
+               <h2>Device Profile</h2>
+					<ul class="PFContainer">{DOCobjDictProfileIndex}</ul>
+            </li>
+         </ul>
+			<ul id="ODDoc">
+            {DOCobjDictComm}
+            {DOCobjDictManuf}
+            {DOCobjDictProfile}
+			</ul>
+         <input type="button" value="Display everything" onclick="toggleAll();"/><br/>
+			<footer>
 				<em>Generated by <a href="http://canopennode.sourceforge.net/">CANopenNode</a>.</em>
-			</div>
+			</footer>
 		</body>;
 
 	//HTML source
 	var text = "HTM"+
-		"<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n"+
-		"<html xmlns=\"http://www.w3.org/1999/xhtml\">\n"+
-		"<head>\n"+
-		"  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"/>\n"+
+		"<!DOCTYPE html>\n"+
+		"<html><head>\n"+
+		"  <meta http-equiv='Content-Type' content='text/html; charset=UTF-8'>\n"+
 		"  <title>"+fileName+" - CANopenNode</title>\n"+
-		stylesheets+
+		"  <link rel='stylesheet' type='text/css' href='lib/CANopenUI.css'/>\n"+
+		"  <style type='text/css'>\n"+
+		"     body{background-color: rgb(165, 186, 221);}\n"+
+		"     li{list-style-type: none;}\n"+
+		"     table, th, td{border: 1px solid black; padding: 0 5px; border-collapse: collapse;}\n"+
+		"     #ODList{position: relative; width: 450px; margin: 0; padding: 0;}\n"+
+		"     #ODList ul{padding-left: 30px;}\n"+
+		"     #ODList > li{margin: 0 0 20px;}\n"+
+		"     #ODList > li > *:first-child{font-family: sans-serif; background-color: LightBlue; margin: 0; padding: 5px 10px; cursor: pointer;}\n"+
+		"     #ODList > li li.expandable{list-style-type: circle;}\n"+
+		"     .expandable > *:first-child{cursor: pointer;}\n"+
+		"     .expandable > *:nth-child(2){display: none;}\n"+   //rule[9], subject to toggleAll()
+		"     #ODList input[addr]{position: absolute; left: 320px; width: 120px;}\n"+
+		"     #ODList > li li.expandable input[addr]{left: 325px; width: 115px;}\n"+
+		"     #ODList a{cursor: pointer; color: blue;}\n"+
+		"     #ODDoc{position: fixed; overflow: auto; height: 95%; width: 500px; left: 500px; top: 10px;}\n"+   //rule[13], subject to toggleAll()
+		"     #ODDoc > li{display: none;}\n"+   //rule[14], subject to toggleAll()
+		"  </style>\n"+
+		"  <script type='text/javascript' src='lib/CANopen.js'></script>\n"+
+		"  <script type='text/javascript' src='lib/CANopenUI.js'></script>\n"+
+		"  <script type='text/javascript'>\n"+
+		"     //<![CDATA[\n"+
+		"     var ODDocDisplayed = null;\n"+
+		"     var ui = null;\n"+
+		"     function toggle(){\n"+
+		"        var tStyle = this.nextElementSibling.style;\n"+
+		"        if(tStyle.display == 'block') tStyle.display = 'none';\n"+
+		"        else tStyle.display = 'block';\n"+
+		"     }\n"+
+		"     function toggleAll(){\n"+
+		"        if(document.styleSheets[1].cssRules[9].style.display == 'none'){\n"+
+		"           document.styleSheets[1].cssRules[9].style.display = 'block';\n"+
+		"           document.styleSheets[1].cssRules[14].style.display = 'block';\n"+
+		"           document.styleSheets[1].cssRules[13].style.position = 'absolute';\n"+
+		"           document.styleSheets[1].cssRules[13].style.overflow = 'visible';\n"+
+		"        }\n"+
+		"        else{\n"+
+		"           document.styleSheets[1].cssRules[9].style.display = 'none';\n"+
+		"           document.styleSheets[1].cssRules[14].style.display = 'none';\n"+
+		"           document.styleSheets[1].cssRules[13].style.position = 'fixed';\n"+
+		"           document.styleSheets[1].cssRules[13].style.overflow = 'auto';\n"+
+		"        }\n"+
+		"     }\n"+
+		"     function showDoc(e){\n"+
+		"        var docAttr = e.target.getAttribute('docref');\n"+
+		"        if(docAttr){\n"+
+		"           var docRef = document.getElementById(docAttr);\n"+
+		"           if(docRef){\n"+
+		"              if(ODDocDisplayed) ODDocDisplayed.style.display = 'none';\n"+
+		"              ODDocDisplayed = docRef;\n"+
+		"              docRef.style.display = 'block';\n"+
+		"           }\n"+
+		"        }\n"+
+		"     }\n"+
+		"     function init(){\n"+
+		"        var expandables = document.getElementsByClassName('expandable');\n"+
+		"        for(var i=0; i<expandables.length; i++){\n"+
+		"           expandables[i].firstElementChild.addEventListener('click', toggle, false);\n"+
+		"        }\n"+
+		"        var ODList = document.getElementById('ODList');\n"+
+		"        ODList.addEventListener('click', showDoc, false);\n"+
+		"        //try{\n"+
+  		"        ui = new CANopenUI();\n"+
+		"        //}\n"+
+		"        //catch(e){}\n"+
+		"     }\n"+
+		"     window.addEventListener('load', init, false);\n"+
+		"     //]]>\n"+
+		"  </script>\n"+
 		"</head>\n"+
 		htmlBody.toXMLString()+
 		"</html>";
 
 	g_openerWindow.source.postMessage(text, "*");
-
-	//HTML view
-	// var parser = new DOMParser();
-	// var head = parser.parseFromString("<head xmlns=\"http://www.w3.org/1999/xhtml\">" + stylesheets + "<style type=\"text/css\">div#object_index{top:10%;height:90%;}</style></head>", "text/xml").documentElement;
-	// var node = document.importNode(head, true);
-	// document.getElementById("fileDOCview").appendChild(node);
-
-	// var htmlNamespace = new Namespace("http://www.w3.org/1999/xhtml")
-	// var file = <html xmlns="http://www.w3.org/1999/xhtml">{htmlBody}</html>
-	// var body = parser.parseFromString(file.htmlNamespace::body.toXMLString(), "text/xml").documentElement;
-	// node = document.importNode(body, true);
-	// document.getElementById("fileDOCview").appendChild(node);
 }

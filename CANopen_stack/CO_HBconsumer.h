@@ -117,16 +117,9 @@ INTEGER16 CO_HBcons_receive(void *object, CO_CANrxMsg_t *msg);
 
    Function for accessing _Consumer Heartbeat Time_ (index 0x1016) from SDO server.
 
-   For more information see topic <SDO server access function> in CO_SDO.h file.
+   For more information see topic <Object dictionary function>.
 *******************************************************************************/
-UNSIGNED32 CO_ODF_1016( void       *object,
-                        UNSIGNED16  index,
-                        UNSIGNED8   subIndex,
-                        UNSIGNED16 *pLength,
-                        UNSIGNED16  attribute,
-                        UNSIGNED8   dir,
-                        void       *dataBuff,
-                        const void *pData);
+UNSIGNED32 CO_ODF_1016(CO_ODF_arg_t *ODF_arg);
 
 
 /*******************************************************************************

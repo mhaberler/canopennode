@@ -66,40 +66,27 @@ INTEGER16 CO_SYNC_receive(void *object, CO_CANrxMsg_t *msg){
 }
 
 
-/******************************************************************************/
-UNSIGNED32 CO_ODF_1005( void       *object,
-                        UNSIGNED16  index,
-                        UNSIGNED8   subIndex,
-                        UNSIGNED16 *pLength,
-                        UNSIGNED16  attribute,
-                        UNSIGNED8   dir,
-                        void       *dataBuff,
-                        const void *pData)
-{
-   UNSIGNED8 configureSyncProducer = 0;
-   UNSIGNED32 abortCode;
+/* COB-ID SYNC message - Object dictionary function ***************************/
+UNSIGNED32 CO_ODF_1005(CO_ODF_arg_t *ODF_arg){
    CO_SYNC_t *SYNC;
-   UNSIGNED32 COB_ID;
+   UNSIGNED32 *value;
 
-   SYNC = (CO_SYNC_t*) object; //this is the correct pointer type of the first argument
-   memcpySwap4((UNSIGNED8*)&COB_ID, (UNSIGNED8*)dataBuff);
+   SYNC = (CO_SYNC_t*) ODF_arg->object;
+   value = (UNSIGNED32*) ODF_arg->data;
 
-   if(dir == 1){  //Writing Object Dictionary variable
+   if(!ODF_arg->reading){
+      UNSIGNED8 configureSyncProducer = 0;
+
       //only 11-bit CAN identifier is supported
-      if(COB_ID & 0x20000000L) return 0x06090030L; //Invalid value for parameter (download only).
+      if(*value & 0x20000000L) return 0x06090030L; //Invalid value for parameter (download only).
 
       //is 'generate Sync messge' bit set?
-      if(COB_ID&0x40000000L){
+      if(*value & 0x40000000L){
          //if bit was set before, value can not be changed
          if(SYNC->isProducer) return 0x08000022L;   //Data cannot be transferred or stored to the application because of the present device state.
          configureSyncProducer = 1;
       }
-   }
-
-   abortCode = CO_ODF(object, index, subIndex, pLength, attribute, dir, dataBuff, pData);
-
-   if(abortCode == 0 && dir == 1){
-      SYNC->COB_ID = COB_ID&0x7FF;
+      SYNC->COB_ID = *value & 0x7FF;
 
       if(configureSyncProducer){
          UNSIGNED8 len = 0;
@@ -121,7 +108,8 @@ UNSIGNED32 CO_ODF_1005( void       *object,
       else{
          SYNC->isProducer = 0;
       }
-      CO_CANrxBufferInit(SYNC->CANdevRx,         //CAN device
+
+      CO_CANrxBufferInit(     SYNC->CANdevRx,         //CAN device
                               SYNC->CANdevRxIdx,      //rx buffer index
                               SYNC->COB_ID,           //CAN identifier
                               0x7FF,                  //mask
@@ -129,71 +117,51 @@ UNSIGNED32 CO_ODF_1005( void       *object,
                               (void*)SYNC,            //object passed to receive function
                               CO_SYNC_receive);       //this function will process received message
    }
-   return abortCode;
+
+   return 0;
 }
 
 
-/******************************************************************************/
-UNSIGNED32 CO_ODF_1006( void       *object,
-                        UNSIGNED16  index,
-                        UNSIGNED8   subIndex,
-                        UNSIGNED16 *pLength,
-                        UNSIGNED16  attribute,
-                        UNSIGNED8   dir,
-                        void       *dataBuff,
-                        const void *pData)
-{
-   UNSIGNED32 abortCode;
-   UNSIGNED32 period;
+/* Communication cycle period - Object dictionary function *********************/
+UNSIGNED32 CO_ODF_1006(CO_ODF_arg_t *ODF_arg){
    CO_SYNC_t *SYNC;
+   UNSIGNED32 *value;
 
-   SYNC = (CO_SYNC_t*) object; //this is the correct pointer type of the first argument
-   memcpySwap4((UNSIGNED8*)&period, (UNSIGNED8*)dataBuff);
+   SYNC = (CO_SYNC_t*) ODF_arg->object;
+   value = (UNSIGNED32*) ODF_arg->data;
 
-   abortCode = CO_ODF(object, index, subIndex, pLength, attribute, dir, dataBuff, pData);
-
-   if(abortCode == 0 && dir == 1){
+   if(!ODF_arg->reading){
       //period transition from 0 to something
-      if(SYNC->periodTime == 0 && period)
+      if(SYNC->periodTime == 0 && *value)
          SYNC->counter = 0;
 
-      SYNC->periodTime = period;
-      SYNC->periodTimeoutTime = period / 2 * 3;
+      SYNC->periodTime = *value;
+      SYNC->periodTimeoutTime = *value / 2 * 3;
       //overflow?
-      if(SYNC->periodTimeoutTime < period) SYNC->periodTimeoutTime = 0xFFFFFFFFL;
+      if(SYNC->periodTimeoutTime < *value) SYNC->periodTimeoutTime = 0xFFFFFFFFL;
 
       SYNC->running = 0;
       SYNC->timer = 0;
    }
-   return abortCode;
+
+   return 0;
 }
 
 
-/******************************************************************************/
-UNSIGNED32 CO_ODF_1019( void       *object,
-                        UNSIGNED16  index,
-                        UNSIGNED8   subIndex,
-                        UNSIGNED16 *pLength,
-                        UNSIGNED16  attribute,
-                        UNSIGNED8   dir,
-                        void       *dataBuff,
-                        const void *pData)
-{
-   UNSIGNED32 abortCode;
+/* Synchronous counter overflow value - Object dictionary function ************/
+UNSIGNED32 CO_ODF_1019(CO_ODF_arg_t *ODF_arg){
    CO_SYNC_t *SYNC;
+   UNSIGNED8 *value;
 
-   SYNC = (CO_SYNC_t*) object; //this is the correct pointer type of the first argument
+   SYNC = (CO_SYNC_t*) ODF_arg->object;
+   value = (UNSIGNED8*) ODF_arg->data;
 
-   if(dir == 1){  //Writing Object Dictionary variable
-      if(SYNC->periodTime) return 0x08000022L; //Data cannot be transferred or stored to the application because of the present device state.
-   }
-
-   abortCode = CO_ODF(object, index, subIndex, pLength, attribute, dir, dataBuff, pData);
-
-   if(abortCode == 0 && dir == 1){
+   if(!ODF_arg->reading){
       UNSIGNED8 len = 0;
+
+      if(SYNC->periodTime) return 0x08000022L; //Data cannot be transferred or stored to the application because of the present device state.
       if(SYNC->counterOverflowValue) len = 1;
-      SYNC->counterOverflowValue = *((UNSIGNED8*)dataBuff);
+      SYNC->counterOverflowValue = *value;
 
       SYNC->CANtxBuff = CO_CANtxBufferInit(
                               SYNC->CANdevTx,         //CAN device
@@ -203,7 +171,8 @@ UNSIGNED32 CO_ODF_1019( void       *object,
                               len,                    //number of data bytes
                               0);                     //synchronous message flag bit
    }
-   return abortCode;
+
+   return 0;
 }
 
 
@@ -255,10 +224,10 @@ INTEGER16 CO_SYNC_init(
    SYNC->CANdevRx = CANdevRx;
    SYNC->CANdevRxIdx = CANdevRxIdx;
 
-   //Configure SDO server for first argument of CO_ODF_1005, CO_ODF_1006 and CO_ODF_1019.
-   CO_OD_configureArgumentForODF(SDO, 0x1005, (void*)SYNC);
-   CO_OD_configureArgumentForODF(SDO, 0x1006, (void*)SYNC);
-   CO_OD_configureArgumentForODF(SDO, 0x1019, (void*)SYNC);
+   //Configure Object dictionary entry at index 0x1005, 0x1006 and 0x1019
+   CO_OD_configure(SDO, 0x1005, CO_ODF_1005, (void*)SYNC);
+   CO_OD_configure(SDO, 0x1006, CO_ODF_1006, (void*)SYNC);
+   CO_OD_configure(SDO, 0x1019, CO_ODF_1019, (void*)SYNC);
 
    //configure SYNC CAN reception
    CO_CANrxBufferInit(     CANdevRx,               //CAN device

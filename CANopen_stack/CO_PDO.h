@@ -59,7 +59,7 @@
 
 
 /*******************************************************************************
-   Object: OD_RPDOCommunicationParameter_t
+   Object: CO_RPDOCommPar_t
 
    _RPDO communication parameter_ record from Object dictionary (index 0x1400+).
 
@@ -78,17 +78,15 @@
                            254:     Manufacturer specific.
                            255:     Asynchronous.
 *******************************************************************************/
-#ifndef _CO_OD_H
-   typedef struct{
-      UNSIGNED8      maxSubIndex;
-      UNSIGNED32     COB_IDUsedByRPDO;
-      UNSIGNED8      transmissionType;
-   }OD_RPDOCommunicationParameter_t;
-#endif
+typedef struct{
+   UNSIGNED8      maxSubIndex;
+   UNSIGNED32     COB_IDUsedByRPDO;
+   UNSIGNED8      transmissionType;
+}CO_RPDOCommPar_t;
 
 
 /*******************************************************************************
-   Object: OD_RPDOMappingParameter_t
+   Object: CO_RPDOMapPar_t
 
    _RPDO mapping parameter_ record from Object dictionary (index 0x1600+).
 
@@ -102,23 +100,21 @@
                                  Bit 8-15:  subindex from object distionary.
                                  Bit 16-31: index from object distionary.
 *******************************************************************************/
-#ifndef _CO_OD_H
-   typedef struct{
-      UNSIGNED8      numberOfMappedObjects;
-      UNSIGNED32     mappedObject1;
-      UNSIGNED32     mappedObject2;
-      UNSIGNED32     mappedObject3;
-      UNSIGNED32     mappedObject4;
-      UNSIGNED32     mappedObject5;
-      UNSIGNED32     mappedObject6;
-      UNSIGNED32     mappedObject7;
-      UNSIGNED32     mappedObject8;
-   }OD_RPDOMappingParameter_t;
-#endif
+typedef struct{
+   UNSIGNED8      numberOfMappedObjects;
+   UNSIGNED32     mappedObject1;
+   UNSIGNED32     mappedObject2;
+   UNSIGNED32     mappedObject3;
+   UNSIGNED32     mappedObject4;
+   UNSIGNED32     mappedObject5;
+   UNSIGNED32     mappedObject6;
+   UNSIGNED32     mappedObject7;
+   UNSIGNED32     mappedObject8;
+}CO_RPDOMapPar_t;
 
 
 /*******************************************************************************
-   Object: OD_TPDOCommunicationParameter_t
+   Object: CO_TPDOCommPar_t
 
    _TPDO communication parameter_ record from Object dictionary (index 0x1800+).
 
@@ -148,21 +144,19 @@
                             1-240:   The SYNC message with the counter value equal to this value
                                      shall be regarded as the first received SYNC message.
 *******************************************************************************/
-#ifndef _CO_OD_H
-   typedef struct{
-      UNSIGNED8      maxSubIndex;
-      UNSIGNED32     COB_IDUsedByTPDO;
-      UNSIGNED8      transmissionType;
-      UNSIGNED16     inhibitTime;
-      UNSIGNED8      compatibilityEntry;
-      UNSIGNED16     eventTimer;
-      UNSIGNED8      SYNCStartValue;
-   }OD_TPDOCommunicationParameter_t;
-#endif
+typedef struct{
+   UNSIGNED8      maxSubIndex;
+   UNSIGNED32     COB_IDUsedByTPDO;
+   UNSIGNED8      transmissionType;
+   UNSIGNED16     inhibitTime;
+   UNSIGNED8      compatibilityEntry;
+   UNSIGNED16     eventTimer;
+   UNSIGNED8      SYNCStartValue;
+}CO_TPDOCommPar_t;
 
 
 /*******************************************************************************
-   Object: OD_TPDOMappingParameter_t
+   Object: CO_TPDOMapPar_t
 
    _TPDO mapping parameter_ record from Object dictionary (index 0x1A00+).
 
@@ -176,19 +170,17 @@
                                  Bit 8-15:  subindex from object distionary.
                                  Bit 16-31: index from object distionary.
 *******************************************************************************/
-#ifndef _CO_OD_H
-   typedef struct{
-      UNSIGNED8      numberOfMappedObjects;
-      UNSIGNED32     mappedObject1;
-      UNSIGNED32     mappedObject2;
-      UNSIGNED32     mappedObject3;
-      UNSIGNED32     mappedObject4;
-      UNSIGNED32     mappedObject5;
-      UNSIGNED32     mappedObject6;
-      UNSIGNED32     mappedObject7;
-      UNSIGNED32     mappedObject8;
-   }OD_TPDOMappingParameter_t;
-#endif
+typedef struct{
+   UNSIGNED8      numberOfMappedObjects;
+   UNSIGNED32     mappedObject1;
+   UNSIGNED32     mappedObject2;
+   UNSIGNED32     mappedObject3;
+   UNSIGNED32     mappedObject4;
+   UNSIGNED32     mappedObject5;
+   UNSIGNED32     mappedObject6;
+   UNSIGNED32     mappedObject7;
+   UNSIGNED32     mappedObject8;
+}CO_TPDOMapPar_t;
 
 
 /*******************************************************************************
@@ -199,6 +191,10 @@
    Variables:
       SDO               - Pointer to SDO object <CO_SDO_t>.
       EM                - Pointer to Emergency object <CO_emergencyReport_t>.
+      RPDOCommPar       - Pointer to _RPDO communication parameter_ record from Object
+                          dictionary (index 0x1400+).
+      RPDOMapPar        - Pointer to _RPDO mapping parameter_ record from Object
+                          dictionary (index 0x1600+).
       operatingState    - Pointer to variable indicating CANopen device NMT internal state.
       nodeId            - CANopen Node ID of this device.
       defaultCOB_ID     - Default COB ID for this PDO (without NodeId). See <Default COB identifiers>.
@@ -224,6 +220,8 @@
 typedef struct{
    CO_emergencyReport_t         *EM;
    CO_SDO_t                     *SDO;
+   const CO_RPDOCommPar_t       *RPDOCommPar;
+   const CO_RPDOMapPar_t        *RPDOMapPar;
    UNSIGNED8                    *operatingState;
    UNSIGNED8                     nodeId;
    UNSIGNED16                    defaultCOB_ID;
@@ -249,9 +247,11 @@ typedef struct{
    Variables:
       SDO               - Pointer to SDO object <CO_SDO_t>.
       EM                - Pointer to Emergency object <CO_emergencyReport_t>.
+      TPDOCommPar       - Pointer to _TPDO communication parameter_ record
+                          from Object Dictionary (index 0x1800+).
+      TPDOMapPar        - Pointer to _TPDO mapping parameter_ record from Object
+                          dictionary (index 0x1600+).
       operatingState    - Pointer to variable indicating CANopen device NMT internal state.
-      ObjDict_TPDOCommunicationParameter - Pointer to _TPDO communication parameter_ record
-                                           from Object Dictionary (index 0x1800+).
       nodeId            - CANopen Node ID of this device.
       defaultCOB_ID     - Default COB ID for this PDO (without NodeId). See <Default COB identifiers>.
       restrictionFlags  - Flag bits indicates, how PDO communication
@@ -279,8 +279,9 @@ typedef struct{
 typedef struct{
    CO_emergencyReport_t         *EM;
    CO_SDO_t                     *SDO;
+   const CO_TPDOCommPar_t       *TPDOCommPar;
+   const CO_TPDOMapPar_t        *TPDOMapPar;
    UNSIGNED8                    *operatingState;
-   const OD_TPDOCommunicationParameter_t *ObjDict_TPDOCommunicationParameter;
    UNSIGNED8                     nodeId;
    UNSIGNED16                    defaultCOB_ID;
    UNSIGNED8                     restrictionFlags;
@@ -393,15 +394,13 @@ UNSIGNED32 CO_PDOfindMap(  CO_SDO_t      *SDO,
    _mapPointer_.
 
    Parameters:
-      RPDO                          - Pointer to RPDO object <CO_RPDO_t>.
-      ObjDict_RPDOMappingParameter  - Pointer to _RPDO mapping parameter_ record
-                                      from Object dictionary (index 0x1600+).
+      RPDO              - Pointer to RPDO object <CO_RPDO_t>.
+      noOfMappedObjects - Number of mapped object (from OD).
 
    Return:
       0 on success, otherwise <SDO abort code>.
 *******************************************************************************/
-UNSIGNED8 CO_RPDOconfigMap(   CO_RPDO_t* RPDO,
-                        const OD_RPDOMappingParameter_t *ObjDict_RPDOMappingParameter);
+UNSIGNED32 CO_RPDOconfigMap(CO_RPDO_t* RPDO, UNSIGNED8 noOfMappedObjects);
 
 
 /*******************************************************************************
@@ -415,15 +414,13 @@ UNSIGNED8 CO_RPDOconfigMap(   CO_RPDO_t* RPDO,
    _mapPointer_ and _sendIfCOSFlags_.
 
    Parameters:
-      TPDO                          - Pointer to TPDO object <CO_TPDO_t>.
-      ObjDict_TPDOMappingParameter  - Pointer to _TPDO mapping parameter_ record
-                                      from Object dictionary (index 0x1600+).
+      TPDO              - Pointer to TPDO object <CO_TPDO_t>.
+      noOfMappedObjects - Number of mapped object (from OD).
 
    Return:
       0 on success, otherwise <SDO abort code>.
 *******************************************************************************/
-UNSIGNED8 CO_TPDOconfigMap(   CO_TPDO_t* TPDO,
-                        const OD_TPDOMappingParameter_t *ObjDict_TPDOMappingParameter);
+UNSIGNED32 CO_TPDOconfigMap(CO_TPDO_t* TPDO, UNSIGNED8 noOfMappedObjects);
 
 
 /*******************************************************************************
@@ -431,16 +428,9 @@ UNSIGNED8 CO_TPDOconfigMap(   CO_TPDO_t* TPDO,
 
    Function for accessing _RPDO communication parameter_ (index 0x1400+) from SDO server.
 
-   For more information see topic <SDO server access function> in CO_SDO.h file.
+   For more information see topic <Object dictionary function>.
 *******************************************************************************/
-UNSIGNED32 CO_ODF_RPDOcom( void       *object,
-                           UNSIGNED16  index,
-                           UNSIGNED8   subIndex,
-                           UNSIGNED16 *pLength,
-                           UNSIGNED16  attribute,
-                           UNSIGNED8   dir,
-                           void       *dataBuff,
-                           const void *pData);
+UNSIGNED32 CO_ODF_RPDOcom(CO_ODF_arg_t *ODF_arg);
 
 
 /*******************************************************************************
@@ -448,16 +438,9 @@ UNSIGNED32 CO_ODF_RPDOcom( void       *object,
 
    Function for accessing _TPDO communication parameter_ (index 0x1800+) from SDO server.
 
-   For more information see topic <SDO server access function> in CO_SDO.h file.
+   For more information see topic <Object dictionary function>.
 *******************************************************************************/
-UNSIGNED32 CO_ODF_TPDOcom( void       *object,
-                           UNSIGNED16  index,
-                           UNSIGNED8   subIndex,
-                           UNSIGNED16 *pLength,
-                           UNSIGNED16  attribute,
-                           UNSIGNED8   dir,
-                           void       *dataBuff,
-                           const void *pData);
+UNSIGNED32 CO_ODF_TPDOcom(CO_ODF_arg_t *ODF_arg);
 
 
 /*******************************************************************************
@@ -465,16 +448,9 @@ UNSIGNED32 CO_ODF_TPDOcom( void       *object,
 
    Function for accessing _RPDO mapping parameter_ (index 0x1600+) from SDO server.
 
-   For more information see topic <SDO server access function> in CO_SDO.h file.
+   For more information see topic <Object dictionary function>.
 *******************************************************************************/
-UNSIGNED32 CO_ODF_RPDOmap( void       *object,
-                           UNSIGNED16  index,
-                           UNSIGNED8   subIndex,
-                           UNSIGNED16 *pLength,
-                           UNSIGNED16  attribute,
-                           UNSIGNED8   dir,
-                           void       *dataBuff,
-                           const void *pData);
+UNSIGNED32 CO_ODF_RPDOmap(CO_ODF_arg_t *ODF_arg);
 
 
 /*******************************************************************************
@@ -482,16 +458,9 @@ UNSIGNED32 CO_ODF_RPDOmap( void       *object,
 
    Function for accessing _TPDO mapping parameter_ (index 0x1A00+) from SDO server.
 
-   For more information see topic <SDO server access function> in CO_SDO.h file.
+   For more information see topic <Object dictionary function>.
 *******************************************************************************/
-UNSIGNED32 CO_ODF_TPDOmap( void       *object,
-                           UNSIGNED16  index,
-                           UNSIGNED8   subIndex,
-                           UNSIGNED16 *pLength,
-                           UNSIGNED16  attribute,
-                           UNSIGNED8   dir,
-                           void       *dataBuff,
-                           const void *pData);
+UNSIGNED32 CO_ODF_TPDOmap(CO_ODF_arg_t *ODF_arg);
 
 
 /*******************************************************************************
@@ -502,29 +471,29 @@ UNSIGNED32 CO_ODF_TPDOmap( void       *object,
    Function must be called in the communication reset section.
 
    Parameters:
-      ppRPDO                        - Pointer to address of RPDO object <CO_RPDO_t>.
-                                      If address is zero, memory for new object will be
-                                      allocated and address will be set.
-      EM                            - Pointer to Emergency object <CO_emergencyReport_t>.
-      SDO                           - Pointer to SDO object <CO_SDO_t>.
-      operatingState                - Pointer to variable indicating CANopen device NMT internal state.
-      nodeId                        - CANopen Node ID of this device. If default COB_ID is used, value will be added.
-      defaultCOB_ID                 - Default COB ID for this PDO (without NodeId). See <Default COB identifiers>.
-      restrictionFlags              - Flag bits indicates, how PDO communication
-                                      and mapping parameters are handled. See object <CO_RPDO_t>.
-      ObjDict_RPDOCommunicationParameter - Pointer to _RPDO communication parameter_ record from Object
-                                      dictionary (index 0x1400+).
-      ObjDict_RPDOMappingParameter  - Pointer to _RPDO mapping parameter_ record from Object
-                                      dictionary (index 0x1600+).
-      ObjDictIndex_RPDOCommunicationParameter - Index in Object Dictionary.
-      ObjDictIndex_RPDOMappingParameter - Index in Object Dictionary.
-      CANdevRx                      - CAN device for PDO reception <CO_CANmodule_t>.
-      CANdevRxIdx                   - Index of receive buffer for PDO reception.
+      ppRPDO                     - Pointer to address of RPDO object <CO_RPDO_t>.
+                                   If address is zero, memory for new object will be
+                                   allocated and address will be set.
+      EM                         - Pointer to Emergency object <CO_emergencyReport_t>.
+      SDO                        - Pointer to SDO object <CO_SDO_t>.
+      operatingState             - Pointer to variable indicating CANopen device NMT internal state.
+      nodeId                     - CANopen Node ID of this device. If default COB_ID is used, value will be added.
+      defaultCOB_ID              - Default COB ID for this PDO (without NodeId). See <Default COB identifiers>.
+      restrictionFlags           - Flag bits indicates, how PDO communication
+                                   and mapping parameters are handled. See object <CO_RPDO_t>.
+      RPDOCommPar                - Pointer to _RPDO communication parameter_ record from Object
+                                   dictionary (index 0x1400+).
+      RPDOMapPar                 - Pointer to _RPDO mapping parameter_ record from Object
+                                   dictionary (index 0x1600+).
+      ObjDictIndex_RPDOCommPar   - Index in Object Dictionary.
+      ObjDictIndex_RPDOMapPar    - Index in Object Dictionary.
+      CANdevRx                   - CAN device for PDO reception <CO_CANmodule_t>.
+      CANdevRxIdx                - Index of receive buffer for PDO reception.
 
    Return <CO_ReturnError>:
-      CO_ERROR_NO                 - Operation completed successfully.
-      CO_ERROR_ILLEGAL_ARGUMENT   - Error in function arguments.
-      CO_ERROR_OUT_OF_MEMORY      - Memory allocation failed.
+      CO_ERROR_NO                - Operation completed successfully.
+      CO_ERROR_ILLEGAL_ARGUMENT  - Error in function arguments.
+      CO_ERROR_OUT_OF_MEMORY     - Memory allocation failed.
 *******************************************************************************/
 INTEGER16 CO_RPDO_init(
       CO_RPDO_t                      **ppRPDO,
@@ -534,10 +503,10 @@ INTEGER16 CO_RPDO_init(
       UNSIGNED8                        nodeId,
       UNSIGNED16                       defaultCOB_ID,
       UNSIGNED8                        restrictionFlags,
-const OD_RPDOCommunicationParameter_t *ObjDict_RPDOCommunicationParameter,
-const OD_RPDOMappingParameter_t       *ObjDict_RPDOMappingParameter,
-      UNSIGNED16                       ObjDictIndex_RPDOCommunicationParameter,
-      UNSIGNED16                       ObjDictIndex_RPDOMappingParameter,
+      const CO_RPDOCommPar_t          *RPDOCommPar,
+      const CO_RPDOMapPar_t           *RPDOMapPar,
+      UNSIGNED16                       ObjDictIndex_RPDOCommPar,
+      UNSIGNED16                       ObjDictIndex_RPDOMapPar,
       CO_CANmodule_t *CANdevRx, UNSIGNED16 CANdevRxIdx);
 
 
@@ -561,29 +530,29 @@ void CO_RPDO_delete(CO_RPDO_t **ppRPDO);
    Function must be called in the communication reset section.
 
    Parameters:
-      ppTPDO                        - Pointer to address of TPDO object <CO_TPDO_t>.
-                                      If address is zero, memory for new object will be
-                                      allocated and address will be set.
-      EM                            - Pointer to Emergency object <CO_emergencyReport_t>.
-      SDO                           - Pointer to SDO object <CO_SDO_t>.
-      operatingState                - Pointer to variable indicating CANopen device NMT internal state.
-      nodeId                        - CANopen Node ID of this device. If default COB_ID is used, value will be added.
-      defaultCOB_ID                 - Default COB ID for this PDO (without NodeId). See <Default COB identifiers>.
-      restrictionFlags              - Flag bits indicates, how PDO communication
-                                      and mapping parameters are handled. See object <CO_RPDO_t>.
-      ObjDict_TPDOCommunicationParameter - Pointer to _TPDO communication parameter_ record from Object
-                                      dictionary (index 0x1400+).
-      ObjDict_TPDOMappingParameter  - Pointer to _TPDO mapping parameter_ record from Object
-                                      dictionary (index 0x1600+).
-      ObjDictIndex_TPDOCommunicationParameter - Index in Object Dictionary.
-      ObjDictIndex_TPDOMappingParameter - Index in Object Dictionary.
-      CANdevTx                      - Pointer to CAN device used for PDO transmission <CO_CANmodule_t>.
-      CANdevTxIdx                   - Index of CAN device TX buffer used for this PDO.
+      ppTPDO                     - Pointer to address of TPDO object <CO_TPDO_t>.
+                                   If address is zero, memory for new object will be
+                                   allocated and address will be set.
+      EM                         - Pointer to Emergency object <CO_emergencyReport_t>.
+      SDO                        - Pointer to SDO object <CO_SDO_t>.
+      operatingState             - Pointer to variable indicating CANopen device NMT internal state.
+      nodeId                     - CANopen Node ID of this device. If default COB_ID is used, value will be added.
+      defaultCOB_ID              - Default COB ID for this PDO (without NodeId). See <Default COB identifiers>.
+      restrictionFlags           - Flag bits indicates, how PDO communication
+                                   and mapping parameters are handled. See object <CO_RPDO_t>.
+      TPDOCommPar                - Pointer to _TPDO communication parameter_ record from Object
+                                   dictionary (index 0x1400+).
+      TPDOMapPar                 - Pointer to _TPDO mapping parameter_ record from Object
+                                   dictionary (index 0x1600+).
+      ObjDictIndex_TPDOCommPar   - Index in Object Dictionary.
+      ObjDictIndex_TPDOMapPar    - Index in Object Dictionary.
+      CANdevTx                   - Pointer to CAN device used for PDO transmission <CO_CANmodule_t>.
+      CANdevTxIdx                - Index of CAN device TX buffer used for this PDO.
 
    Return <CO_ReturnError>:
-      CO_ERROR_NO                 - Operation completed successfully.
-      CO_ERROR_ILLEGAL_ARGUMENT   - Error in function arguments.
-      CO_ERROR_OUT_OF_MEMORY      - Memory allocation failed.
+      CO_ERROR_NO                - Operation completed successfully.
+      CO_ERROR_ILLEGAL_ARGUMENT  - Error in function arguments.
+      CO_ERROR_OUT_OF_MEMORY     - Memory allocation failed.
 *******************************************************************************/
 INTEGER16 CO_TPDO_init(
       CO_TPDO_t                      **ppTPDO,
@@ -593,10 +562,10 @@ INTEGER16 CO_TPDO_init(
       UNSIGNED8                        nodeId,
       UNSIGNED16                       defaultCOB_ID,
       UNSIGNED8                        restrictionFlags,
-const OD_TPDOCommunicationParameter_t *ObjDict_TPDOCommunicationParameter,
-const OD_TPDOMappingParameter_t       *ObjDict_TPDOMappingParameter,
-      UNSIGNED16                       ObjDictIndex_TPDOCommunicationParameter,
-      UNSIGNED16                       ObjDictIndex_TPDOMappingParameter,
+      const CO_TPDOCommPar_t          *TPDOCommPar,
+      const CO_TPDOMapPar_t           *TPDOMapPar,
+      UNSIGNED16                       ObjDictIndex_TPDOCommPar,
+      UNSIGNED16                       ObjDictIndex_TPDOMapPar,
       CO_CANmodule_t *CANdevTx, UNSIGNED16 CANdevTxIdx);
 
 

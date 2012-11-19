@@ -10,8 +10,8 @@ FileVersion=3.0
 FileRevision=0
 EDSVersion=4.0
 Description=Open Source CANopen implementation
-CreationTime=11:24:37
-CreationDate=2012-09-14
+CreationTime=08:15:03
+CreationDate=2012-11-19
 CreatedBy=-
 
 
@@ -109,7 +109,7 @@ SupportedObjects=38
 
 
 [ManufacturerObjects]
-SupportedObjects=14
+SupportedObjects=13
 1=0x2100
 2=0x2101
 3=0x2102
@@ -123,7 +123,6 @@ SupportedObjects=14
 11=0x2111
 12=0x2112
 13=0x2120
-14=0x2121
 
 [1000]
 ParameterName=Device type
@@ -2081,7 +2080,7 @@ DefaultValue=0
 [2120]
 ParameterName=test var
 ObjectType=9
-SubNumber=5
+SubNumber=6
 
 [2120sub0]
 ParameterName=max sub-index
@@ -2089,7 +2088,7 @@ ObjectType=7
 DataType=0x0005
 AccessType=ro
 PDOMapping=0
-DefaultValue=4
+DefaultValue=5
 
 [2120sub1]
 ParameterName=I64
@@ -2123,12 +2122,12 @@ AccessType=rww
 PDOMapping=1
 DefaultValue=456.789
 
-[2121]
-ParameterName=test domain
+[2120sub5]
+ParameterName=domain
 ObjectType=7
 DataType=0x000F
-AccessType=rww
-PDOMapping=1
+AccessType=rw
+PDOMapping=0
 DefaultValue=0
 
 [6000]

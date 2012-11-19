@@ -8,22 +8,20 @@ Variables (communication, device, custom) are ordered in CANopen object dictiona
 
 
 Code includes:
- - CANopen Stack for multiple microcontrollers with documenation,
+ - CANopen Stack for multiple microcontrollers with documenation.
  - Working examples of simple Input Output CANopen device for all microcontrolers.
- - Working CANopen master device with HTML interface to CANopen: CAN log,
-   Emergency log, SDO master, NMT master, Custom CAN message. (It runs on demo board
-   DB240 from beck-ipc. It's available also for simpler custom borad based on SC243.)
+ - Working CANopen master device with HTML interface to CANopen: CAN log, Emergency log, SDO master, NMT master, Custom CAN message. (It runs on demo board DB240 from beck-ipc. It's available also for simpler custom borad based on SC243.)
  - CANopen Object dictionary editor. For usage of this web application see "about.html".
 
 
 CANopen Features:
- - NMT slave to start, stop, reset device,
- - Heartbeat producer/consumer error control,
- - PDO linking and dynamic mapping for fast exchange of process variables,
- - SDO expedited and segmented transfer for service access to all parameters,
- - SDO master,
- - Emergency message,
- - Sync producer/consumer,
+ - NMT slave to start, stop, reset device.
+ - Heartbeat producer/consumer error control.
+ - PDO linking and dynamic mapping for fast exchange of process variables.
+ - SDO expedited and segmented transfer for service access to all parameters.
+ - SDO master.
+ - Emergency message.
+ - Sync producer/consumer.
  - Nonvolatile storage.
 
 
@@ -38,10 +36,22 @@ Supported controllers:
 
    
 ****************************************************************************************************
+Version next
+Updates:
+ - Object dictionary editor: changed HTML output, no ODF functions.
+ - SDO server rewritten. Better interface with Object dictionary function.
+ - Multiple files was updated for newer Object dictionary function.
+Additional features:
+ - Added block transfer. It is possible to transfer large block of data (32bit length).
+ - Added CRC function. Calculation of CRC in eeprom.c files updated to this function.
+Fixes in processor specific files:
+ - !!Bugfix!! Added disable/enable interrupt calls in CO_CANsend() function. (dsPIC30, dsPIC33, PIC24, SC243)
+
+
+****************************************************************************************************
 Version 3.10
 Additional features:
- - Master device with HTML interface to CANopen: CAN log, Emergency log, SDO master, NMT master,
-   Custom CAN message.
+ - Master device with HTML interface to CANopen: CAN log, Emergency log, SDO master, NMT master, Custom CAN message.
  - Additional data types: UNSIGNED64, INTEGER64, REAL32, REAL64, DOMAIN.
  - SDO transfer now supports more than 255 bytes in one communication cycle. (SDO master too.)
  - EEPROM for PIC32 and SC243 fully functional.

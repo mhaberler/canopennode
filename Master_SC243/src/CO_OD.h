@@ -41,8 +41,8 @@
    FILE INFO:
       FileName:     SC243
       FileVersion:  3.0
-      CreationTime: 18:10:53
-      CreationDate: 2012-09-14
+      CreationTime: 08:13:26
+      CreationDate: 2012-11-19
       CreatedBy:    -
 *******************************************************************************/
 
@@ -65,13 +65,13 @@
    #define CO_NO_SDO_CLIENT               1   //Associated objects: 1280
    #define CO_NO_RPDO                     16  //Associated objects from index 1400 to 160F, count = 32
    #define CO_NO_TPDO                     16  //Associated objects from index 1800 to 1A0F, count = 32
-   #define CO_NO_NMT_MASTER               0   
+   #define CO_NO_NMT_MASTER               1   
 
 
 /*******************************************************************************
    OBJECT DICTIONARY
 *******************************************************************************/
-   #define CO_OD_NoOfElements             105
+   #define CO_OD_NoOfElements             104
 
 
 /*******************************************************************************
@@ -144,6 +144,7 @@
                UNSIGNED64     U64;
                REAL32         R32;
                REAL64         R64;
+               DOMAIN         domain;
                }              OD_testVar_t;
 
 /*2200      */ typedef struct{
@@ -177,7 +178,6 @@ struct sCO_OD_RAM{
 /*2109      */ INTEGER16      voltage[1];
 /*2110      */ INTEGER32      variableInt32[16];
 /*2120      */ OD_testVar_t   testVar;
-/*2121      */ DOMAIN         testDomain;
 /*6000      */ UNSIGNED8      readInput8Bit[8];
 /*6200      */ UNSIGNED8      writeOutput8Bit[8];
 /*6401      */ INTEGER16      readAnalogueInput16Bit[12];
@@ -387,9 +387,6 @@ extern CO_OD_ROM_IDENT struct sCO_OD_ROM CO_OD_ROM;
 
 /*2120, Data Type: OD_testVar_t */
       #define OD_testVar                                 CO_OD_RAM.testVar
-
-/*2121, Data Type: DOMAIN */
-      #define OD_testDomain                              CO_OD_RAM.testDomain
 
 /*2200, Data Type: OD_CANopenLog_t */
       #define OD_CANopenLog                              CO_OD_ROM.CANopenLog

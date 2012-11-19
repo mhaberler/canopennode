@@ -429,16 +429,9 @@ typedef struct{
 
    Function for accessing _Pre-Defined Error Field_ (index 0x1003) from SDO server.
 
-   For more information see topic <SDO server access function> in CO_SDO.h file.
+   For more information see topic <Object dictionary function>.
 *******************************************************************************/
-UNSIGNED32 CO_ODF_1003( void       *object,
-                        UNSIGNED16  index,
-                        UNSIGNED8   subIndex,
-                        UNSIGNED16 *pLength,
-                        UNSIGNED16  attribute,
-                        UNSIGNED8   dir,
-                        void       *dataBuff,
-                        const void *pData);
+UNSIGNED32 CO_ODF_1003(CO_ODF_arg_t *ODF_arg);
 
 
 /*******************************************************************************
@@ -446,16 +439,9 @@ UNSIGNED32 CO_ODF_1003( void       *object,
 
    Function for accessing _COB ID EMCY_ (index 0x1014) from SDO server.
 
-   For more information see topic <SDO server access function> in CO_SDO.h file.
+   For more information see topic <Object dictionary function>.
 *******************************************************************************/
-UNSIGNED32 CO_ODF_1014( void       *object,
-                        UNSIGNED16  index,
-                        UNSIGNED8   subIndex,
-                        UNSIGNED16 *pLength,
-                        UNSIGNED16  attribute,
-                        UNSIGNED8   dir,
-                        void       *dataBuff,
-                        const void *pData);
+UNSIGNED32 CO_ODF_1014(CO_ODF_arg_t *ODF_arg);
 
 
 /*******************************************************************************

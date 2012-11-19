@@ -41,11 +41,11 @@ OBJECTDIR=build/${CND_CONF}/${IMAGE_TYPE}
 DISTDIR=dist/${CND_CONF}/${IMAGE_TYPE}
 
 # Object Files Quoted if spaced
-OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/_ext/542917987/CO_driver.o ${OBJECTDIR}/_ext/542917987/eeprom.o ${OBJECTDIR}/_ext/542917987/main_PIC32.o ${OBJECTDIR}/_ext/581370467/CO_Emergency.o ${OBJECTDIR}/_ext/581370467/CO_HBconsumer.o ${OBJECTDIR}/_ext/581370467/CO_NMT_Heartbeat.o ${OBJECTDIR}/_ext/581370467/CO_PDO.o ${OBJECTDIR}/_ext/581370467/CO_SDO.o ${OBJECTDIR}/_ext/581370467/CO_SYNC.o ${OBJECTDIR}/_ext/581370467/CO_SDOmaster.o ${OBJECTDIR}/_ext/581370467/CANopen.o ${OBJECTDIR}/_ext/1472/appl_PIC32_explorer16_IO.o ${OBJECTDIR}/_ext/1472/CO_OD.o
-POSSIBLE_DEPFILES=${OBJECTDIR}/_ext/542917987/CO_driver.o.d ${OBJECTDIR}/_ext/542917987/eeprom.o.d ${OBJECTDIR}/_ext/542917987/main_PIC32.o.d ${OBJECTDIR}/_ext/581370467/CO_Emergency.o.d ${OBJECTDIR}/_ext/581370467/CO_HBconsumer.o.d ${OBJECTDIR}/_ext/581370467/CO_NMT_Heartbeat.o.d ${OBJECTDIR}/_ext/581370467/CO_PDO.o.d ${OBJECTDIR}/_ext/581370467/CO_SDO.o.d ${OBJECTDIR}/_ext/581370467/CO_SYNC.o.d ${OBJECTDIR}/_ext/581370467/CO_SDOmaster.o.d ${OBJECTDIR}/_ext/581370467/CANopen.o.d ${OBJECTDIR}/_ext/1472/appl_PIC32_explorer16_IO.o.d ${OBJECTDIR}/_ext/1472/CO_OD.o.d
+OBJECTFILES_QUOTED_IF_SPACED=${OBJECTDIR}/_ext/542917987/CO_driver.o ${OBJECTDIR}/_ext/542917987/eeprom.o ${OBJECTDIR}/_ext/542917987/main_PIC32.o ${OBJECTDIR}/_ext/581370467/CO_Emergency.o ${OBJECTDIR}/_ext/581370467/CO_HBconsumer.o ${OBJECTDIR}/_ext/581370467/CO_NMT_Heartbeat.o ${OBJECTDIR}/_ext/581370467/CO_PDO.o ${OBJECTDIR}/_ext/581370467/CO_SDO.o ${OBJECTDIR}/_ext/581370467/CO_SYNC.o ${OBJECTDIR}/_ext/581370467/CANopen.o ${OBJECTDIR}/_ext/1472/appl_PIC32_explorer16_IO.o ${OBJECTDIR}/_ext/1472/CO_OD.o ${OBJECTDIR}/_ext/581370467/crc16-ccitt.o
+POSSIBLE_DEPFILES=${OBJECTDIR}/_ext/542917987/CO_driver.o.d ${OBJECTDIR}/_ext/542917987/eeprom.o.d ${OBJECTDIR}/_ext/542917987/main_PIC32.o.d ${OBJECTDIR}/_ext/581370467/CO_Emergency.o.d ${OBJECTDIR}/_ext/581370467/CO_HBconsumer.o.d ${OBJECTDIR}/_ext/581370467/CO_NMT_Heartbeat.o.d ${OBJECTDIR}/_ext/581370467/CO_PDO.o.d ${OBJECTDIR}/_ext/581370467/CO_SDO.o.d ${OBJECTDIR}/_ext/581370467/CO_SYNC.o.d ${OBJECTDIR}/_ext/581370467/CANopen.o.d ${OBJECTDIR}/_ext/1472/appl_PIC32_explorer16_IO.o.d ${OBJECTDIR}/_ext/1472/CO_OD.o.d ${OBJECTDIR}/_ext/581370467/crc16-ccitt.o.d
 
 # Object Files
-OBJECTFILES=${OBJECTDIR}/_ext/542917987/CO_driver.o ${OBJECTDIR}/_ext/542917987/eeprom.o ${OBJECTDIR}/_ext/542917987/main_PIC32.o ${OBJECTDIR}/_ext/581370467/CO_Emergency.o ${OBJECTDIR}/_ext/581370467/CO_HBconsumer.o ${OBJECTDIR}/_ext/581370467/CO_NMT_Heartbeat.o ${OBJECTDIR}/_ext/581370467/CO_PDO.o ${OBJECTDIR}/_ext/581370467/CO_SDO.o ${OBJECTDIR}/_ext/581370467/CO_SYNC.o ${OBJECTDIR}/_ext/581370467/CO_SDOmaster.o ${OBJECTDIR}/_ext/581370467/CANopen.o ${OBJECTDIR}/_ext/1472/appl_PIC32_explorer16_IO.o ${OBJECTDIR}/_ext/1472/CO_OD.o
+OBJECTFILES=${OBJECTDIR}/_ext/542917987/CO_driver.o ${OBJECTDIR}/_ext/542917987/eeprom.o ${OBJECTDIR}/_ext/542917987/main_PIC32.o ${OBJECTDIR}/_ext/581370467/CO_Emergency.o ${OBJECTDIR}/_ext/581370467/CO_HBconsumer.o ${OBJECTDIR}/_ext/581370467/CO_NMT_Heartbeat.o ${OBJECTDIR}/_ext/581370467/CO_PDO.o ${OBJECTDIR}/_ext/581370467/CO_SDO.o ${OBJECTDIR}/_ext/581370467/CO_SYNC.o ${OBJECTDIR}/_ext/581370467/CANopen.o ${OBJECTDIR}/_ext/1472/appl_PIC32_explorer16_IO.o ${OBJECTDIR}/_ext/1472/CO_OD.o ${OBJECTDIR}/_ext/581370467/crc16-ccitt.o
 
 
 CFLAGS=
@@ -126,11 +126,6 @@ ${OBJECTDIR}/_ext/581370467/CO_SYNC.o: ../../CANopen_stack/CO_SYNC.c  nbproject/
 	@${RM} ${OBJECTDIR}/_ext/581370467/CO_SYNC.o.d 
 	@${FIXDEPS} "${OBJECTDIR}/_ext/581370467/CO_SYNC.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -DCO_OD_MAX_OBJECT_SIZE=889 -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -O1 -Wall -MMD -MF "${OBJECTDIR}/_ext/581370467/CO_SYNC.o.d" -o ${OBJECTDIR}/_ext/581370467/CO_SYNC.o ../../CANopen_stack/CO_SYNC.c   
 	
-${OBJECTDIR}/_ext/581370467/CO_SDOmaster.o: ../../CANopen_stack/CO_SDOmaster.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/_ext/581370467 
-	@${RM} ${OBJECTDIR}/_ext/581370467/CO_SDOmaster.o.d 
-	@${FIXDEPS} "${OBJECTDIR}/_ext/581370467/CO_SDOmaster.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -DCO_OD_MAX_OBJECT_SIZE=889 -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -O1 -Wall -MMD -MF "${OBJECTDIR}/_ext/581370467/CO_SDOmaster.o.d" -o ${OBJECTDIR}/_ext/581370467/CO_SDOmaster.o ../../CANopen_stack/CO_SDOmaster.c   
-	
 ${OBJECTDIR}/_ext/581370467/CANopen.o: ../../CANopen_stack/CANopen.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} ${OBJECTDIR}/_ext/581370467 
 	@${RM} ${OBJECTDIR}/_ext/581370467/CANopen.o.d 
@@ -145,6 +140,11 @@ ${OBJECTDIR}/_ext/1472/CO_OD.o: ../CO_OD.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} ${OBJECTDIR}/_ext/1472 
 	@${RM} ${OBJECTDIR}/_ext/1472/CO_OD.o.d 
 	@${FIXDEPS} "${OBJECTDIR}/_ext/1472/CO_OD.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -DCO_OD_MAX_OBJECT_SIZE=889 -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -O1 -Wall -MMD -MF "${OBJECTDIR}/_ext/1472/CO_OD.o.d" -o ${OBJECTDIR}/_ext/1472/CO_OD.o ../CO_OD.c   
+	
+${OBJECTDIR}/_ext/581370467/crc16-ccitt.o: ../../CANopen_stack/crc16-ccitt.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/_ext/581370467 
+	@${RM} ${OBJECTDIR}/_ext/581370467/crc16-ccitt.o.d 
+	@${FIXDEPS} "${OBJECTDIR}/_ext/581370467/crc16-ccitt.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE) -g -D__DEBUG -D__MPLAB_DEBUGGER_ICD3=1 -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -DCO_OD_MAX_OBJECT_SIZE=889 -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -O1 -Wall -MMD -MF "${OBJECTDIR}/_ext/581370467/crc16-ccitt.o.d" -o ${OBJECTDIR}/_ext/581370467/crc16-ccitt.o ../../CANopen_stack/crc16-ccitt.c   
 	
 else
 ${OBJECTDIR}/_ext/542917987/CO_driver.o: ../../CANopen_stack/PIC32/CO_driver.c  nbproject/Makefile-${CND_CONF}.mk
@@ -192,11 +192,6 @@ ${OBJECTDIR}/_ext/581370467/CO_SYNC.o: ../../CANopen_stack/CO_SYNC.c  nbproject/
 	@${RM} ${OBJECTDIR}/_ext/581370467/CO_SYNC.o.d 
 	@${FIXDEPS} "${OBJECTDIR}/_ext/581370467/CO_SYNC.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -DCO_OD_MAX_OBJECT_SIZE=889 -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -O1 -Wall -MMD -MF "${OBJECTDIR}/_ext/581370467/CO_SYNC.o.d" -o ${OBJECTDIR}/_ext/581370467/CO_SYNC.o ../../CANopen_stack/CO_SYNC.c   
 	
-${OBJECTDIR}/_ext/581370467/CO_SDOmaster.o: ../../CANopen_stack/CO_SDOmaster.c  nbproject/Makefile-${CND_CONF}.mk
-	@${MKDIR} ${OBJECTDIR}/_ext/581370467 
-	@${RM} ${OBJECTDIR}/_ext/581370467/CO_SDOmaster.o.d 
-	@${FIXDEPS} "${OBJECTDIR}/_ext/581370467/CO_SDOmaster.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -DCO_OD_MAX_OBJECT_SIZE=889 -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -O1 -Wall -MMD -MF "${OBJECTDIR}/_ext/581370467/CO_SDOmaster.o.d" -o ${OBJECTDIR}/_ext/581370467/CO_SDOmaster.o ../../CANopen_stack/CO_SDOmaster.c   
-	
 ${OBJECTDIR}/_ext/581370467/CANopen.o: ../../CANopen_stack/CANopen.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} ${OBJECTDIR}/_ext/581370467 
 	@${RM} ${OBJECTDIR}/_ext/581370467/CANopen.o.d 
@@ -211,6 +206,11 @@ ${OBJECTDIR}/_ext/1472/CO_OD.o: ../CO_OD.c  nbproject/Makefile-${CND_CONF}.mk
 	@${MKDIR} ${OBJECTDIR}/_ext/1472 
 	@${RM} ${OBJECTDIR}/_ext/1472/CO_OD.o.d 
 	@${FIXDEPS} "${OBJECTDIR}/_ext/1472/CO_OD.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -DCO_OD_MAX_OBJECT_SIZE=889 -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -O1 -Wall -MMD -MF "${OBJECTDIR}/_ext/1472/CO_OD.o.d" -o ${OBJECTDIR}/_ext/1472/CO_OD.o ../CO_OD.c   
+	
+${OBJECTDIR}/_ext/581370467/crc16-ccitt.o: ../../CANopen_stack/crc16-ccitt.c  nbproject/Makefile-${CND_CONF}.mk
+	@${MKDIR} ${OBJECTDIR}/_ext/581370467 
+	@${RM} ${OBJECTDIR}/_ext/581370467/crc16-ccitt.o.d 
+	@${FIXDEPS} "${OBJECTDIR}/_ext/581370467/crc16-ccitt.o.d" $(SILENT) -rsi ${MP_CC_DIR}../  -c ${MP_CC}  $(MP_EXTRA_CC_PRE)  -g -x c -c -mprocessor=$(MP_PROCESSOR_OPTION) -DCO_OD_MAX_OBJECT_SIZE=889 -I"../../CANopen_stack" -I"../../CANopen_stack/PIC32" -I".." -O1 -Wall -MMD -MF "${OBJECTDIR}/_ext/581370467/crc16-ccitt.o.d" -o ${OBJECTDIR}/_ext/581370467/crc16-ccitt.o ../../CANopen_stack/crc16-ccitt.c   
 	
 endif
 
