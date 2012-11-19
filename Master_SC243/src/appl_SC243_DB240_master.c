@@ -89,6 +89,17 @@
    #define ERROR_TEST2_CRITICAL                       0x40, 0x5000
 
 
+/*******************************************************************************
+   Function - ODF_testDomain
+
+   Function for accessing _test var_ (index 0x2120) from SDO server.
+
+   For more information see topic <Object dictionary function>.
+*******************************************************************************/
+#define ODF_testDomain_index     0x2120
+UNSIGNED32 ODF_testDomain(CO_ODF_arg_t *ODF_arg);
+
+
 /******************************************************************************/
 void programStart(void){
 
@@ -120,6 +131,9 @@ void communicationReset(void){
    OD_writeOutput8Bit[0] = 0;
    OD_writeOutput8Bit[1] = 0;
    errorRegisterPrev = 0;
+
+   //Configure Object dictionary entry at index 0x2120
+   CO_OD_configure(CO->SDO, ODF_testDomain_index, ODF_testDomain, 0);
 }
 
 
