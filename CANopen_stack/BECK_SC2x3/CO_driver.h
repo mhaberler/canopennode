@@ -104,11 +104,11 @@
 
    #define UNSIGNED8       unsigned char
    #define UNSIGNED16      unsigned short int
-   #define UNSIGNED32      unsigned long int
+   #define UNSIGNED32      unsigned int
    #define UNSIGNED64      unsigned long long int
    #define INTEGER8        signed char
    #define INTEGER16       signed short int
-   #define INTEGER32       signed long int
+   #define INTEGER32       signed int
    #define INTEGER64       signed long long int
    #define REAL32          float
    #define REAL64          double

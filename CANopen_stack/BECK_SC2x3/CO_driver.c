@@ -239,12 +239,14 @@ INTEGER16 CO_CANsend(   CO_CANmodule_t   *CANmodule,
 
    //send message
    CanError err;
+   DISABLE_INTERRUPTS();
    err = canSend(CANmodule->CANbaseAddress, (const CanMsg*) buffer, FALSE);
    //if no buffer is free, message will be sent by interrupt
    if(err == CAN_ERROR_QUEUE_MAX){
       buffer->bufferFull = 1;
       CANmodule->CANtxCount++;
    }
+   ENABLE_INTERRUPTS();
 
 #ifdef CO_LOG_CAN_MESSAGES
    void CO_logMessage(const CanMsg *msg);
@@ -258,9 +260,14 @@ INTEGER16 CO_CANsend(   CO_CANmodule_t   *CANmodule,
 /******************************************************************************/
 void CO_CANclearPendingSyncPDOs(CO_CANmodule_t *CANmodule){
 
+   DISABLE_INTERRUPTS();
    if(CANmodule->bufferInhibitFlag){
       canPurgeTx(CANmodule->CANbaseAddress, FALSE);
+      ENABLE_INTERRUPTS();
       CO_errorReport((CO_emergencyReport_t*)CANmodule->EM, ERROR_TPDO_OUTSIDE_WINDOW, 1);
+   }
+   else{
+      ENABLE_INTERRUPTS();
    }
 }
 

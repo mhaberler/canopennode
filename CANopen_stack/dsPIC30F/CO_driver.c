@@ -384,9 +384,7 @@ INTEGER16 CO_CANsend(   CO_CANmodule_t   *CANmodule,
       return CO_ERROR_TX_PDO_WINDOW;
    }
 
-   //Disable CAN TX interrupts
-   C_INTEold = CAN_REG(addr, C_INTE);
-   CAN_REG(addr, C_INTE) &= 0xFFE3;
+   DISABLE_INTERRUPTS();
 
    //if CAN TB buffer0 is free, copy message to it
    if((CAN_REG(addr, C_TXBUF0 + C_TXCON) & 0x8) == 0 && CANmodule->CANtxCount == 0){
@@ -399,8 +397,7 @@ INTEGER16 CO_CANsend(   CO_CANmodule_t   *CANmodule,
       CANmodule->CANtxCount++;
    }
 
-   //enable CAN TX interrupts
-   CAN_REG(addr, C_INTE) = C_INTEold;
+   ENABLE_INTERRUPTS();
    return CO_ERROR_NO;
 }
 

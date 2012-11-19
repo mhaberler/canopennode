@@ -473,12 +473,10 @@ void CO_CANsendToModule(UNSIGNED16 CANbaseAddress, CO_CANrxMsg_t *dest, CO_CANtx
    for(; DLC>0; DLC--) *(CANdataBuffer++) = *(pData++);
 
    //control register, transmit request
-   DISABLE_INTERRUPTS();
    C_CTRL1old = CAN_REG(CANbaseAddress, C_CTRL1);
    CAN_REG(CANbaseAddress, C_CTRL1) = C_CTRL1old & 0xFFFE;     //WIN = 0 - use buffer registers
    CAN_REG(CANbaseAddress, C_TR01CON) |= 0x08;
    CAN_REG(CANbaseAddress, C_CTRL1) = C_CTRL1old;
-   ENABLE_INTERRUPTS();
 }
 
 
@@ -509,11 +507,6 @@ INTEGER16 CO_CANsend(   CO_CANmodule_t   *CANmodule,
    CAN_REG(addr, C_CTRL1) = C_CTRL1old & 0xFFFE;     //WIN = 0 - use buffer registers
    C_TR01CONcopy = CAN_REG(addr, C_TR01CON);
    CAN_REG(addr, C_CTRL1) = C_CTRL1old;
-   ENABLE_INTERRUPTS();
-
-   //Disable CAN TX interrupts
-   C_INTEold = CAN_REG(addr, C_INTE);
-   CAN_REG(addr, C_INTE) &= 0xFFFE;
 
    //if CAN TB buffer0 is free, copy message to it
    if((C_TR01CONcopy & 0x8) == 0 && CANmodule->CANtxCount == 0){
@@ -526,8 +519,7 @@ INTEGER16 CO_CANsend(   CO_CANmodule_t   *CANmodule,
       CANmodule->CANtxCount++;
    }
 
-   //enable CAN TX interrupts
-   CAN_REG(addr, C_INTE) = C_INTEold;
+   ENABLE_INTERRUPTS();
    return CO_ERROR_NO;
 }
 

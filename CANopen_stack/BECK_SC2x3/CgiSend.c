@@ -36,6 +36,9 @@
 #include <string.h> // for memcpy
 #include <stdlib.h> // for malloc, free
 
+#if CO_NO_NMT_MASTER != 1
+   #error NMT master is not defined in Object Dictionary
+#endif
 
 /******************************************************************************/
 int hex2dec(char *str, int len, int *val);   //externally defined

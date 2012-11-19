@@ -69,11 +69,15 @@ unsigned int CO_interruptStatus = 0;
 
 /******************************************************************************/
 void memcpySwap2(UNSIGNED8* dest, UNSIGNED8* src){
-   *((UNSIGNED16*) dest) = *((UNSIGNED16*) src);
+   *(dest++) = *(src++);
+   *(dest) = *(src);
 }
 
 void memcpySwap4(UNSIGNED8* dest, UNSIGNED8* src){
-   *((UNSIGNED32*) dest) = *((UNSIGNED32*) src);
+   *(dest++) = *(src++);
+   *(dest++) = *(src++);
+   *(dest++) = *(src++);
+   *(dest) = *(src);
 }
 
 

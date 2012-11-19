@@ -84,7 +84,7 @@
 
 //Global variables and objects
    const CO_CANbitRateData_t  CO_CANbitRateData[8] = {CO_CANbitRateDataInitializers};
-   volatile UNSIGNED16        CO_timer1ms;   //variable increments each millisecond
+   volatile UNSIGNED16        CO_timer1ms=0; //variable increments each millisecond
    CO_t                      *CO = 0;        //pointer to CANopen object
 #ifdef USE_EEPROM
    EE_t                      *EE = 0;        //pointer to eeprom object
