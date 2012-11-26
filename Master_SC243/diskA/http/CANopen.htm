@@ -16,7 +16,6 @@ body{
 }
 body > div{
    float: left;
-   width: 350px;
    padding: 5px;
 }
 #EMCYlogDiv{
@@ -35,19 +34,18 @@ input[type="text"]{
    width: 140px;
 }
 textarea{
-   width: 97%;
+   width: 310px;
    height: 411px;
    font-size: 12px;
-   resize: vertical;
 }
 .oneBut > input[type="button"]{
-   width: 100%;
+   width: 318px;
 }
 .twoBut > input[type="button"]{
-   width: 47.7%;
+   width: 153px;
 }
 .threeBut > input[type="button"]{
-   width: 30.3%;
+   width: 98px;
 }
 #SDOData{
    height: 16px;
@@ -175,16 +173,16 @@ textarea{
       <fieldset class="twoBut"><legend>NMT master</legend>
          Node ID (0 for all nodes): <input type="text" id="NMTnodeId" value="0x30"/><br/><br/>
          <input type="button" value="Enter operational"     onclick="CO.sendNMT(document.getElementById('NMTnodeId').value, '01');"/> &nbsp;
-         <input type="button" value="Reset communication"   onclick="CO.sendNMT(document.getElementById('NMTnodeId').value, '82');"/>
+         <input type="button" value="Reset communication"   onclick="CO.sendNMT(document.getElementById('NMTnodeId').value, '82');"/><br/>
          <input type="button" value="Enter pre-operational" onclick="CO.sendNMT(document.getElementById('NMTnodeId').value, '80');"/> &nbsp;
-         <input type="button" value="Reset node"            onclick="CO.sendNMT(document.getElementById('NMTnodeId').value, '81');"/>
+         <input type="button" value="Reset node"            onclick="CO.sendNMT(document.getElementById('NMTnodeId').value, '81');"/><br/>
          <input type="button" value="Enter stopped"         onclick="CO.sendNMT(document.getElementById('NMTnodeId').value, '02');"/> &nbsp;
       </fieldset>
       <br/>
       <fieldset class="threeBut"><legend>SDO master</legend>
          SDO addr <span style="font-size: 12px;">(NN IIII SS LLLL)</span>:<input type="text" id="SDOAddr" value="30 1017 00 0002"/><br/>
-         Data (12 05 ...):
-         <textarea id="SDOData">E8 03</textarea>
+         Data (12 05 ...):<br/>
+         <textarea id="SDOData">E8 03</textarea><br/>
          <div id="SDOStatus">SDO status Line.</div><br/>
          <input type="button" value="Read" onclick="SDORead();"/> &nbsp;
          <input type="button" value="Write" onclick="SDOWrite();"/> &nbsp;
@@ -195,16 +193,16 @@ textarea{
       <fieldset class="threeBut"><legend>CAN log</legend>
          <input type="button" value="Start log" onclick="LOGStart(this);" id="LOGStartButton"/> &nbsp;
          <input type="button" value="Dump" onclick="CANLog.dumpBufferOnServer();"/> &nbsp;
-         <input type="button" value="Load file ..." onclick="LOGFile();"/>
+         <input type="button" value="Load file ..." onclick="LOGFile();"/><br/>
          <textarea id="CANLog">-</textarea>
       </fieldset>
    </div>
-   <div id="EMCYlogDiv">
+   <div>
       <fieldset class="threeBut"><legend>Emergency log</legend>
          <input type="button" value="Read last" onclick="emcy('emcy');"/> &nbsp;
          <input type="button" value="Flush" onclick="emcy('emcy?flush');"/> &nbsp;
-         <input type="button" value="Read Log" onclick="emcy('emcy.log');"/>
-         <textarea id="EMCYlog">-</textarea>
+         <input type="button" value="Read Log" onclick="emcy('emcy.log');"/><br/>
+         <textarea id="EMCYlogDiv" id="EMCYlog">-</textarea>
       </fieldset>
    </div>
    <footer>

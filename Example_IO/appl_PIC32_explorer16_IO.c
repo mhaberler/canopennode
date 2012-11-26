@@ -1,7 +1,7 @@
 /*******************************************************************************
 
    File - appl_PIC32_explorer16_IO.c
-   Application program CANopen IO device on Microchip PIC32 on Explorer16
+   Application program for CANopen IO device on Microchip PIC32 on Explorer16
    demo board.
 
    Copyright (C) 2010 Janez Paternoster
@@ -26,11 +26,6 @@
 
 
    Author: Janez Paternoster
-
-*******************************************************************************/
-/*******************************************************************************
-
-   Application program.
 
 *******************************************************************************/
 
@@ -181,7 +176,7 @@ UNSIGNED32 ODF_testDomain(CO_ODF_arg_t *ODF_arg){
       //If domainFileSize is greater than SDObufferSize, this function will
       //be called multiple times during one SDO communication cycle
 
-      const UNSIGNED32 domainFileSize = 800;
+      const UNSIGNED32 domainFileSize = 400;
       static UNSIGNED32 offset = 0;
 
       UNSIGNED16 i;

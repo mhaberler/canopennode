@@ -129,7 +129,7 @@
    -3 = CO_ERROR_TIMEOUT            - Function timeout.
    -4 = CO_ERROR_ILLEGAL_BAUDRATE   - Illegal baudrate passed to function <CO_CANmodule_init>
    -5 = CO_ERROR_RX_OVERFLOW        - Previous message was not processed yet.
-   -6 = CO_ERROR_RX_PDO_OWERFLOW    - previous PDO was not processed yet.
+   -6 = CO_ERROR_RX_PDO_OVERFLOW    - previous PDO was not processed yet.
    -7 = CO_ERROR_RX_MSG_LENGTH      - Wrong receive message length.
    -8 = CO_ERROR_RX_PDO_LENGTH      - Wrong receive PDO length.
    -9 = CO_ERROR_TX_OVERFLOW        - Previous message is still waiting, buffer full.
@@ -146,7 +146,7 @@
       CO_ERROR_TIMEOUT           = -3,
       CO_ERROR_ILLEGAL_BAUDRATE  = -4,
       CO_ERROR_RX_OVERFLOW       = -5,
-      CO_ERROR_RX_PDO_OWERFLOW   = -6,
+      CO_ERROR_RX_PDO_OVERFLOW   = -6,
       CO_ERROR_RX_MSG_LENGTH     = -7,
       CO_ERROR_RX_PDO_LENGTH     = -8,
       CO_ERROR_TX_OVERFLOW       = -9,
@@ -189,10 +189,10 @@
 
       CO_LOG_CAN_MESSAGES           - Call external function for each received
                                       or transmitted CAN message.
-      CO_OD_MAX_OBJECT_SIZE         - Override SDO server buffer size
+      CO_SDO_BUFFER_SIZE            - Override default <SDO buffer size>.
 *******************************************************************************/
 #define CO_LOG_CAN_MESSAGES
-#define CO_OD_MAX_OBJECT_SIZE           889
+#define CO_SDO_BUFFER_SIZE           889
 
 
 /*******************************************************************************
@@ -336,7 +336,7 @@ void memcpySwap4(UNSIGNED8* dest, UNSIGNED8* src);
    Return <CO_ReturnError>:
       CO_ERROR_NO                 - Operation completed successfully.
       CO_ERROR_RX_OVERFLOW        - Previous message was not processed yet.
-      CO_ERROR_RX_PDO_OWERFLOW    - previous PDO was not processed yet.
+      CO_ERROR_RX_PDO_OVERFLOW    - previous PDO was not processed yet.
       CO_ERROR_RX_MSG_LENGTH      - Wrong receive message length.
       CO_ERROR_RX_PDO_LENGTH      - Wrong receive PDO length.
 *******************************************************************************/

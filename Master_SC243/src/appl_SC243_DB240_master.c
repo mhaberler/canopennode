@@ -1,7 +1,8 @@
 /*******************************************************************************
 
    File - appl_SC243_DB240_master.c
-   Application program CANopen IO device on Beck SC243 on DB240 demo board.
+   Application program for CANopen IO device on Beck SC243 on DB240
+   demo board.
 
    Copyright (C) 2010 Janez Paternoster
 
@@ -27,21 +28,16 @@
    Author: Janez Paternoster
 
 *******************************************************************************/
-/*******************************************************************************
-
-   Application program.
-
-*******************************************************************************/
 
 
 /*******************************************************************************
    This file is tested on DB240 board from Beck. Microcontroller is SC243.
       D0 and D1 LEDs are used as CANopen status LEDs (D1 should be red). Device
-      sends bootup and Heartbeat message. Default NodeID is 0x30.
+      sends bootup and Heartbeat message. Default NodeID is 0x20.
    Implemented is simple CANopen I/O device profile (DS401):
-    - TPDO with address 0x1B0 is send on change of state of DIP switches.
+    - TPDO with address 0x1A0 is send on change of state of DIP switches.
     - LED diodes (D2...D7) are controlled by two bytes long RPDO on
-      CAN address 0x230 (upper six bits from first byte is used to control LEDs).
+      CAN address 0x220 (upper six bits from first byte is used to control LEDs).
 *******************************************************************************/
 
 

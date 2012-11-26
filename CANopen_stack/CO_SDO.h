@@ -824,12 +824,13 @@ UNSIGNED32 CO_SDO_initTransfer(CO_SDO_t *SDO, UNSIGNED16 index, UNSIGNED8 subInd
    <Object dictionary function> is called if configured.
 
    Parameters:
-      SDO      - Pointer to SDO object <CO_SDO_t>.
+      SDO            - Pointer to SDO object <CO_SDO_t>.
+      SDOBufferSize  - Total size of the SDO buffer.
 
    Return:
       0 on success, otherwise <SDO abort code>.
 *******************************************************************************/
-UNSIGNED32 CO_SDO_readOD(CO_SDO_t *SDO);
+UNSIGNED32 CO_SDO_readOD(CO_SDO_t *SDO, UNSIGNED16 SDOBufferSize);
 
 
 /*******************************************************************************

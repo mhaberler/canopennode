@@ -56,6 +56,7 @@ File: CO_PDO.h  (CO_PDO.h)
 File: CO_SDO.h  (CO_SDO.h)
 File: CO_SDOmaster.h  (CO_SDOmaster.h)
 File: CO_SYNC.h  (CO_SYNC.h)
+File: crc16-ccitt.h  (crc16-ccitt.h)
 
 Group: PIC32  {
 
@@ -84,10 +85,4 @@ Group: dsPIC30F  {
    File: eeprom.h  (dsPIC30F\eeprom.h)
    File: memcpyram2flash.h  (dsPIC30F\memcpyram2flash.h)
    }  # Group: dsPIC30F
-
-Group: Index  {
-
-   Index: Everything
-   File Index: Files
-   }  # Group: Index
 

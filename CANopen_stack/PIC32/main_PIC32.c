@@ -81,6 +81,11 @@
    #define CO_CAN_ISR_PRIORITY IPC11bits.CAN1IP //Interrupt Priority
    #define CO_CAN_ISR_ENABLE   IEC1bits.CAN1IE  //Interrupt Enable bit
 
+   #define CO_CAN_ISR2() void __ISR(_CAN_2_VECTOR, ipl5SOFT) CO_CAN2InterruptHandler(void)
+   #define CO_CAN_ISR2_FLAG     IFS1bits.CAN2IF  //Interrupt Flag bit
+   #define CO_CAN_ISR2_PRIORITY IPC11bits.CAN2IP //Interrupt Priority
+   #define CO_CAN_ISR2_ENABLE   IEC1bits.CAN2IE  //Interrupt Enable bit
+
 
 //Global variables and objects
    const CO_CANbitRateData_t  CO_CANbitRateData[8] = {CO_CANbitRateDataInitializers};
@@ -138,6 +143,7 @@ int main (void){
       //disable timer and CAN interrupts
       CO_TMR_ISR_ENABLE = 0;
       CO_CAN_ISR_ENABLE = 0;
+      CO_CAN_ISR2_ENABLE = 0;
 
 
       //initialize CANopen
@@ -176,6 +182,8 @@ int main (void){
       //Configure CAN1 Interrupt (Combined)
       CO_CAN_ISR_FLAG = 0;       //CAN1 Interrupt - Clear flag
       CO_CAN_ISR_PRIORITY = 5;   //CAN1 Interrupt - Set higher priority than timer (set the same value in '#define CO_CAN_ISR_PRIORITY')
+      CO_CAN_ISR2_FLAG = 0;      //CAN2 Interrupt - Clear flag
+      CO_CAN_ISR2_PRIORITY = 5;  //CAN Interrupt - Set higher priority than timer (set the same value in '#define CO_CAN_ISR_PRIORITY')
 
 
       communicationReset();
@@ -185,6 +193,11 @@ int main (void){
       CO_CANsetNormalMode(ADDR_CAN1);
       CO_TMR_ISR_ENABLE = 1;
       CO_CAN_ISR_ENABLE = 1;
+
+#if CO_NO_CAN_MODULES >= 2
+      CO_CANsetNormalMode(ADDR_CAN2);
+      CO_CAN_ISR2_ENABLE = 1;
+#endif
 
 
       while(reset == 0){
@@ -284,3 +297,11 @@ CO_CAN_ISR(){
    //Clear combined Interrupt flag
    CO_CAN_ISR_FLAG = 0;
 }
+
+#if CO_NO_CAN_MODULES >= 2
+CO_CAN_ISR2(){
+   CO_CANinterrupt(CO->CANmodule[1]);
+   //Clear combined Interrupt flag
+   CO_CAN_ISR2_FLAG = 0;
+}
+#endif

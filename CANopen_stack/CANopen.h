@@ -47,6 +47,19 @@
 
 
 /*******************************************************************************
+   Constant: CO_NO_CAN_MODULES
+
+   Number of CAN modules in use.
+
+   If constant is set globaly to 2, second CAN module is initialized and fifth
+   and sixth RPDO (if exist) are configured to it.
+*******************************************************************************/
+#ifndef CO_NO_CAN_MODULES
+   #define CO_NO_CAN_MODULES 1
+#endif
+
+
+/*******************************************************************************
    Object: CO_t
 
    CANopen stack object combines all CANopen objects.
@@ -64,7 +77,7 @@
       SDOclient      - SDO client object of type <CO_SDOclient_t>.
 *******************************************************************************/
 typedef struct{
-   CO_CANmodule_t            *CANmodule[1];
+   CO_CANmodule_t            *CANmodule[CO_NO_CAN_MODULES];
    CO_SDO_t                  *SDO;
    CO_emergencyReport_t      *EM;
    CO_emergencyProcess_t     *EMpr;

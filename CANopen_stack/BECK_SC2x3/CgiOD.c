@@ -37,6 +37,9 @@
 #include <stdlib.h> // for malloc, free
 
 
+#define DATA_MAX_LEN 2048
+
+
 /*******************************************************************************
    Function - hex2dec
 
@@ -93,7 +96,6 @@ void huge _pascal CgiCliFunction(rpCgiPtr CgiRequest){
          char rw = name[0];
          unsigned int nodeId, idx, sidx, len;
          char err = 0;
-         #define DATA_MAX_LEN 889
          unsigned char data[DATA_MAX_LEN]; //data sent or received on CANopen
          unsigned int dataLen = 0;
 
@@ -142,7 +144,7 @@ void huge _pascal CgiCliFunction(rpCgiPtr CgiRequest){
          else if(rw == 'r'){
             INTEGER8 ret;
             CO_SDOclient_setup(SDO_C, 0, 0, nodeId);
-            CO_SDOclientUploadInitiate(SDO_C, idx, sidx, data, DATA_MAX_LEN, 0);
+            CO_SDOclientUploadInitiate(SDO_C, idx, sidx, data, DATA_MAX_LEN, 1);
             do{
                RTX_Sleep_Time(10);
                ret = CO_SDOclientUpload(SDO_C, 10, 500, &dataLen, &SDOabortCode);
@@ -163,7 +165,7 @@ void huge _pascal CgiCliFunction(rpCgiPtr CgiRequest){
          else if(rw == 'w'){
             INTEGER8 ret;
             CO_SDOclient_setup(SDO_C, 0, 0, nodeId);
-            CO_SDOclientDownloadInitiate(SDO_C, idx, sidx, data, dataLen, 0);
+            CO_SDOclientDownloadInitiate(SDO_C, idx, sidx, data, dataLen, 1);
             do{
                RTX_Sleep_Time(10);
                ret = CO_SDOclientDownload(SDO_C, 10, 500, &SDOabortCode);

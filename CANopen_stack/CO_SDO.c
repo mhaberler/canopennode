@@ -55,9 +55,9 @@
 #define CCS_DOWNLOAD_SEGMENT           0
 #define CCS_UPLOAD_INITIATE            2
 #define CCS_UPLOAD_SEGMENT             3
-#define CCS_ABORT                      4
 #define CCS_DOWNLOAD_BLOCK             6
 #define CCS_UPLOAD_BLOCK               5
+#define CCS_ABORT                      0x80
 
 
 #if CO_SDO_BUFFER_SIZE < 7
@@ -391,14 +391,20 @@ UNSIGNED32 CO_SDO_initTransfer(CO_SDO_t *SDO, UNSIGNED16 index, UNSIGNED8 subInd
 
 
 /******************************************************************************/
-UNSIGNED32 CO_SDO_readOD(CO_SDO_t *SDO){
-   UNSIGNED8 *SDObuffer = SDO->databuffer;
+UNSIGNED32 CO_SDO_readOD(CO_SDO_t *SDO, UNSIGNED16 SDOBufferSize){
+   UNSIGNED8 *SDObuffer = SDO->ODF_arg.data;
    UNSIGNED8 *ODdata = (UNSIGNED8*)SDO->ODF_arg.ODdataStorage;
    UNSIGNED16 length = SDO->ODF_arg.dataLength;
+   CO_OD_extension_t *ext = 0;
 
    //is object readable?
    if(!(SDO->ODF_arg.attribute & CO_ODA_READABLE))
       return 0x06010001L;     //attempt to read a write-only object
+
+   //find extension
+   if(SDO->ODExtensions){
+      ext = SDO->ODExtensions[SDO->entryNo];
+   }
 
    //copy data from OD to SDO buffer if not domain
    if(ODdata){
@@ -406,20 +412,20 @@ UNSIGNED32 CO_SDO_readOD(CO_SDO_t *SDO){
       while(length--) *(SDObuffer++) = *(ODdata++);
       ENABLE_INTERRUPTS();
    }
+   //if domain, Object dictionary function MUST exist
+   else{
+      if(ext == 0) return 0x06040047L;     //general internal incompatibility in the device
+   }
 
    //call Object dictionary function if registered
    SDO->ODF_arg.reading = 1;
-   if(SDO->ODExtensions){
-      CO_OD_extension_t *ext = SDO->ODExtensions[SDO->entryNo];
+   if(ext){
+      UNSIGNED32 abortCode = ext->pODFunc(&SDO->ODF_arg);
+      if(abortCode) return abortCode;
 
-      if(ext){
-         UNSIGNED32 abortCode = ext->pODFunc(&SDO->ODF_arg);
-         if(abortCode) return abortCode;
-
-         //dataLength (upadted by pODFunc) must be inside limits
-         if(SDO->ODF_arg.dataLength == 0 || SDO->ODF_arg.dataLength > CO_SDO_BUFFER_SIZE)
-            return 0x06040047L;     //general internal incompatibility in the device
-      }
+      //dataLength (upadted by pODFunc) must be inside limits
+      if(SDO->ODF_arg.dataLength == 0 || SDO->ODF_arg.dataLength > SDOBufferSize)
+         return 0x06040047L;     //general internal incompatibility in the device
    }
    SDO->ODF_arg.firstSegment = 0;
 
@@ -427,7 +433,7 @@ UNSIGNED32 CO_SDO_readOD(CO_SDO_t *SDO){
 #ifdef BIG_ENDIAN
    if(SDO->ODF_arg.attribute & CO_ODA_MB_VALUE){
       UNSIGNED16 len = SDO->ODF_arg.dataLength;
-      UNSIGNED8 *buf1 = SDO->databuffer;
+      UNSIGNED8 *buf1 = SDO->ODF_arg.data;
       UNSIGNED8 *buf2 = buf1 + len - 1;
 
       len /= 2;
@@ -445,7 +451,7 @@ UNSIGNED32 CO_SDO_readOD(CO_SDO_t *SDO){
 
 /******************************************************************************/
 UNSIGNED32 CO_SDO_writeOD(CO_SDO_t *SDO, UNSIGNED16 length){
-   UNSIGNED8 *SDObuffer = SDO->databuffer;
+   UNSIGNED8 *SDObuffer = SDO->ODF_arg.data;
    UNSIGNED8 *ODdata = (UNSIGNED8*)SDO->ODF_arg.ODdataStorage;
 
    //is object writeable?
@@ -464,7 +470,7 @@ UNSIGNED32 CO_SDO_writeOD(CO_SDO_t *SDO, UNSIGNED16 length){
 #ifdef BIG_ENDIAN
    if(SDO->ODF_arg.attribute & CO_ODA_MB_VALUE){
       UNSIGNED16 len = SDO->ODF_arg.dataLength;
-      UNSIGNED8 *buf1 = SDO->databuffer;
+      UNSIGNED8 *buf1 = SDO->ODF_arg.data;
       UNSIGNED8 *buf2 = buf1 + len - 1;
 
       len /= 2;
@@ -546,7 +552,7 @@ INTEGER8 CO_SDO_process(CO_SDO_t         *SDO,
       SDO->CANtxBuff->data[4] = SDO->CANtxBuff->data[5] = SDO->CANtxBuff->data[6] = SDO->CANtxBuff->data[7] = 0;
 
       //Is abort from client?
-      if(SDO->CANrxNew && CCS == CCS_ABORT){
+      if(SDO->CANrxNew && SDO->CANrxData[0] == CCS_ABORT){
          SDO->state = STATE_IDLE;
          SDO->CANrxNew = 0;
          return -1;
@@ -589,7 +595,7 @@ INTEGER8 CO_SDO_process(CO_SDO_t         *SDO,
 
          //upload
          else{
-            abortCode = CO_SDO_readOD(SDO);
+            abortCode = CO_SDO_readOD(SDO, CO_SDO_BUFFER_SIZE);
             if(abortCode){
                CO_SDO_abort(SDO, abortCode);
                return -1;
@@ -641,10 +647,10 @@ INTEGER8 CO_SDO_process(CO_SDO_t         *SDO,
                len = 4;
 
             //copy data to SDO buffer
-            SDO->databuffer[0] = SDO->CANrxData[4];
-            SDO->databuffer[1] = SDO->CANrxData[5];
-            SDO->databuffer[2] = SDO->CANrxData[6];
-            SDO->databuffer[3] = SDO->CANrxData[7];
+            SDO->ODF_arg.data[0] = SDO->CANrxData[4];
+            SDO->ODF_arg.data[1] = SDO->CANrxData[5];
+            SDO->ODF_arg.data[2] = SDO->CANrxData[6];
+            SDO->ODF_arg.data[3] = SDO->CANrxData[7];
 
             //write data to the Object dictionary
             abortCode = CO_SDO_writeOD(SDO, len);
@@ -719,7 +725,7 @@ INTEGER8 CO_SDO_process(CO_SDO_t         *SDO,
 
          //copy data to buffer
          for(i=0; i<len; i++)
-            SDO->databuffer[SDO->bufferOffset++] = SDO->CANrxData[i+1];
+            SDO->ODF_arg.data[SDO->bufferOffset++] = SDO->CANrxData[i+1];
 
          //If no more segments to be downloaded, write data to the Object dictionary
          if(SDO->CANrxData[0] & 0x01){
@@ -797,12 +803,17 @@ INTEGER8 CO_SDO_process(CO_SDO_t         *SDO,
                break;
             }
 
+            //previous segment is received again, ignore it
+            else if((SDO->CANrxData[0] & 0x7f) == SDO->sequence){
+               break;
+            }
+
             //correct segment is received, copy data
             else if((SDO->CANrxData[0] & 0x7f) == (SDO->sequence+1)){
                SDO->sequence++;
                err = 0;
                for(i=0; i<7; i++)
-                  SDO->databuffer[SDO->bufferOffset++] = SDO->CANtxBuff->data[i+1];
+                  SDO->ODF_arg.data[SDO->bufferOffset++] = SDO->CANrxData[i+1];
             }
          }
 
@@ -886,6 +897,7 @@ INTEGER8 CO_SDO_process(CO_SDO_t         *SDO,
          //send response
          SDO->CANtxBuff->data[0] = 0xA1;
          CO_CANsend(SDO->CANdevTx, SDO->CANtxBuff);
+         SDO->state = STATE_IDLE;
          break;
       }
 
@@ -898,7 +910,7 @@ INTEGER8 CO_SDO_process(CO_SDO_t         *SDO,
          //Expedited transfer
          if(SDO->ODF_arg.dataLength <= 4){
             for(i=0; i<SDO->ODF_arg.dataLength; i++)
-               SDO->CANtxBuff->data[4+i] = SDO->databuffer[i];
+               SDO->CANtxBuff->data[4+i] = SDO->ODF_arg.data[i];
 
             SDO->CANtxBuff->data[0] = 0x43 | ((4-SDO->ODF_arg.dataLength) << 2);
             CO_CANsend(SDO->CANdevTx, SDO->CANtxBuff);
@@ -951,14 +963,14 @@ INTEGER8 CO_SDO_process(CO_SDO_t         *SDO,
          if(SDO->ODF_arg.ODdataStorage == 0 && len < 7 && SDO->ODF_arg.lastSegment == 0){
             //copy previous data to the beginning
             for(i=0; i<len; i++)
-               SDO->databuffer[i] = SDO->databuffer[SDO->bufferOffset+i];
+               SDO->ODF_arg.data[i] = SDO->ODF_arg.data[SDO->bufferOffset+i];
 
             //move the beginning of the data buffer
             SDO->ODF_arg.data += len;
             SDO->ODF_arg.dataLength = CO_OD_getLength(SDO, SDO->entryNo, SDO->ODF_arg.subIndex) - len;
 
             //read next data from Object dictionary function
-            abortCode = CO_SDO_readOD(SDO);
+            abortCode = CO_SDO_readOD(SDO, CO_SDO_BUFFER_SIZE);
             if(abortCode){
                CO_SDO_abort(SDO, abortCode);
                return -1;
@@ -976,7 +988,7 @@ INTEGER8 CO_SDO_process(CO_SDO_t         *SDO,
 
          //fill response data bytes
          for(i=0; i<len; i++)
-            SDO->CANtxBuff->data[i+1] = SDO->databuffer[SDO->bufferOffset++];
+            SDO->CANtxBuff->data[i+1] = SDO->ODF_arg.data[SDO->bufferOffset++];
 
          //first response byte
          SDO->CANtxBuff->data[0] = 0x00 | (SDO->sequence ? 0x10 : 0x00) | ((7-len)<<1);
@@ -1035,6 +1047,7 @@ INTEGER8 CO_SDO_process(CO_SDO_t         *SDO,
          }
 
          //send response
+         SDO->state = STATE_UPLOAD_BLOCK_INITIATE_2;
          CO_CANsend(SDO->CANdevTx, SDO->CANtxBuff);
          break;
       }
@@ -1049,6 +1062,7 @@ INTEGER8 CO_SDO_process(CO_SDO_t         *SDO,
          SDO->bufferOffset = 0;
          SDO->sequence = 0;
          SDO->endOfTransfer = 0;
+         SDO->CANrxNew = 0;
          SDO->state = STATE_UPLOAD_BLOCK_SUBBLOCK;
          //continue in next case
       }
@@ -1057,6 +1071,7 @@ INTEGER8 CO_SDO_process(CO_SDO_t         *SDO,
          //is block confirmation received
          if(SDO->CANrxNew){
             UNSIGNED8 ackseq;
+            UNSIGNED16 j;
 
             //verify client command specifier and subcommand
             if((SDO->CANrxData[0]&0xE3) != 0xA2){
@@ -1088,13 +1103,9 @@ INTEGER8 CO_SDO_process(CO_SDO_t         *SDO,
                break;
             }
 
-            //not all segments were successfully transfered
-            if(ackseq < SDO->blksize){
-               UNSIGNED16 j = 0;
-               //move unsuccessfuly transmitted data to the beginning
-               for(i=ackseq*7; i<SDO->ODF_arg.dataLength; i++, j++)
-                  SDO->databuffer[j] = SDO->databuffer[i];
-            }
+            //move remaining data to the beginning
+            for(i=ackseq*7, j=0; i<SDO->ODF_arg.dataLength; i++, j++)
+               SDO->ODF_arg.data[j] = SDO->ODF_arg.data[i];
 
             //set remaining data length in buffer
             SDO->ODF_arg.dataLength -= ackseq * 7;
@@ -1110,7 +1121,7 @@ INTEGER8 CO_SDO_process(CO_SDO_t         *SDO,
                SDO->ODF_arg.dataLength = CO_OD_getLength(SDO, SDO->entryNo, SDO->ODF_arg.subIndex) - len;
 
                //read next data from Object dictionary function
-               abortCode = CO_SDO_readOD(SDO);
+               abortCode = CO_SDO_readOD(SDO, CO_SDO_BUFFER_SIZE);
                if(abortCode){
                   CO_SDO_abort(SDO, abortCode);
                   return -1;
@@ -1152,7 +1163,7 @@ INTEGER8 CO_SDO_process(CO_SDO_t         *SDO,
 
          //fill response data bytes
          for(i=0; i<len; i++)
-            SDO->CANtxBuff->data[i+1] = SDO->databuffer[SDO->bufferOffset++];
+            SDO->CANtxBuff->data[i+1] = SDO->ODF_arg.data[SDO->bufferOffset++];
 
          //first response byte
          SDO->CANtxBuff->data[0] = ++SDO->sequence;

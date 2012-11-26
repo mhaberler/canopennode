@@ -46,6 +46,9 @@ Additional features:
  - Added CRC function. Calculation of CRC in eeprom.c files updated to this function.
 Fixes in processor specific files:
  - !!Bugfix!! Added disable/enable interrupt calls in CO_CANsend() function. (dsPIC30, dsPIC33, PIC24, SC243)
+Note:
+ - Object dictionary editor does not work any more in Firefox 17 and above, because: https://developer.mozilla.org/en-US/docs/E4X. (It is possible to re-enable E4X in FF17: type about:config in addressbar and change javascript.options.xml.content to true.)
+
 
 
 ****************************************************************************************************

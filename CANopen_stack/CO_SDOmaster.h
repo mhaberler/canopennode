@@ -58,6 +58,79 @@
    }OD_SDOClientParameter_t;
 #endif
 
+/********************************************************************************
+*********************************************************************************
+
+	SDO MASTER DEFINITIONs
+
+*********************************************************************************/
+//Client command specifier
+#define CCS_DOWNLOAD_INITIATE       1
+#define CCS_DOWNLOAD_SEGMENT        0
+#define CCS_UPLOAD_INITIATE         2
+#define CCS_UPLOAD_SEGMENT          3
+#define CCS_ABORT                   4
+#define CCS_UPLOAD_BLOCK			5
+#define CCS_DOWNLOAD_BLOCK          6
+
+//Server Command Specifier
+#define SCS_UPLOAD_INITIATED		2
+#define SCS_UPLOAD_SEGMENT			0
+#define SCS_ABORT                   4
+#define SCS_UPLOAD_BLOCK            6
+
+
+
+
+
+// client states
+#define SDO_STATE_NOTDEFINED				0
+#define SDO_STATE_ABORT						1
+
+// DOWNLOAD EXPEDITED/SEGMENTED
+#define SDO_STATE_DOWNLOAD	10
+
+// UPLOAD EXPEDITED/SEGMENTED
+#define SDO_STATE_UPLOAD_INITIATED		20
+#define SDO_STATE_UPLOAD_REQUEST		21
+#define SDO_STATE_UPLOAD_RESPONSE		22
+
+// DOWNLOAD BLOCK
+#define SDO_STATE_BLOCKDOWNLOAD_INITIATE  		100
+#define SDO_STATE_BLOCKDOWNLOAD_INITIATE_ACK	101
+
+// UPLOAD BLOCK
+#define SDO_STATE_BLOCKUPLOAD_INITIATE 		200
+#define SDO_STATE_BLOCKUPLOAD_INITIATE_ACK	201
+#define SDO_STATE_BLOCKUPLOAD_INPROGRES		202
+#define SDO_STATE_BLOCKUPLOAD_BLOCK_ACK		203
+#define SDO_STATE_BLOCKUPLOAD_BLOCK_ACK_LAST 204
+#define SDO_STATE_BLOCKUPLOAD_BLOCK_CRC		205
+#define SDO_STATE_BLOCKUPLOAD_BLOCK_END		206
+
+// COMON
+#define SDO_STATE_IDLE	250
+
+
+// client return codes
+#define SDO_RETURN_BLOCKUPLOAD_INPROGRES 	3
+#define SDO_RETURN_WAITING_SERVER_RESPONSE 	1
+#define SDO_RETURN_COMMUNICATION_END 		0
+
+#define SDO_RETURN_END_ERROR -1
+#define SDO_RETURN_END_TMO	 -11
+#define SDO_RETURN_END_SERVERABORT -10
+
+
+
+
+
+
+
+
+
+
+
 
 /*******************************************************************************
    Object: CO_SDOclient_t
@@ -120,6 +193,7 @@ typedef struct{
 
 
    UNSIGNED16              timeoutTimer;
+   UNSIGNED16			   timeoutTimerBLOCK;
    UNSIGNED16              index;
    UNSIGNED8               subIndex;
 
@@ -135,13 +209,16 @@ typedef struct{
    CO_CANtxArray_t        *CANtxBuff;
    UNSIGNED16              CANdevTxIdx;
 
+   UNSIGNED8 				toggle;
+
 // MTJ ADD 4 SDO BLOCK TRANSFERE
    UNSIGNED8      block_state;    // state of block transfere
-   UNSIGNED8       block_seqno;
+   UNSIGNED8      block_seqno;
    UNSIGNED8      block_blksize;
 //   UNSIGNED8      block_blkcount;
    UNSIGNED8      block_noData;
-   UNSIGNED8      block_serverCRC;
+   UNSIGNED8      block_serverCRC; // delete
+   UNSIGNED8      crcEnabled;
 
 }CO_SDOclient_t;
 
@@ -286,7 +363,8 @@ INTEGER8 CO_SDOclientDownloadInitiate( CO_SDOclient_t   *SDO_C,
       1  - Waiting for server response.
       0  - End of communication.
      -1  - SDO BLOCK initiate faild, try segmented.
-     -3  - Error: communication was not properly initiaded.
+     -3  - Error: communication was not properly initiated.
+     -9  - Error: SDO server busy.
      -10 - Error in SDO communication. SDO abort code is in value pointed by pSDOabortCode.
      -11 - Error: timeout in SDO communication, SDO abort code is in value pointed by pSDOabortCode.
 *******************************************************************************/
@@ -319,6 +397,7 @@ INTEGER8 CO_SDOclientDownload(   CO_SDOclient_t      *SDO_C,
    Return:
       0  - Success.
      -2  - Wrong arguments.
+     -3  - Too small buffer size.
 *******************************************************************************/
 INTEGER8 CO_SDOclientUploadInitiate(   CO_SDOclient_t   *SDO_C,
                                        UNSIGNED16        index,
@@ -352,6 +431,7 @@ INTEGER8 CO_SDOclientUploadInitiate(   CO_SDOclient_t   *SDO_C,
       1  - Waiting for server response.
       0  - End of communication.
      -3  - Error: communication was not properly initiated.
+     -9  - Error: SDO server busy.
      -10 - Error in SDO communication. SDO abort code is in value pointed by pSDOabortCode.
      -11 - Error: timeout in SDO communication, SDO abort code is in value pointed by pSDOabortCode.
 *******************************************************************************/

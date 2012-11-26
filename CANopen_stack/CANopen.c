@@ -260,6 +260,17 @@ INTEGER16 CO_init(CO_t **ppCO){
                         CANBitRate);
    if(err){CO_delete(ppCO); return err;}
 
+#if CO_NO_CAN_MODULES >= 2
+   CO_CANsetConfigurationMode(ADDR_CAN2);
+   err = CO_CANmodule_init(
+                       &CO->CANmodule[1],
+                        ADDR_CAN2,
+                        2,
+                        0,
+                        250);
+   if(err){CO_delete(ppCO); return err;}
+#endif
+
    err = CO_SDO_init(
                        &CO->SDO,
                         0x600 + nodeId,
@@ -315,19 +326,29 @@ INTEGER16 CO_init(CO_t **ppCO){
    if(err){CO_delete(ppCO); return err;}
 
    for(i=0; i<CO_NO_RPDO; i++){
+      CO_CANmodule_t *CANdevRx = CO->CANmodule[0];
+      UNSIGNED16 CANdevRxIdx = CO_RXCAN_RPDO + i;
+
+#if CO_NO_CAN_MODULES >= 2
+      if(i >= 4){
+         CANdevRx = CO->CANmodule[1];
+         CANdevRxIdx = i-4;
+      }
+#endif
+
       err = CO_RPDO_init(
                        &CO->RPDO[i],
                         CO->EM,
                         CO->SDO,
                        &CO->NMT->operatingState,
                         nodeId,
-                        ((i<=4) ? (CAN_ID_RPDO0+i*0x100) : 0),
+                        ((i<4) ? (CAN_ID_RPDO0+i*0x100) : 0),
                         0,
                         (CO_RPDOCommPar_t*) &OD_RPDOCommunicationParameter[i],
                         (CO_RPDOMapPar_t*) &OD_RPDOMappingParameter[i],
                         0x1400+i,
                         0x1600+i,
-                        CO->CANmodule[0], CO_RXCAN_RPDO+i);
+                        CANdevRx, CANdevRxIdx);
       if(err){CO_delete(ppCO); return err;}
    }
 
@@ -338,7 +359,7 @@ INTEGER16 CO_init(CO_t **ppCO){
                         CO->SDO,
                        &CO->NMT->operatingState,
                         nodeId,
-                        ((i<=4) ? (CAN_ID_TPDO0+i*0x100) : 0),
+                        ((i<4) ? (CAN_ID_TPDO0+i*0x100) : 0),
                         0,
                         (CO_TPDOCommPar_t*) &OD_TPDOCommunicationParameter[i],
                         (CO_TPDOMapPar_t*) &OD_TPDOMappingParameter[i],

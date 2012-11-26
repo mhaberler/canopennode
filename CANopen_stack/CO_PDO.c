@@ -49,7 +49,7 @@ INTEGER16 CO_PDO_receive(void *object, CO_CANrxMsg_t *msg){
       if(RPDO->dataLength && msg->DLC < RPDO->dataLength) return CO_ERROR_RX_PDO_LENGTH;
 
       //verify message overflow (previous message was not processed yet)
-      if(RPDO->CANrxNew) return CO_ERROR_RX_PDO_OWERFLOW;
+      if(RPDO->CANrxNew) return CO_ERROR_RX_PDO_OVERFLOW;
 
       //copy data and set 'new message' flag
       RPDO->CANrxData[0] = msg->data[0];
