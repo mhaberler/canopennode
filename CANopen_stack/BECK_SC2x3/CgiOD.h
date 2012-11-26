@@ -70,13 +70,16 @@
    Variables:
       buf            - Buffer for CGI web page.
       bufSize        - Size of the above buffer.
+      SDOBuf         - Buffer for SDO data.
+      SDODataSize    - Maximum size of SDO object in SDO master.
       cgiEntry       - Holds information on the CGI function.
 *******************************************************************************/
 typedef struct{
    char          *buf;
    unsigned int   bufSize;
    CGI_Entry      cgiEntry;
-
+   unsigned char *SDOBuf;
+   unsigned int   SDODataSize;
 }CgiCli_t;
 
 
@@ -88,6 +91,7 @@ typedef struct{
    Parameters:
       ppCgiCli                - Pointer to address of Cgi OD client object <CgiCli_t>.
       bufSize                 - Size of CGI buffer.
+      SDODataSize             - Maximum size of SDO object for SDO master.
 
    Return:
       CO_ERROR_NO                - Operation completed successfully.
@@ -97,7 +101,8 @@ typedef struct{
 *******************************************************************************/
 INTEGER16 CgiCli_init_1(
       CgiCli_t        **ppCgiCli,
-      unsigned int      bufSize);
+      unsigned int      bufSize,
+      unsigned int      SDODataSize);
 
 
 /*******************************************************************************

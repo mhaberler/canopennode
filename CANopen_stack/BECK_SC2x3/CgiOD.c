@@ -37,9 +37,6 @@
 #include <stdlib.h> // for malloc, free
 
 
-#define DATA_MAX_LEN 2048
-
-
 /*******************************************************************************
    Function - hex2dec
 
@@ -96,7 +93,7 @@ void huge _pascal CgiCliFunction(rpCgiPtr CgiRequest){
          char rw = name[0];
          unsigned int nodeId, idx, sidx, len;
          char err = 0;
-         unsigned char data[DATA_MAX_LEN]; //data sent or received on CANopen
+         unsigned char *data = CgiCli->SDOBuf; //data sent or received on CANopen
          unsigned int dataLen = 0;
 
          if(!name) err++;
@@ -128,7 +125,7 @@ void huge _pascal CgiCliFunction(rpCgiPtr CgiRequest){
                unsigned int dc;
                err += hex2dec(&val[i], 2, &dc);
                data[dataLen] = dc;
-               if(++dataLen >= DATA_MAX_LEN) break;
+               if(++dataLen >= CgiCli->SDODataSize) break;
             }
 
             //verify value length
@@ -144,7 +141,7 @@ void huge _pascal CgiCliFunction(rpCgiPtr CgiRequest){
          else if(rw == 'r'){
             INTEGER8 ret;
             CO_SDOclient_setup(SDO_C, 0, 0, nodeId);
-            CO_SDOclientUploadInitiate(SDO_C, idx, sidx, data, DATA_MAX_LEN, 1);
+            CO_SDOclientUploadInitiate(SDO_C, idx, sidx, data, CgiCli->SDODataSize, 1);
             do{
                RTX_Sleep_Time(10);
                ret = CO_SDOclientUpload(SDO_C, 10, 500, &dataLen, &SDOabortCode);
@@ -218,24 +215,27 @@ void huge _pascal CgiCliFunction(rpCgiPtr CgiRequest){
 /******************************************************************************/
 INTEGER16 CgiCli_init_1(
       CgiCli_t        **ppCgiCli,
-      unsigned int      bufSize)
+      unsigned int      bufSize,
+      unsigned int      SDODataSize)
 {
    //allocate memory if not already allocated
    if((*ppCgiCli) == NULL){
-      if(((*ppCgiCli)      = (CgiCli_t*)malloc(sizeof(CgiCli_t))) == NULL){                                return CO_ERROR_OUT_OF_MEMORY;}
-      if(((*ppCgiCli)->buf = (char*)    malloc(         bufSize)) == NULL){free(*ppCgiCli); *ppCgiCli = 0; return CO_ERROR_OUT_OF_MEMORY;}
+      if(((*ppCgiCli)         = (CgiCli_t*)      malloc(sizeof(CgiCli_t))) == NULL){                                                        return CO_ERROR_OUT_OF_MEMORY;}
+      if(((*ppCgiCli)->buf    = (char*)          malloc(         bufSize)) == NULL){                        free(*ppCgiCli); *ppCgiCli = 0; return CO_ERROR_OUT_OF_MEMORY;}
+      if(((*ppCgiCli)->SDOBuf = (unsigned char*) malloc(     SDODataSize)) == NULL){free((*ppCgiCli)->buf); free(*ppCgiCli); *ppCgiCli = 0; return CO_ERROR_OUT_OF_MEMORY;}
    }
-   else if((*ppCgiCli)->buf == NULL) return CO_ERROR_ILLEGAL_ARGUMENT;
+   else if((*ppCgiCli)->buf == NULL || (*ppCgiCli)->SDOBuf == NULL) return CO_ERROR_ILLEGAL_ARGUMENT;
 
    CgiCli_t *CgiCli = *ppCgiCli; //pointer to (newly created) object
 
 
    //setup variables
    CgiCli->bufSize = bufSize;
+   CgiCli->SDODataSize = SDODataSize;
 
    //Install CGI function
    CgiCli->cgiEntry.PathPtr = "odcli";          // Name of the page
-   CgiCli->cgiEntry.method = CgiHttpGet;        // HTTP method
+   CgiCli->cgiEntry.method = CgiHttpPost;       // HTTP method
    CgiCli->cgiEntry.CgiFuncPtr = CgiCliFunction;// Function called on browser request
 
    if(CGI_Install(&CgiCli->cgiEntry) != 0)
@@ -249,6 +249,7 @@ INTEGER16 CgiCli_init_1(
 void CgiCli_delete(CgiCli_t **ppCgiCli){
    if(*ppCgiCli){
       CGI_Delete((*ppCgiCli)->cgiEntry.PathPtr);
+      free((*ppCgiCli)->SDOBuf);
       free((*ppCgiCli)->buf);
       free(*ppCgiCli);
       *ppCgiCli = 0;

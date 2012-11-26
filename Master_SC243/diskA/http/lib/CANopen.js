@@ -161,11 +161,16 @@ CANopen_t.prototype = {
    ****************************************************************************/
    SDORead: function(address, responseFunction){
       var req = new XMLHttpRequest();
-      req.open("GET", "odcli?r"+address.replace(/\s/g, ""), true);
+      var params = "r" + address.replace(/\s/g, "");
+      req.open("POST", "odcli", true);
+      req.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      req.setRequestHeader("Content-length", params.length);
+      req.setRequestHeader("Connection", "close");
+
       req.onload = function (oEvent){
          responseFunction(req.responseText);//"R NNIIIISSLLLL OK: dd dd"
       }
-      req.send(null);
+      req.send(params);
    },
 
 
@@ -183,11 +188,16 @@ CANopen_t.prototype = {
    ****************************************************************************/
    SDOWrite: function(address, data, responseFunction){
       var req = new XMLHttpRequest();
-      req.open("GET", "odcli?w"+address.replace(/\s/g, "")+"="+data.replace(/\s/g, ""), true);
+      var params = "w" + address.replace(/\s/g, "") + "=" + data.replace(/\s/g, "");
+      req.open("POST", "odcli", true);
+      req.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+      req.setRequestHeader("Content-length", params.length);
+      req.setRequestHeader("Connection", "close");
+
       req.onload = function (oEvent){
          responseFunction(req.responseText);//"W NNIIIISSLLLL OK: dd dd"
       }
-      req.send(null);
+      req.send(params);
    }
 };
 

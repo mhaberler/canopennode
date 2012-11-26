@@ -120,7 +120,7 @@ int main (void){
    //are executed by the Web server task, if a HTTP request with such a fixed
    //name comes in. This mechanism allows dynamic usage of the IPC@CHIP Web server.
    if(   CgiLog_init_1(&CgiLog, SRAM.emcyBufPtr, SRAM.emcyBufSize, OD_CANopenLog.CANLogSize, OD_CANopenLog.maxDumpFiles)
-      || CgiCli_init_1(&CgiCli, 0x8000)
+      || CgiCli_init_1(&CgiCli, 0x10000, 0x800)
       || CgiSend_init_1(&CgiSend, 1000))
    {
       printf("\nError: CGI initialization failed.");
