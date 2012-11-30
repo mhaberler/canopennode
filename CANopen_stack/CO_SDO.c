@@ -114,6 +114,7 @@ INTEGER16 CO_SDO_init(
       UNSIGNED16                    COB_IDClientToServer,
       UNSIGNED16                    COB_IDServerToClient,
       UNSIGNED16                    ObjDictIndex_SDOServerParameter,
+      CO_SDO_t                     *parentSDO,
 const CO_OD_entry_t                *OD,
       UNSIGNED16                    ODSize,
       UNSIGNED8                     nodeId,
@@ -125,14 +126,40 @@ const CO_OD_entry_t                *OD,
    //allocate memory if not already allocated
    if((*ppSDO) == NULL){
       if(((*ppSDO) = (CO_SDO_t *) malloc(sizeof(CO_SDO_t))) == NULL){return CO_ERROR_OUT_OF_MEMORY;}
-      (*ppSDO)->ODExtensions = 0;   //Memory is allocated in CO_OD_configure() function.
+      (*ppSDO)->ODExtensions = 0;
    }
 
    SDO = *ppSDO; //pointer to (newly created) object
 
+   //configure own object dictionary
+   if(parentSDO == 0){
+      UNSIGNED16 i;
+
+      //setup OD
+      SDO->ownOD = 1;
+      SDO->OD = OD;
+      SDO->ODSize = ODSize;
+
+      //allocate memory for ODExtensions
+      SDO->ODExtensions = (void*) malloc(ODSize * sizeof(CO_OD_extension_t *));
+      if(SDO->ODExtensions == 0){
+         free(*ppSDO);
+         *ppSDO = 0;
+         return CO_ERROR_OUT_OF_MEMORY;
+      }
+
+      //clear pointers in ODExtensions
+      for(i=0; i<ODSize; i++) SDO->ODExtensions[i] = 0;
+   }
+   //copy object dictionary from parent
+   else{
+      SDO->ownOD = 0;
+      SDO->OD = parentSDO->OD;
+      SDO->ODSize = parentSDO->ODSize;
+      SDO->ODExtensions = parentSDO->ODExtensions;
+   }
+
    //Configure object variables
-   SDO->OD = OD;
-   SDO->ODSize = ODSize;
    SDO->nodeId = nodeId;
    SDO->state = STATE_IDLE;
    SDO->CANrxNew = 0;
@@ -166,18 +193,18 @@ const CO_OD_entry_t                *OD,
 
 /******************************************************************************/
 void CO_SDO_delete(CO_SDO_t **ppSDO){
-   CO_SDO_t *SDO = *ppSDO;
-
-   if(SDO){
-      if(SDO->ODExtensions){
+   if(*ppSDO){
+      CO_SDO_t *SDO = *ppSDO;
+      if(SDO->ODExtensions && SDO->ownOD){
          UNSIGNED16 i;
          for(i=0; i<SDO->ODSize; i++){
             if(SDO->ODExtensions[i]) free(SDO->ODExtensions[i]);
          }
          free(SDO->ODExtensions);
       }
-      free(SDO);
-      SDO = 0;
+
+      free(*ppSDO);
+      *ppSDO = 0;
    }
 }
 
@@ -194,16 +221,6 @@ UNSIGNED16 CO_OD_configure(CO_SDO_t      *SDO,
 
    entryNo = CO_OD_find(SDO, index);
    if(entryNo == 0xFFFF) return 0xFFFF;   //index not found in Object dictionary
-
-   //allocate ODExtensions array of pointers if not allready allocated
-   if(SDO->ODExtensions == 0){
-      SDO->ODExtensions = (void*) malloc(SDO->ODSize * sizeof(CO_OD_extension_t *));
-      if(SDO->ODExtensions == 0) return 0xFFFF;   //memory allocation failed
-
-      //clear pointers
-      for(i=0; i<SDO->ODSize; i++) SDO->ODExtensions[i] = 0;
-   }
-
 
    //allocate CO_OD_extension_t
    CO_OD_extension_t *ext = SDO->ODExtensions[entryNo];

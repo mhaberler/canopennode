@@ -276,6 +276,7 @@ INTEGER16 CO_init(CO_t **ppCO){
                         0x600 + nodeId,
                         0x580 + nodeId,
                         0x1200,
+                        0,
                        &CO_OD[0],
                         CO_OD_NoOfElements,
                         nodeId,

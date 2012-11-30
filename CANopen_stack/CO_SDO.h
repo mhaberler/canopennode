@@ -518,6 +518,7 @@ typedef struct{
    Object controls the SDO server.
 
    Variables:
+      ownOD             - Internal flag indicates, that this object has own OD.
       OD                - Pointer to the <Object dictionary>.
       ODSize            - Size of the <Object dictionary>.
       ODExtensions      - Pointer to array of pointers to <CO_OD_extension_t>
@@ -553,6 +554,7 @@ typedef struct{
    UNSIGNED8                     CANrxData[8];   //take care for correct (word) alignment!
    UNSIGNED8                     databuffer[CO_SDO_BUFFER_SIZE];  //take care for correct (word) alignment!
 
+   UNSIGNED8                     ownOD;
    const CO_OD_entry_t          *OD;
    UNSIGNED16                    ODSize;
    CO_OD_extension_t           **ODExtensions;
@@ -618,6 +620,11 @@ UNSIGNED32 CO_ODF_1200(CO_ODF_arg_t *ODF_arg);
       COB_IDServerToClient       - 0x580 + nodeId by default.
       ObjDictIndex_SDOServerParameter - Index in Object dictionary.
 
+      parentSDO                  - Pointer to SDO object, which contains object
+                                   dictionary and its extension. For first (default)
+                                   SDO object this argument must be NULL. If this
+                                   argument is specified, then OD and ODSize
+                                   arguments are ignored.
       OD                         - Pointer to <Object dictionary>.
       ODSize                     - Size of <Object dictionary>.
       nodeId                     - CANopen Node ID of this device. Value will be added to
@@ -638,6 +645,7 @@ INTEGER16 CO_SDO_init(
       UNSIGNED16                    COB_IDClientToServer,
       UNSIGNED16                    COB_IDServerToClient,
       UNSIGNED16                    ObjDictIndex_SDOServerParameter,
+      CO_SDO_t                     *parentSDO,
 const CO_OD_entry_t                *OD,
       UNSIGNED16                    ODSize,
       UNSIGNED8                     nodeId,
