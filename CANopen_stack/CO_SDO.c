@@ -288,7 +288,7 @@ UNSIGNED16 CO_OD_getLength(CO_SDO_t *SDO, UNSIGNED16 entryNo, UNSIGNED8 subIndex
       else
          return object->length;
    }
-   else if(object->length){         //Object type is Array
+   else if(object->attribute != 0){ //Object type is Array
       if(subIndex == 0) return 1;
       else if(object->pData == 0)//data type is domain
          return CO_SDO_BUFFER_SIZE;
@@ -312,7 +312,7 @@ UNSIGNED16 CO_OD_getAttribute(CO_SDO_t *SDO, UNSIGNED16 entryNo, UNSIGNED8 subIn
    if(object->maxSubIndex == 0){    //Object type is Var
       return object->attribute;
    }
-   else if(object->length){         //Object type is Array
+   else if(object->attribute != 0){ //Object type is Array
       UNSIGNED16 attr = object->attribute;
       if(subIndex == 0){
          //First subIndex is readonly
@@ -336,7 +336,7 @@ void* CO_OD_getDataPointer(CO_SDO_t *SDO, UNSIGNED16 entryNo, UNSIGNED8 subIndex
    if(object->maxSubIndex == 0){    //Object type is Var
       return object->pData;
    }
-   else if(object->length){         //Object Type is Array
+   else if(object->attribute != 0){ //Object type is Array
       if(subIndex==0){
          //this is the data, for the subIndex 0 in the array
          return (void*) &object->maxSubIndex;
