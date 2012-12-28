@@ -192,7 +192,7 @@ UNSIGNED32 CO_PDOfindMap(  CO_SDO_t      *SDO,
 
    attr = CO_OD_getAttribute(SDO, entryNo, subIndex);
    //Is object Mappable for RPDO?
-   if(R_T==0 && !(attr&CO_ODA_RPDO_MAPABLE && attr&CO_ODA_WRITEABLE && attr&CO_ODA_MEM_RAM)) return 0x06040041L;   //Object cannot be mapped to the PDO.
+   if(R_T==0 && !(attr&CO_ODA_RPDO_MAPABLE && attr&CO_ODA_WRITEABLE)) return 0x06040041L;   //Object cannot be mapped to the PDO.
    //Is object Mappable for TPDO?
    if(R_T!=0 && !(attr&CO_ODA_TPDO_MAPABLE && attr&CO_ODA_READABLE)) return 0x06040041L;   //Object cannot be mapped to the PDO.
 
@@ -214,7 +214,7 @@ UNSIGNED32 CO_PDOfindMap(  CO_SDO_t      *SDO,
 
    //setup change of state flags
    if(attr&CO_ODA_TPDO_DETECT_COS){
-      UNSIGNED8 i;
+      INTEGER16 i;
       for(i=*pLength-dataLen; i<*pLength; i++){
          *pSendIfCOSFlags |= 1<<i;
       }
@@ -226,21 +226,22 @@ UNSIGNED32 CO_PDOfindMap(  CO_SDO_t      *SDO,
 
 /******************************************************************************/
 UNSIGNED32 CO_RPDOconfigMap(CO_RPDO_t* RPDO, UNSIGNED8 noOfMappedObjects){
-   UNSIGNED8 i;
+   INTEGER16 i;
    UNSIGNED8 length = 0;
    UNSIGNED32 ret = 0;
    const UNSIGNED32* pMap = &RPDO->RPDOMapPar->mappedObject1;
 
    for(i=noOfMappedObjects; i>0; i--){
-      UNSIGNED8 j;
+      INTEGER16 j;
       UNSIGNED8* pData;
       UNSIGNED8 dummy = 0;
       UNSIGNED8 prevLength = length;
       UNSIGNED8 MBvar;
+      UNSIGNED32 map = *(pMap++);
 
       //function do much checking of errors in map
       ret = CO_PDOfindMap( RPDO->SDO,
-                           *(pMap++),
+                           map,
                            0,
                            &pData,
                            &length,
@@ -248,7 +249,7 @@ UNSIGNED32 CO_RPDOconfigMap(CO_RPDO_t* RPDO, UNSIGNED8 noOfMappedObjects){
                            &MBvar);
       if(ret){
          length = 0;
-         CO_errorReport(RPDO->EM, ERROR_PDO_WRONG_MAPPING, ret);
+         CO_errorReport(RPDO->EM, ERROR_PDO_WRONG_MAPPING, map);
          break;
       }
 
@@ -278,7 +279,7 @@ UNSIGNED32 CO_RPDOconfigMap(CO_RPDO_t* RPDO, UNSIGNED8 noOfMappedObjects){
 
 /******************************************************************************/
 UNSIGNED32 CO_TPDOconfigMap(CO_TPDO_t* TPDO, UNSIGNED8 noOfMappedObjects){
-   UNSIGNED8 i;
+   INTEGER16 i;
    UNSIGNED8 length = 0;
    UNSIGNED32 ret = 0;
    const UNSIGNED32* pMap = &TPDO->TPDOMapPar->mappedObject1;
@@ -286,14 +287,15 @@ UNSIGNED32 CO_TPDOconfigMap(CO_TPDO_t* TPDO, UNSIGNED8 noOfMappedObjects){
    TPDO->sendIfCOSFlags = 0;
 
    for(i=noOfMappedObjects; i>0; i--){
-      UNSIGNED8 j;
+      INTEGER16 j;
       UNSIGNED8* pData;
       UNSIGNED8 prevLength = length;
       UNSIGNED8 MBvar;
+      UNSIGNED32 map = *(pMap++);
 
       //function do much checking of errors in map
       ret = CO_PDOfindMap( TPDO->SDO,
-                           *(pMap++),
+                           map,
                            1,
                            &pData,
                            &length,
@@ -301,7 +303,7 @@ UNSIGNED32 CO_TPDOconfigMap(CO_TPDO_t* TPDO, UNSIGNED8 noOfMappedObjects){
                            &MBvar);
       if(ret){
          length = 0;
-         CO_errorReport(TPDO->EM, ERROR_PDO_WRONG_MAPPING, ret);
+         CO_errorReport(TPDO->EM, ERROR_PDO_WRONG_MAPPING, map);
          break;
       }
 
@@ -506,7 +508,7 @@ UNSIGNED32 CO_ODF_RPDOmap(CO_ODF_arg_t *ODF_arg){
 
       if(*value > 8)
          return 0x06090031L;  //Value of parameter written too high.
-      
+
       //configure mapping
       return CO_RPDOconfigMap(RPDO, *value);
    }
@@ -752,7 +754,7 @@ UNSIGNED8 CO_TPDOisCOS(CO_TPDO_t *TPDO){
 
 /******************************************************************************/
 INTEGER16 CO_TPDOsend(CO_TPDO_t *TPDO){
-   UNSIGNED8 i;
+   INTEGER16 i;
    UNSIGNED8* pPDOdataByte;
    UNSIGNED8** ppODdataByte;
 
@@ -772,7 +774,7 @@ INTEGER16 CO_TPDOsend(CO_TPDO_t *TPDO){
 void CO_RPDO_process(CO_RPDO_t *RPDO){
 
    if(RPDO->CANrxNew && RPDO->valid && *RPDO->operatingState == CO_NMT_OPERATIONAL){
-      UNSIGNED8 i;
+      INTEGER16 i;
       UNSIGNED8* pPDOdataByte;
       UNSIGNED8** ppODdataByte;
 

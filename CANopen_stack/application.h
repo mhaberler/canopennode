@@ -107,5 +107,5 @@ Topic: Receive and transmit high priority interrupt flow chart.
 void programStart(void);
 void communicationReset(void);
 void programEnd(void);
-void programAsync(unsigned int timer1msDiff); //time difference since last call
+void programAsync(UNSIGNED16 timer1msDiff); //time difference since last call
 void program1ms(void);

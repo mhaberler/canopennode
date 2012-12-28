@@ -59,7 +59,10 @@ UNSIGNED32 CO_ODF_1010(CO_ODF_arg_t *ODF_arg){
             rename(EE_ROM_FILE_PATH "OD_ROM01.dat", "OD_ROM01.old");
             //open a file
             FILE *fp = fopen(EE_ROM_FILE_PATH "OD_ROM01.dat", "wb");
-            if(!fp) return 0x06060000;   //Access failed due to an hardware error.
+            if(!fp){
+               rename(EE_ROM_FILE_PATH "OD_ROM01.old", "OD_ROM01.dat");
+               return 0x06060000;   //Access failed due to an hardware error.
+            }
 
             //write data to the file
             fwrite((const void *)EE->OD_ROMAddress, 1, EE->OD_ROMSize, fp);
@@ -67,6 +70,7 @@ UNSIGNED32 CO_ODF_1010(CO_ODF_arg_t *ODF_arg){
             UNSIGNED16 CRC = crc16_ccitt((unsigned char*)EE->OD_ROMAddress, EE->OD_ROMSize, 0);
             fwrite((const void *)&CRC, 1, 2, fp);
             fclose(fp);
+
             //verify data
             void *buf = malloc(EE->OD_ROMSize + 4);
             if(buf){
@@ -82,10 +86,14 @@ UNSIGNED32 CO_ODF_1010(CO_ODF_arg_t *ODF_arg){
                }
                free(buf);
                if(cnt == (EE->OD_ROMSize + 2) && CRC == CRC2){
-                  //write successfull
+                  //write successful
                   return 0;
                }
             }
+            //error, set back the old file
+            remove(EE_ROM_FILE_PATH "OD_ROM01.dat");
+            rename(EE_ROM_FILE_PATH "OD_ROM01.old", "OD_ROM01.dat");
+
             return 0x06060000;   //Access failed due to an hardware error.
          }
          else
@@ -117,6 +125,17 @@ UNSIGNED32 CO_ODF_1011(CO_ODF_arg_t *ODF_arg){
             //rename current file to .old, so it no longer exist
             remove(EE_ROM_FILE_PATH "OD_ROM01.old");
             rename(EE_ROM_FILE_PATH "OD_ROM01.dat", "OD_ROM01.old");
+
+            //create an empty file
+            FILE *fp = fopen(EE_ROM_FILE_PATH "OD_ROM01.dat", "wt");
+            if(!fp){
+               rename(EE_ROM_FILE_PATH "OD_ROM01.old", "OD_ROM01.dat");
+               return 0x06060000;   //Access failed due to an hardware error.
+            }
+            //write one byte '-' to the file
+            fputc('-', fp);
+            fclose(fp);
+
             return 0;
          }
          else
@@ -179,17 +198,21 @@ INTEGER16 EE_init_1(
          CRC[1] = crc16_ccitt((unsigned char*)buf, EE->OD_ROMSize, 0);
          fclose(fp);
       }
-      if(cnt != (EE->OD_ROMSize + 2)){
+
+      if(cnt == 1 && *((char*)buf) == '-'){
+         ret = CO_ERROR_NO; //file is empty, default values will be used, no error
+      }
+      else if(cnt != (EE->OD_ROMSize + 2)){
          ret = CO_ERROR_DATA_CORRUPT; //file length does not match
       }
       else if(CRC[0] != CRC[1]){
          ret = CO_ERROR_CRC;       //CRC does not match
       }
-
-      if(!ret){
-         //copy data into object dictionary
+      else{
+         //no errors, copy data into object dictionary
          memcpy(EE->OD_ROMAddress, buf, EE->OD_ROMSize);
       }
+
       free(buf);
       return ret;
    }

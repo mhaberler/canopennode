@@ -77,6 +77,8 @@ void huge _pascal CgiCliFunction(rpCgiPtr CgiRequest){
    extern CO_t *CO;
    CO_SDOclient_t *SDO_C = CO->SDOclient;
    unsigned int bufLen = 0;   //current length of the buffer
+   unsigned int timeouts = 0;
+   const unsigned int maxTimeouts = 5;
 
    //Prepare function, which will wake this task after CAN SDO response is
    //received (inside CAN receive interrupt).
@@ -147,6 +149,9 @@ void huge _pascal CgiCliFunction(rpCgiPtr CgiRequest){
                ret = CO_SDOclientUpload(SDO_C, 10, 500, &dataLen, &SDOabortCode);
             }while(ret > 0);
 
+            if(ret == -11) timeouts++;
+            else           timeouts = 0;
+
             if(SDOabortCode){
                buf += sprintf(buf, "R %02X%04X%02X%X AB: %08X\n",
                               nodeId, idx, sidx, dataLen, (unsigned int)SDOabortCode);
@@ -168,6 +173,9 @@ void huge _pascal CgiCliFunction(rpCgiPtr CgiRequest){
                ret = CO_SDOclientDownload(SDO_C, 10, 500, &SDOabortCode);
             }while(ret > 0);
 
+            if(ret == -11) timeouts++;
+            else           timeouts = 0;
+
             if(SDOabortCode){
                buf += sprintf(buf, "W %02X%04X%02X%X AB: %08X\n",
                               nodeId, idx, sidx, dataLen, (unsigned int)SDOabortCode);
@@ -183,6 +191,11 @@ void huge _pascal CgiCliFunction(rpCgiPtr CgiRequest){
          //calculate buffer length, if not enough space for next object, break
          bufLen = (unsigned int)(buf - CgiCli->buf);
          if((bufLen+1000) > CgiCli->bufSize){
+            break;
+         }
+
+         //if no response from remote node for multiple times, break the loop
+         if(timeouts > maxTimeouts){
             break;
          }
       }

@@ -47,16 +47,16 @@
 
 
 //constants
-   #define CHIP_SELECT          1            //Chip select to use
-   #define OFFSET_LED_WRITE     0            //offset of LED output register
-   #define OFFSET_LED_READ      1            //offset of LED input register
-   #define OFFSET_DIP_READ      0            //offset of dip switch input register
+   #define CHIP_SELECT        1                 //Chip select to use
+   #define OFFSET_LED_WRITE   0                 //offset of LED output register
+   #define OFFSET_LED_READ    1                 //offset of LED input register
+   #define OFFSET_DIP_READ    0                 //offset of dip switch input register
 
 
 //Global variables
-   extern CO_t *CO;                          //pointer to external CANopen object
-   unsigned char *gBaseAddr = NULL;          //hardware base address
-   UNSIGNED8 errorRegisterPrev;
+   extern CO_t               *CO;               //pointer to CANopen object defined externally
+   UNSIGNED8                  errorRegisterPrev;
+   unsigned char             *gBaseAddr = NULL; //hardware base address
 
 
 //LED diodes. Two LSB bits are CANopen standard diodes.
@@ -85,6 +85,7 @@
    #define ERROR_TEST2_CRITICAL                       0x40, 0x5000
 
 
+#ifdef OD_testVar
 /*******************************************************************************
    Function - ODF_testDomain
 
@@ -92,8 +93,9 @@
 
    For more information see topic <Object dictionary function>.
 *******************************************************************************/
-#define ODF_testDomain_index     0x2120
-UNSIGNED32 ODF_testDomain(CO_ODF_arg_t *ODF_arg);
+   #define ODF_testDomain_index     0x2120
+   UNSIGNED32 ODF_testDomain(CO_ODF_arg_t *ODF_arg);
+#endif
 
 
 /******************************************************************************/
@@ -117,30 +119,35 @@ void programStart(void){
       printf("\nError: Could not enable chip select.");
 
 
-   CAN_RUN_LED_ON(); CAN_ERROR_LED_OFF(); WRITE_LEDS(0)
+   CAN_RUN_LED_OFF(); CAN_ERROR_LED_ON();
+   WRITE_LEDS(0)
 }
 
 
 /******************************************************************************/
 void communicationReset(void){
-   CAN_RUN_LED_OFF(); CAN_ERROR_LED_OFF(); WRITE_LEDS(0)
    OD_writeOutput8Bit[0] = 0;
    OD_writeOutput8Bit[1] = 0;
    errorRegisterPrev = 0;
 
-   //Configure Object dictionary entry at index 0x2120
+#ifdef OD_testVar
    CO_OD_configure(CO->SDO, ODF_testDomain_index, ODF_testDomain, 0);
+#endif
+
+   CAN_RUN_LED_OFF(); CAN_ERROR_LED_OFF();
+   WRITE_LEDS(0)
 }
 
 
 /******************************************************************************/
 void programEnd(void){
-   CAN_RUN_LED_OFF(); CAN_ERROR_LED_OFF(); WRITE_LEDS(0)
+   CAN_RUN_LED_OFF(); CAN_ERROR_LED_OFF();
+   WRITE_LEDS(0)
 }
 
 
 /******************************************************************************/
-void programAsync(unsigned int timer1msDiff){
+void programAsync(UNSIGNED16 timer1msDiff){
 
    if(LED_GREEN_RUN(CO->NMT))CAN_RUN_LED_ON();   else CAN_RUN_LED_OFF();
    if(LED_RED_ERROR(CO->NMT))CAN_ERROR_LED_ON(); else CAN_ERROR_LED_OFF();

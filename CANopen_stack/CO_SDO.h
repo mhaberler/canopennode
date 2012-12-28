@@ -522,8 +522,8 @@ typedef struct{
       OD                - Pointer to the <Object dictionary>.
       ODSize            - Size of the <Object dictionary>.
       ODExtensions      - Pointer to array of pointers to <CO_OD_extension_t>
-                          object. Array and separate objects are generated
-                          dynamically (malloc) inside <CO_OD_configure>.
+                          object. Separate objects are generated dynamically
+                          (malloc) inside <CO_OD_configure>.
 
       databuffer        - SDO data buffer of size <SDO buffer size>.
       bufferOffset      - Offset in buffer of next data segment being read/written.

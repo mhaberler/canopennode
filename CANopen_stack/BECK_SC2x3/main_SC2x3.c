@@ -151,6 +151,7 @@ int main (void){
       err = CO_init(&CO);
       if(err){
          printf("\nError: CANopen initialization failed.");
+         return 0;
          //CO_errorReport(CO->EM, ERROR_MEMORY_ALLOCATION_ERROR, err);
       }
 

@@ -24,7 +24,8 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-   Author: Janez Paternoster
+   Author:  Janez Paternoster
+            Matej Severkar
 
 *******************************************************************************/
 
@@ -58,80 +59,6 @@
    }OD_SDOClientParameter_t;
 #endif
 
-/********************************************************************************
-*********************************************************************************
-
-	SDO MASTER DEFINITIONs
-
-*********************************************************************************/
-//Client command specifier
-#define CCS_DOWNLOAD_INITIATE       1
-#define CCS_DOWNLOAD_SEGMENT        0
-#define CCS_UPLOAD_INITIATE         2
-#define CCS_UPLOAD_SEGMENT          3
-#define CCS_ABORT                   4
-#define CCS_UPLOAD_BLOCK			5
-#define CCS_DOWNLOAD_BLOCK          6
-
-//Server Command Specifier
-#define SCS_UPLOAD_INITIATED		2
-#define SCS_UPLOAD_SEGMENT			0
-#define SCS_ABORT                   4
-#define SCS_UPLOAD_BLOCK            6
-
-
-
-
-
-// client states
-#define SDO_STATE_NOTDEFINED				0
-#define SDO_STATE_ABORT						1
-
-// DOWNLOAD EXPEDITED/SEGMENTED
-#define SDO_STATE_DOWNLOAD	10
-
-// UPLOAD EXPEDITED/SEGMENTED
-#define SDO_STATE_UPLOAD_INITIATED		20
-#define SDO_STATE_UPLOAD_REQUEST		21
-#define SDO_STATE_UPLOAD_RESPONSE		22
-
-// DOWNLOAD BLOCK
-#define SDO_STATE_BLOCKDOWNLOAD_INITIATE  		100
-#define SDO_STATE_BLOCKDOWNLOAD_INITIATE_ACK	101
-
-// UPLOAD BLOCK
-#define SDO_STATE_BLOCKUPLOAD_INITIATE 		200
-#define SDO_STATE_BLOCKUPLOAD_INITIATE_ACK	201
-#define SDO_STATE_BLOCKUPLOAD_INPROGRES		202
-#define SDO_STATE_BLOCKUPLOAD_BLOCK_ACK		203
-#define SDO_STATE_BLOCKUPLOAD_BLOCK_ACK_LAST 204
-#define SDO_STATE_BLOCKUPLOAD_BLOCK_CRC		205
-#define SDO_STATE_BLOCKUPLOAD_BLOCK_END		206
-
-// COMON
-#define SDO_STATE_IDLE	250
-
-
-// client return codes
-#define SDO_RETURN_BLOCKUPLOAD_INPROGRES 	3
-#define SDO_RETURN_WAITING_SERVER_RESPONSE 	1
-#define SDO_RETURN_COMMUNICATION_END 		0
-
-#define SDO_RETURN_END_ERROR -1
-#define SDO_RETURN_END_TMO	 -11
-#define SDO_RETURN_END_SERVERABORT -10
-
-
-
-
-
-
-
-
-
-
-
-
 /*******************************************************************************
    Object: CO_SDOclient_t
 
@@ -145,26 +72,27 @@
                        client is accessing object dictionary from its own device.
                        If NULL, it will be ignored.
 
-      state          - Internal state of the SDO client:
-                        Bit0 = 0: not used.
-                        Bit1 = 1: segmented download in progress.
-                        Bit2 = 1: segmented upload in progress.
-                        Bit3 = 0: not used.
-                        Bit4: toggled bit from previous object.
-                        Bit5 = 1: download initiated.
-                        Bit6 = 1: upload initiated.
+      state          - Internal state of the SDO client
+
       buffer         - Pointer to data buffer supplied by user.
       bufferSize     - By download application indicates data size in buffer,
                        by upload application indicates buffer size.
       bufferOffset   - Offset in buffer of next data segment being read/written.
+
+      dataSize       - Block transfer; data length to be uploaded
+      dataSizeTransfered - Block transfer; data length transfered
+
       timeoutTimer   - Timeout timer for SDO communication.
+
+      timeoutTimerBLOCK - Timeout timer for SDO block transfer
+
       index          - Index of current object in Object Dictionary.
       subIndex       - Subindex of current object in Object Dictionary.
 
       CANdevRx       - CAN device for SDO client reception <CO_CANmodule_t>.
       CANdevRxIdx    - Index of receive buffer for SDO client reception.
       CANrxNew       - Flag indicates, if new SDO message received from CAN bus.
-                       It is not cleared, untill received message is completely processed.
+                       It is not cleared, until received message is completely processed.
       CANrxData      - 8 data bytes of the received message.
 
       pFunctSignal   - Pointer to optional external function. If defined, it is
@@ -176,6 +104,17 @@
       CANdevTx       - Pointer to CAN device used for SDO client transmission <CO_CANmodule_t>.
       CANtxBuff      - CAN transmit buffer inside CANdev for CAN tx message.
       CANdevTxIdx    - Index of CAN device TX buffer used for SDO client.
+
+      toggle         - SDO segmented transfer; toggle bit toggled with each subsequent
+      pst            - SDO block transfer; server threshold for switch back to segmented transfer,
+                       set in CO_SDOclient_init()
+      block_size_max - SDO block transfer; max size of block, set in CO_SDOclient_init ()
+      block_seqno    - SDO block transfer; last sector number
+      block_blksize  - SDO block transfer; block size in current transfer
+      block_noData   - SDO block transfer; number of bytes in last segment that do not contain data
+      crcEnabled     - SDO block transfer; server CRC support
+
+
 *******************************************************************************/
 typedef struct{
    OD_SDOClientParameter_t *ObjDict_SDOClientParameter;
@@ -184,16 +123,15 @@ typedef struct{
    UNSIGNED8               state;
    UNSIGNED8              *buffer;
 
-   UNSIGNED32              dataSize;
-   UNSIGNED32              dataSizeTransfered;
-
    UNSIGNED32              bufferSize;
    UNSIGNED32              bufferOffset;
    UNSIGNED32              bufferOffsetACK;
 
+   UNSIGNED32              dataSize;
+   UNSIGNED32              dataSizeTransfered;
 
    UNSIGNED16              timeoutTimer;
-   UNSIGNED16			   timeoutTimerBLOCK;
+   UNSIGNED16              timeoutTimerBLOCK;
    UNSIGNED16              index;
    UNSIGNED8               subIndex;
 
@@ -209,16 +147,13 @@ typedef struct{
    CO_CANtxArray_t        *CANtxBuff;
    UNSIGNED16              CANdevTxIdx;
 
-   UNSIGNED8 				toggle;
-
-// MTJ ADD 4 SDO BLOCK TRANSFERE
-   UNSIGNED8      block_state;    // state of block transfere
-   UNSIGNED8      block_seqno;
-   UNSIGNED8      block_blksize;
-//   UNSIGNED8      block_blkcount;
-   UNSIGNED8      block_noData;
-   UNSIGNED8      block_serverCRC; // delete
-   UNSIGNED8      crcEnabled;
+   UNSIGNED8               toggle;
+   UNSIGNED8               pst;
+   UNSIGNED8               block_size_max;
+   UNSIGNED8               block_seqno;
+   UNSIGNED8               block_blksize;
+   UNSIGNED8               block_noData;
+   UNSIGNED8               crcEnabled;
 
 }CO_SDOclient_t;
 
@@ -362,7 +297,7 @@ INTEGER8 CO_SDOclientDownloadInitiate( CO_SDOclient_t   *SDO_C,
       2  - Server responded, new client request was sent.
       1  - Waiting for server response.
       0  - End of communication.
-     -1  - SDO BLOCK initiate faild, try segmented.
+     -1  - SDO BLOCK initiate failed, try segmented.
      -3  - Error: communication was not properly initiated.
      -9  - Error: SDO server busy.
      -10 - Error in SDO communication. SDO abort code is in value pointed by pSDOabortCode.
