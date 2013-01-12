@@ -128,28 +128,31 @@ const CO_OD_entry_t                *OD,
       if(((*ppSDO) = (CO_SDO_t *) malloc(sizeof(CO_SDO_t))) == NULL){return CO_ERROR_OUT_OF_MEMORY;}
       (*ppSDO)->ODExtensions = 0;
    }
+   else if((*ppSDO)->ODExtensions == NULL) return CO_ERROR_ILLEGAL_ARGUMENT;
 
    SDO = *ppSDO; //pointer to (newly created) object
 
    //configure own object dictionary
    if(parentSDO == 0){
-      UNSIGNED16 i;
-
       //setup OD
       SDO->ownOD = 1;
       SDO->OD = OD;
       SDO->ODSize = ODSize;
 
-      //allocate memory for ODExtensions
-      SDO->ODExtensions = (void*) malloc(ODSize * sizeof(CO_OD_extension_t *));
-      if(SDO->ODExtensions == 0){
-         free(*ppSDO);
-         *ppSDO = 0;
-         return CO_ERROR_OUT_OF_MEMORY;
-      }
+      //allocate memory for ODExtensions, if not allready allocated
+      if(SDO->ODExtensions == NULL){
+         UNSIGNED16 i;
 
-      //clear pointers in ODExtensions
-      for(i=0; i<ODSize; i++) SDO->ODExtensions[i] = 0;
+         SDO->ODExtensions = (void*) malloc(ODSize * sizeof(CO_OD_extension_t *));
+         if(SDO->ODExtensions == 0){
+            free(*ppSDO);
+            *ppSDO = 0;
+            return CO_ERROR_OUT_OF_MEMORY;
+         }
+
+         //clear pointers in ODExtensions
+         for(i=0; i<ODSize; i++) SDO->ODExtensions[i] = 0;
+      }
    }
    //copy object dictionary from parent
    else{
@@ -225,7 +228,7 @@ UNSIGNED16 CO_OD_configure(CO_SDO_t      *SDO,
    //allocate CO_OD_extension_t
    CO_OD_extension_t *ext = SDO->ODExtensions[entryNo];
    maxSubIndex = SDO->OD[entryNo].maxSubIndex;
-   if(ext == 0){
+   if(ext == NULL){
       ext = (CO_OD_extension_t*) malloc(sizeof(CO_OD_extension_t) + maxSubIndex);
       if(ext == 0) return 0xFFFF;   //memory allocation failed
       SDO->ODExtensions[entryNo] = ext;
