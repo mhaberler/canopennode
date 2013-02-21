@@ -55,12 +55,12 @@ UNSIGNED32 CO_ODF_1010(CO_ODF_arg_t *ODF_arg){
          if(valueCopy == 0x65766173){
             //store parameters
             //rename current file to .old
-            remove(EE_ROM_FILE_PATH "OD_ROM01.old");
-            rename(EE_ROM_FILE_PATH "OD_ROM01.dat", "OD_ROM01.old");
+            remove(EE_ROM_FILENAME_OLD);
+            rename(EE_ROM_FILENAME, EE_ROM_FILENAME_OLD);
             //open a file
-            FILE *fp = fopen(EE_ROM_FILE_PATH "OD_ROM01.dat", "wb");
+            FILE *fp = fopen(EE_ROM_FILENAME, "wb");
             if(!fp){
-               rename(EE_ROM_FILE_PATH "OD_ROM01.old", "OD_ROM01.dat");
+               rename(EE_ROM_FILENAME_OLD, EE_ROM_FILENAME);
                return 0x06060000;   //Access failed due to an hardware error.
             }
 
@@ -74,7 +74,7 @@ UNSIGNED32 CO_ODF_1010(CO_ODF_arg_t *ODF_arg){
             //verify data
             void *buf = malloc(EE->OD_ROMSize + 4);
             if(buf){
-               fp = fopen(EE_ROM_FILE_PATH "OD_ROM01.dat", "rb");
+               fp = fopen(EE_ROM_FILENAME, "rb");
                UNSIGNED32 cnt = 0;
                UNSIGNED16 CRC2 = 0;
                if(fp){
@@ -91,8 +91,8 @@ UNSIGNED32 CO_ODF_1010(CO_ODF_arg_t *ODF_arg){
                }
             }
             //error, set back the old file
-            remove(EE_ROM_FILE_PATH "OD_ROM01.dat");
-            rename(EE_ROM_FILE_PATH "OD_ROM01.old", "OD_ROM01.dat");
+            remove(EE_ROM_FILENAME);
+            rename(EE_ROM_FILENAME_OLD, EE_ROM_FILENAME);
 
             return 0x06060000;   //Access failed due to an hardware error.
          }
@@ -123,13 +123,13 @@ UNSIGNED32 CO_ODF_1011(CO_ODF_arg_t *ODF_arg){
          if(valueCopy == 0x64616F6C){
             //restore default parameters
             //rename current file to .old, so it no longer exist
-            remove(EE_ROM_FILE_PATH "OD_ROM01.old");
-            rename(EE_ROM_FILE_PATH "OD_ROM01.dat", "OD_ROM01.old");
+            remove(EE_ROM_FILENAME_OLD);
+            rename(EE_ROM_FILENAME, EE_ROM_FILENAME_OLD);
 
             //create an empty file
-            FILE *fp = fopen(EE_ROM_FILE_PATH "OD_ROM01.dat", "wt");
+            FILE *fp = fopen(EE_ROM_FILENAME, "wt");
             if(!fp){
-               rename(EE_ROM_FILE_PATH "OD_ROM01.old", "OD_ROM01.dat");
+               rename(EE_ROM_FILENAME_OLD, EE_ROM_FILENAME);
                return 0x06060000;   //Access failed due to an hardware error.
             }
             //write one byte '-' to the file
@@ -188,7 +188,7 @@ INTEGER16 EE_init_1(
    void *buf = malloc(EE->OD_ROMSize);
    if(buf){
       INTEGER16 ret = CO_ERROR_NO;
-      FILE *fp = fopen(EE_ROM_FILE_PATH "OD_ROM01.dat", "rb");
+      FILE *fp = fopen(EE_ROM_FILENAME, "rb");
       UNSIGNED32 cnt = 0;
       UNSIGNED16 CRC[2];
       if(fp){

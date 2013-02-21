@@ -46,16 +46,13 @@
                Data are stored on special CANopen command - Writing 0x65766173
                into Object dictionary (index 1010, subindex 1). Default values
                are restored after reset, if writing 0x64616F6C into (1011, 1).
+               Backup is stored to "OD_ROM01.old".
 *******************************************************************************/
-
-
-/*******************************************************************************
-   Constant: EE_ROM_FILE_PATH
-
-   Location of the OD_ROM01.dat file, used for storing OD_ROM variables.
-*******************************************************************************/
-#ifndef EE_ROM_FILE_PATH
-   #define EE_ROM_FILE_PATH "A:\\"
+#ifndef EE_ROM_FILENAME
+	#define EE_ROM_FILENAME       "OD_ROM01.dat"
+#endif
+#ifndef EE_ROM_FILENAME_OLD
+	#define EE_ROM_FILENAME_OLD   "OD_ROM01.old"
 #endif
 
 

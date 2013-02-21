@@ -810,7 +810,7 @@ void CO_TPDO_process(   CO_TPDO_t     *TPDO,
       }
 
       //Synchronous PDOs
-      else if(SYNC && SYNC->running){
+      else if(SYNC && SYNC->running && SYNC->curentSyncTimeIsInsideWindow){
          //detect SYNC message
          if(SYNC->timer < TPDO->SYNCtimerPrevious){
             //send synchronous acyclic PDO
@@ -840,12 +840,14 @@ void CO_TPDO_process(   CO_TPDO_t     *TPDO,
                }
             }
          }
+         TPDO->SYNCtimerPrevious = SYNC->timer;
       }
 
    }
    else{
       //Not operational or valid. Force TPDO first send after operational or valid.
-      TPDO->sendRequest = 1;
+      if(TPDO->TPDOCommPar->transmissionType>=254) TPDO->sendRequest = 1;
+      else                                         TPDO->sendRequest = 0;
    }
 
    //update timers
@@ -856,6 +858,4 @@ void CO_TPDO_process(   CO_TPDO_t     *TPDO,
    i = TPDO->eventTimer;
    i -= timeDifference_ms;
    TPDO->eventTimer = (i<=0) ? 0 : (UNSIGNED16)i;
-
-   TPDO->SYNCtimerPrevious = SYNC->timer;
 }

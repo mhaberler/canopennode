@@ -143,7 +143,7 @@ void huge _pascal CgiCliFunction(rpCgiPtr CgiRequest){
          else if(rw == 'r'){
             INTEGER8 ret;
             CO_SDOclient_setup(SDO_C, 0, 0, nodeId);
-            CO_SDOclientUploadInitiate(SDO_C, idx, sidx, data, CgiCli->SDODataSize, 1);
+            CO_SDOclientUploadInitiate(SDO_C, idx, sidx, data, CgiCli->SDODataSize, 0);
             do{
                RTX_Sleep_Time(10);
                ret = CO_SDOclientUpload(SDO_C, 10, 500, &dataLen, &SDOabortCode);
@@ -167,7 +167,7 @@ void huge _pascal CgiCliFunction(rpCgiPtr CgiRequest){
          else if(rw == 'w'){
             INTEGER8 ret;
             CO_SDOclient_setup(SDO_C, 0, 0, nodeId);
-            CO_SDOclientDownloadInitiate(SDO_C, idx, sidx, data, dataLen, 1);
+            CO_SDOclientDownloadInitiate(SDO_C, idx, sidx, data, dataLen, 0);
             do{
                RTX_Sleep_Time(10);
                ret = CO_SDOclientDownload(SDO_C, 10, 500, &SDOabortCode);

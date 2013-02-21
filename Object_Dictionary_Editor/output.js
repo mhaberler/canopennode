@@ -949,6 +949,8 @@ function calculateObjects(){
 					var DOCobjectSubIdx = <></>
 					for(var i=0; i<subNumberVal; i++){
 						var subObject = object.CANopenSubObject[i];
+                  if(subObject.@disabled == "true") continue;
+
 						DOCcontSubidx +=
 							<tr>
 								<td>{subObject.@subIndex}</td>
@@ -1725,6 +1727,10 @@ function generateDOC(){
 		"     #ODList a{cursor: pointer; color: blue;}\n"+
 		"     #ODDoc{position: fixed; overflow: auto; height: 95%; width: 500px; left: 500px; top: 10px;}\n"+   //rule[13], subject to toggleAll()
 		"     #ODDoc > li{display: none;}\n"+   //rule[14], subject to toggleAll()
+		"     .PFContainer .ODUpdatedAndDefault{background-color:lightGreen;}\n"+
+		"     .PFContainer .ODUpdated{background-color:MediumSpringGreen;}\n"+
+		"     .PFContainer .ODChanged{background-color:yellow;}\n"+
+		"     .PFContainer .ODError{background-color:red;}\n"+
 		"  </style>\n"+
 		"  <script type='text/javascript' src='lib/CANopen.js'></script>\n"+
 		"  <script type='text/javascript' src='lib/CANopenUI.js'></script>\n"+

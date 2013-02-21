@@ -43,7 +43,7 @@ INTEGER16 CO_SYNC_receive(void *object, CO_CANrxMsg_t *msg){
 
    SYNC = (CO_SYNC_t*)object;   //this is the correct pointer type of the first argument
 
-   if((*SYNC->operatingState == CO_NMT_OPERATIONAL || *SYNC->operatingState == CO_NMT_PRE_OPERATIONAL)){
+   if(*SYNC->operatingState == CO_NMT_OPERATIONAL || *SYNC->operatingState == CO_NMT_PRE_OPERATIONAL){
       if(SYNC->counterOverflowValue){
          if(msg->DLC != 1){
             CO_errorReport(SYNC->EM, ERROR_SYNC_LENGTH, msg->DLC | 0x0100);
@@ -58,7 +58,7 @@ INTEGER16 CO_SYNC_receive(void *object, CO_CANrxMsg_t *msg){
          }
       }
 
-      SYNC->running = 1;
+      if(*SYNC->operatingState == CO_NMT_OPERATIONAL) SYNC->running = 1;
       SYNC->timer = 0;
    }
 
@@ -160,8 +160,8 @@ UNSIGNED32 CO_ODF_1019(CO_ODF_arg_t *ODF_arg){
       UNSIGNED8 len = 0;
 
       if(SYNC->periodTime) return 0x08000022L; //Data cannot be transferred or stored to the application because of the present device state.
-      if(SYNC->counterOverflowValue) len = 1;
       SYNC->counterOverflowValue = *value;
+      if(SYNC->counterOverflowValue) len = 1;
 
       SYNC->CANtxBuff = CO_CANtxBufferInit(
                               SYNC->CANdevTx,         //CAN device
@@ -270,14 +270,16 @@ UNSIGNED8 CO_SYNC_process( CO_SYNC_t           *SYNC,
    UNSIGNED8 ret = 0;
    UNSIGNED32 timerNew;
 
-   if((*SYNC->operatingState == CO_NMT_OPERATIONAL || *SYNC->operatingState == CO_NMT_PRE_OPERATIONAL)){
+   if(*SYNC->operatingState == CO_NMT_OPERATIONAL || *SYNC->operatingState == CO_NMT_PRE_OPERATIONAL){
       //was SYNC just received
       if(SYNC->running && SYNC->timer == 0)
          ret = 1;
 
       //update sync timer, no overflow
+      DISABLE_INTERRUPTS();
       timerNew = SYNC->timer + timeDifference_us;
       if(timerNew > SYNC->timer) SYNC->timer = timerNew;
+      ENABLE_INTERRUPTS();
 
       //SYNC producer
       if(SYNC->isProducer && SYNC->periodTime){
@@ -311,8 +313,10 @@ UNSIGNED8 CO_SYNC_process( CO_SYNC_t           *SYNC,
       if(SYNC->periodTime && SYNC->timer > SYNC->periodTimeoutTime && *SYNC->operatingState == CO_NMT_OPERATIONAL)
          CO_errorReport(SYNC->EM, ERROR_SYNC_TIME_OUT, SYNC->timer);
    }
-   else{
+
+   if(*SYNC->operatingState != CO_NMT_OPERATIONAL){
       SYNC->running = 0;
    }
+
    return ret;
 }

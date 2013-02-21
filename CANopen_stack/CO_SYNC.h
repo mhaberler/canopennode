@@ -69,10 +69,10 @@
       counterOverflowValue - Value from _Synchronous counter overflow value_
                              variable from Object dictionary (index 0x1019).
 
-      curentSyncTimeIsInsideWindow - True, if curent time is inside synchronous window.
+      curentSyncTimeIsInsideWindow - True, if current time is inside synchronous window.
                              In this case synchronous PDO may be sent.
 
-      running              - True, after first SYNC was received or transmitted.
+      running              - True in operational, after first SYNC was received or transmitted.
       timer                - Timer for the SYNC message in [microseconds]. Set to
                              zero after received or transmitted SYNC message.
       counter              - Counter of the SYNC message if counterOverflowValue
