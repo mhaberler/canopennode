@@ -1,0 +1,179 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+
+<script type="text/javascript">
+//<![CDATA[
+function convert(){
+    document.getElementById('text2').value = 'Converting...';
+    eval(document.getElementById('command').value);
+}
+
+/* Helper function partially convert comments from Natural docs style to doxygen */
+function convertComments(text){
+    /* convert the comment blocks */
+    var lines = text.split("\n");
+    var isComment = false;  /* is current line in comment section? */
+    var isParamDesc = "";   /* is current line in a description of parameter in comment section? */
+    var formatParam = 0;    /* format parameters of the object or function. */
+    for(var i=0; i<lines.length; ){
+        var line = lines[i];
+        if(isComment){
+            /* is end of comment */
+            if(line.indexOf("*/") >= 0){
+                isComment = false;
+                line = line.replace(/\*+\/+/g, " */");
+            }
+            else{
+                /* delete two lines in front of comment */
+                if(line.indexOf("    Object: ") == 0 || line.indexOf("    Function: ") == 0){
+                    lines.splice(i, 2);
+                    if(line.indexOf("    Object: ") == 0)
+                        formatParam = 10;
+                    else
+                        formatParam = 20;
+                    continue;
+                }
+
+                /* change "Parameters:" to doxygen style. */
+                if(line == "    Parameters:"){
+                    isParamDesc = " * @param ";
+                    lines.splice(i, 1);
+                    continue;
+                }
+
+                if(line.length == 0){
+                    line = " *";
+                    isParamDesc = "";
+                }
+
+                if(isParamDesc != ""){
+                    if(line.slice(0, 8) == "        " && line[8] != " "){
+                        line = isParamDesc + line.slice(8);
+                        line = line.replace("-", "").replace(/  +/g, " ");
+                    }
+                    else line = line.replace(/^ */g, " * ");
+                }
+
+                else if(line.slice(0, 4) == "    ") line = " * " + line.slice(4); /* add asterrisk */
+            }
+        }
+        else{ /* not comment */
+            isParamDesc = "";
+            /* is start of comment */
+            if(line.indexOf("/*") >= 0 && line.indexOf("*/") < 0){
+                isComment = true;
+                line = line.replace(/\/\*+/g, "/**");
+                formatParam = 0;
+            }
+            else{
+                switch(formatParam){
+                    case 10: /* typedef struct{ */
+                        if(line.indexOf("typedef struct{") == 0 && line.length == 15)
+                            formatParam++;
+                        else
+                            formatParam = 0;
+                        break;
+                    case 11: /* variables in typedef */
+                        if(line.indexOf("}") >= 0){
+                            formatParam = 0;
+                            break;
+                        }
+                        lines.splice(i++, 0, "    /**  */");    //insert before
+                        if(line.length < 40){
+                            line += "                                             ";
+                            line = line.slice(0, 40) + "/**<  */";
+                        }
+                        break;
+                    case 20: /* function(...)( */
+                        if(line.indexOf("(") > 0 && line.indexOf(")") < 0){
+                            formatParam++;
+                            /* split line at '(' if necessary. */
+                            var strPos = line.indexOf("(") + 1;
+                            if(strPos > 0 && strPos < line.length){
+                                lines.splice(i+1, 0, line.slice(strPos));
+                                line = line.slice(0, strPos);
+                            }
+                        }
+                        else
+                            formatParam = 0;
+                        break;
+                    case 21: /* function arguments */
+                        line = "        " + line.replace(/^ */g, "");
+                        if(line.indexOf(")") >= 0)
+                            formatParam = 0;
+                        break;
+                }
+
+                /* convert // style comment to /* */
+                if(line.indexOf("//") >= 0)
+                    line = line.replace("//", "/* ") + " */";
+            }
+        }
+        lines[i] = line;
+        i++;
+    }
+    return lines.join("\n");
+}
+//]]>
+</script>
+
+</head>
+<body style="background-color:#A5BADD;">
+<textarea id="text1" wrap="off" style="height:300px; width:99%; font-family:monospace; font-size:medium;" onclick="this.select();">-</textarea>
+<br/>
+
+<textarea id="command" wrap="off" style="height:250px; width:80%; font-family:monospace; font-size:medium;">
+/* read from upper textarea */
+var text = document.getElementById("text1").value;
+
+/* remove trailing spaces */
+text = text.replace(/ +\n/g, "\n");
+
+/* replace UNSIGNED8 with uint8_t etc */
+text =  text.replace(/UNSIGNED8/g,      "uint8_t")
+            .replace(/UNSIGNED16/g,     "uint16_t")
+            .replace(/UNSIGNED32/g,     "uint32_t")
+            .replace(/UNSIGNED64/g,     "uint64_t")
+            .replace(/INTEGER8/g,       "int8_t")
+            .replace(/INTEGER16/g,      "int16_t")
+            .replace(/INTEGER32/g,      "int32_t")
+            .replace(/INTEGER64/g,      "int64_t")
+            .replace(/REAL32/g,         "float32_t")
+            .replace(/REAL64/g,         "float64_t")
+            .replace(/VISIBLE_STRING/g, "char_t")
+            .replace(/OCTET_STRING/g,   "oChar_t")
+            .replace(/DOMAIN/g,         "domain_t")
+            .replace(/CO_emergencyReport_t/g,   "CO_EM_t")
+            .replace(/CO_emergencyProcess_t/g,  "CO_EMpr_t")
+            .replace(/CO_emergency_init/g,      "CO_EM_init")
+            .replace(/CO_emergency_delete/g,    "CO_EM_delete")
+            .replace(/CO_emergency_process/g,   "CO_EM_process")
+            .replace(/EM->errorStatusBits/g,    "EM->OD_errorBits")
+            .replace(/EMpr->errorRegister/g,    "EMpr->OD_errorReg")
+            .replace(/CO_CANrxArray_t/g,        "CO_CANrx")
+            .replace(/CO_CANtxArray_t/g,        "CO_CANtx");
+
+/* change intentation from three to four spaces */
+text =  text.replace(/\n                     /g, "\n\t\t\t\t\t\t\t")
+            .replace(/\n                  /g, "\n\t\t\t\t\t\t")
+            .replace(/\n               /g, "\n\t\t\t\t\t")
+            .replace(/\n            /g, "\n\t\t\t\t")
+            .replace(/\n         /g, "\n\t\t\t")
+            .replace(/\n      /g, "\n\t\t")
+            .replace(/\n   /g, "\n\t")
+            .replace(/\t/g, "    ");
+
+/* convert existiong comments to doxygen style (helper) */
+// text = convertComments(text);
+
+/* write to textarea below */
+document.getElementById("text2").value = text;
+</textarea>
+
+<input value="Execute javascript" onclick="convert();" type="button"/>
+<br/>
+<textarea id="text2" wrap="off" style="height:300px; width:99%; font-family:monospace; font-size:medium;" onclick="this.select();">-</textarea>
+
+</body>
+</html>
