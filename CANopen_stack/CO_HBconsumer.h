@@ -1,195 +1,133 @@
-/*******************************************************************************
+/**
+ * CANopen Heartbeat consumer protocol.
+ *
+ * @file        CO_HBconsumer.h
+ * @ingroup     CO_HBconsumer
+ * @version     SVN: \$Id$
+ * @author      Janez Paternoster
+ * @copyright   2004 - 2013 Janez Paternoster
+ *
+ * This file is part of CANopenNode, an opensource CANopen Stack.
+ * Project home page is <http://canopennode.sourceforge.net>.
+ * For more information on CANopen see <http://www.can-cia.org/>.
+ *
+ * CANopenNode is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 
-   File: CO_HBconsumer.h
-   CANopen Heartbeat consumer object.
-
-   Copyright (C) 2004-2008 Janez Paternoster
-
-   License: GNU Lesser General Public License (LGPL).
-
-   <http://canopennode.sourceforge.net>
-*/
-/*
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU Lesser General Public License as published by
-   the Free Software Foundation, either version 3 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU Lesser General Public License for more details.
-
-   You should have received a copy of the GNU Lesser General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-
-   Author: Janez Paternoster
-
-*******************************************************************************/
 
 #ifndef _CO_HB_CONS_H
 #define _CO_HB_CONS_H
 
 
-/*******************************************************************************
-   Topic: Heartbeat consumer
+/**
+ * @defgroup CO_HBconsumer Heartbeat consumer
+ * @ingroup CO_CANopen
+ * @{
+ *
+ * CANopen Heartbeat consumer protocol.
+ *
+ * Heartbeat consumer monitors Heartbeat messages from remote nodes. If any
+ * monitored node don't send his Heartbeat in specified time, Heartbeat consumer
+ * sends emergency message. If all monitored nodes are operational, then
+ * variable _allMonitoredOperational_ inside CO_HBconsumer_t is set to true.
+ * Monitoring starts after the reception of the first HeartBeat (not bootup).
+ *
+ * @see  @ref CO_NMT_Heartbeat
+ */
 
-   Monitoring of remote nodes.
 
-   Heartbeat consumer monitors Heartbeat messages from remote nodes. If any
-   monitored node don't send his Heartbeat in specified time, Heartbeat consumer
-   sends emergency message. If all monitored nodes are operational, then
-   variable _allMonitoredOperational_ inside <CO_HBconsumer_t> is set to true.
-   Monitoring starts after the reception of the first HeartBeat (not bootup).
-
-   See also <Heartbeat message contents> and <NMT internal state> in
-   CO_NMT_Heartbeat.h file.
-*******************************************************************************/
-
-
-/*******************************************************************************
-   Object: CO_HBconsNode_t
-
-   Structure for one monitored node inside <CO_HBconsumer_t>.
-
-   Variables:
-      NMTstate     - NMT state of the remote node.
-      monStarted   - Monitoring for the remote node started. (After reception
-                     of the first Heartbeat mesage.)
-      timeoutTimer - Timeout timer for remote node.
-      time         - consumer heartbeat time.
-      CANrxNew     - Indication, if new Heartbeat message received from CAN bus.
-*******************************************************************************/
+/**
+ * One monitored node inside CO_HBconsumer_t.
+ */
 typedef struct{
-   UNSIGNED8         NMTstate;
-   UNSIGNED8         monStarted;
-   UNSIGNED16        timeoutTimer;
-   UNSIGNED16        time;
-   UNSIGNED8         CANrxNew;
+    uint8_t             NMTstate;       /**< Of the remote node */
+    uint8_t             monStarted;     /**< True after reception of the first Heartbeat mesage */
+    uint16_t            timeoutTimer;   /**< Time since last heartbeat received */
+    uint16_t            time;           /**< Consumer heartbeat time from OD */
+    uint8_t             CANrxNew;       /**< True if new Heartbeat message received from the CAN bus */
 }CO_HBconsNode_t;
 
 
-/*******************************************************************************
-   Object: CO_HBconsumer_t
-
-   Object controls Heartbeat consumer.
-
-   Variables:
-      EM                            - Pointer to Emergency object <CO_emergencyReport_t>.
-      ObjDict_consumerHeartbeatTime - Pointer to _Consumer Heartbeat Time_ array
-                                      from Object Dictionary (index 0x1016). Size
-                                      of array is equal to numberOfMonitoredNodes.
-      monitoredNodes                - Pointer to externaly defined array of
-                                      <CO_HBconsNode_t> objects. Size of array
-                                      is equal to numberOfMonitoredNodes.
-      numberOfMonitoredNodes        - Number of monitored nodes.
-      allMonitoredOperational       - True, if all monitored nodes are NMT
-                                      operational or no node is monitored.
-      CANdevRx                      - CAN device for HB_cons reception <CO_CANmodule_t>.
-      CANdevRxIdxStart              - Index of receive buffer for HB_cons reception.
-*******************************************************************************/
+/**
+ * Heartbeat consumer object.
+ *
+ * Object is initilaized by CO_HBconsumer_init(). It contains an array of
+ * CO_HBconsNode_t objects.
+ */
 typedef struct{
-   CO_emergencyReport_t   *EM;
-   const UNSIGNED32       *ObjDict_consumerHeartbeatTime;
-   CO_HBconsNode_t        *monitoredNodes;
-   UNSIGNED8               numberOfMonitoredNodes;
-   UNSIGNED8               allMonitoredOperational;
-   CO_CANmodule_t         *CANdevRx;
-   UNSIGNED16              CANdevRxIdxStart;
+    CO_EM_t            *EM;             /**< From CO_HBconsumer_init() */
+    const uint32_t     *HBconsTime;     /**< From CO_HBconsumer_init() */
+    CO_HBconsNode_t    *monitoredNodes; /**< From CO_HBconsumer_init() */
+    uint8_t             numberOfMonitoredNodes; /**< From CO_HBconsumer_init() */
+    /** True, if all monitored nodes are NMT operational or no node is
+        monitored. Can be read by the application */
+    uint8_t             allMonitoredOperational;
+    CO_CANmodule_t     *CANdevRx;       /**< From CO_HBconsumer_init() */
+    uint16_t            CANdevRxIdxStart; /**< From CO_HBconsumer_init() */
 }CO_HBconsumer_t;
 
 
-/*******************************************************************************
-   Function: CO_HBcons_receive
-
-   Read received message from CAN module.
-
-   Function will be called (by CAN receive interrupt) every time, when CAN
-   message with correct identifier will be received. For more information and
-   description of parameters see topic <Receive CAN message function>.
-*******************************************************************************/
-INTEGER16 CO_HBcons_receive(void *object, CO_CANrxMsg_t *msg);
-
-
-/*******************************************************************************
-   Function: CO_ODF_1016
-
-   Function for accessing _Consumer Heartbeat Time_ (index 0x1016) from SDO server.
-
-   For more information see topic <Object dictionary function>.
-*******************************************************************************/
-UNSIGNED32 CO_ODF_1016(CO_ODF_arg_t *ODF_arg);
-
-
-/*******************************************************************************
-   Function: CO_HBconsumer_init
-
-   Initialize Heartbeat consumer object.
-
-   Function must be called in the communication reset section.
-
-   Parameters:
-      ppHBcons                      - Pointer to address of HBconsumer object <CO_HBconsumer_t>.
-                                      If address is zero, memory for new object will be
-                                      allocated and address will be set.
-      HBcons                        - Pointer to Heartbeat consumer object <CO_HBconsumer_t>.
-      EM                            - Pointer to Emergency object <CO_emergencyReport_t>.
-      SDO                           - Pointer to SDO object <CO_SDO_t>.
-      ObjDict_consumerHeartbeatTime - Pointer to _Consumer Heartbeat Time_ array
-                                      from Object Dictionary (index 0x1016). Size
-                                      of array is equal to numberOfMonitoredNodes.
-      monitoredNodes                - Pointer to externaly defined array of
-                                      <CO_HBconsNode_t> objects. Size of array
-                                      is equal to numberOfMonitoredNodes.
-      numberOfMonitoredNodes        - Number of monitored nodes.
-      CANdevRx                      - CAN device for Heartbeat reception <CO_CANmodule_t>.
-      CANdevRxIdxStart              - Starting index of receive buffer for Heartbeat
-                                      message reception. Number of used indexes
-                                      is equal to numberOfMonitoredNodes.
-
-   Return <CO_ReturnError>:
-      CO_ERROR_NO                 - Operation completed successfully.
-      CO_ERROR_ILLEGAL_ARGUMENT   - Error in function arguments.
-      CO_ERROR_OUT_OF_MEMORY      - Memory allocation failed.
-*******************************************************************************/
-INTEGER16 CO_HBconsumer_init(
-      CO_HBconsumer_t       **ppHBcons,
-      CO_emergencyReport_t   *EM,
-      CO_SDO_t               *SDO,
-const UNSIGNED32             *ObjDict_consumerHeartbeatTime,
-      UNSIGNED8               numberOfMonitoredNodes,
-      CO_CANmodule_t *CANdevRx, UNSIGNED16 CANdevRxIdxStart);
+/**
+ * Initialize Heartbeat consumer object.
+ *
+ * Function must be called in the communication reset section.
+ *
+ * @param HBcons This object will be initialized.
+ * @param EM Emergency object.
+ * @param SDO SDO server object.
+ * @param HBconsTime Pointer to _Consumer Heartbeat Time_ array
+ * from Object Dictionary (index 0x1016). Size of array is equal to numberOfMonitoredNodes.
+ * @param numberOfMonitoredNodes Total size of the above array.
+ * @param CANdevRx CAN device for Heartbeat reception.
+ * @param CANdevRxIdxStart Starting index of receive buffer in the above CAN device.
+ * Number of used indexes is equal to numberOfMonitoredNodes.
+ *
+ * @return #CO_ReturnError_t CO_ERROR_NO or CO_ERROR_ILLEGAL_ARGUMENT.
+ */
+int16_t CO_HBconsumer_init(
+        CO_HBconsumer_t       **HBcons,
+        CO_EM_t                *EM,
+        CO_SDO_t               *SDO,
+        const uint32_t         *HBconsTime,
+        uint8_t                 numberOfMonitoredNodes,
+        CO_CANmodule_t         *CANdevRx,
+        uint16_t                CANdevRxIdxStart);
 
 
-/*******************************************************************************
-   Function: CO_HBconsumer_delete
-
-   Delete HBconsumer object and free memory.
-
-   Parameters:
-      ppHBcons       - Pointer to pointer to HBconsumer object <CO_HBconsumer_t>.
-                       Pointer to HBconsumer object is set to 0.
-*******************************************************************************/
-void CO_HBconsumer_delete(CO_HBconsumer_t **ppHBcons);
+/**
+ * Delete Heartbeat consumer object and free memory.
+ *
+ * @param HBcons Pointer to pointer to HBconsumer object CO_HBconsumer_t.
+ * Pointer to HBconsumer object is set to 0.
+ */
+void CO_HBconsumer_delete(CO_HBconsumer_t **HBcons);
 
 
-/*******************************************************************************
-   Function: CO_HBconsumer_process
-
-   Process Heartbeat consumer.
-
-   Function must be called cyclically.
-
-   Parameters:
-      HBcons                   - Pointer to Heartbeat consumer object <CO_HBconsumer_t>.
-      NMTisPreOrOperational    - Different than zero, if <NMT internal State> is
-                                 NMT_PRE_OPERATIONAL or NMT_OPERATIONAL.
-      timeDifference_ms        - Time difference from previous function call in [milliseconds].
-*******************************************************************************/
-void CO_HBconsumer_process(CO_HBconsumer_t     *HBcons,
-                           UNSIGNED8            NMTisPreOrOperational,
-                           UNSIGNED16           timeDifference_ms);
+/**
+ * Process Heartbeat consumer object.
+ *
+ * Function must be called cyclically.
+ *
+ * @param HBcons This object.
+ * @param NMTisPreOrOperational True if this node is NMT_PRE_OPERATIONAL or NMT_OPERATIONAL.
+ * @param timeDifference_ms Time difference from previous function call in [milliseconds].
+ */
+void CO_HBconsumer_process(
+        CO_HBconsumer_t        *HBcons,
+        uint8_t                 NMTisPreOrOperational,
+        uint16_t                timeDifference_ms);
 
 
+/** @} */
 #endif

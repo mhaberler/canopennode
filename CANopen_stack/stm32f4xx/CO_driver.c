@@ -1,8 +1,8 @@
 /*
- * CAN module object for Microchip STM32F103 microcontroller.
+ * CAN module object for Microchip STM32F4xx microcontroller.
  *
  * @file        CO_driver.c
- * @version     SVN: \$Id$
+ * @version     SVN: \$Id: CO_driver.h 278 2013-03-04 17:11:47Z jani $
  * @author      Janez Paternoster
  * @author      Ondrej Netik
  * @copyright   2004 - 2013 Janez Paternoster, Ondrej Netik
@@ -28,16 +28,25 @@
 
 #include <string.h>     // for memcpy
 #include <stdlib.h>     // for malloc, free
-#include <stm32f10x_conf.h>
+#include <stddef.h>		// for NULL
+
+// Custom
+#include "config.h"
+#include "trace.h"
+
+#include <stm32f4xx_conf.h>
 #include "CO_driver.h"
 #include "CO_Emergency.h"
 
 
+
 void InitCanLeds() {
     GPIO_InitTypeDef GPIO_InitStructure;
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIO_LED, ENABLE);
+    RCC_AHB1PeriphClockCmd(LED_GPIO_CLOCK, ENABLE);
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_Led_GREEN | GPIO_Pin_Led_RED;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
     GPIO_Init(GPIO_LEDS, &GPIO_InitStructure);
     CanLedsOff(eCoLed_Green | eCoLed_Red);
@@ -53,8 +62,6 @@ void CanLedsSet(eCoLeds led) {
         CanLedsOn(eCoLed_Red);
     else
         CanLedsOff(eCoLed_Red);
-
-
 }
 
 void CanLedsOn(eCoLeds led) {
@@ -162,8 +169,8 @@ void CO_CANsetNormalMode(CAN_TypeDef *CANbaseAddress) {
 }
 
 static void CO_CanInterruptEnDis(CAN_TypeDef *CANbaseAddress, uint8_t enb) {
-    CAN_ITConfig(CANmodule->CANbaseAddress,
-    		CAN_IT_TME | // Tx
+    CAN_ITConfig(CANbaseAddress,
+    		//CAN_IT_TME | // Tx
             CAN_IT_FMP0  // Rx
             //CAN_IT_ERR |  // Error Interrupt
             //CAN_IT_BOF |  // BusOff interrupt
@@ -224,23 +231,41 @@ int16_t CO_CANmodule_init(
     }
 
     /* Setting Clock of CAN HW */
-    RCC_APB2PeriphClockCmd(CLOCK_GPIO_CAN | RCC_APB2Periph_AFIO, ENABLE);
-    RCC_APB1PeriphClockCmd(CLOCK_CAN, ENABLE);
-    /* Remap */
-    GPIO_PinRemapConfig(GPIO_Remapping_CAN, GPIO_CAN_Remap_State);
-    /* Configure CAN pin: RX */
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_CAN_RX;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
-    GPIO_Init(GPIO_CAN, &GPIO_InitStructure);
-    /* Configure CAN pin: TX */
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_CAN_TX;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_Init(GPIO_CAN, &GPIO_InitStructure);
+    RCC_APB1PeriphClockCmd( CLOCK_CAN, ENABLE);
+    RCC_AHB1PeriphClockCmd( CAN_GPIO_CLK, ENABLE);
+	GPIO_PinAFConfig(GPIO_CAN, GPIO_PinSource1, GPIO_AF_CAN1);
+	GPIO_PinAFConfig(GPIO_CAN, GPIO_PinSource0, GPIO_AF_CAN1);
+
+	/* Configure CAN pin: RX */
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_CAN_RX;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+	GPIO_Init(GPIO_CAN, &GPIO_InitStructure);
+
+	/* Configure CAN pin: TX */
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_CAN_TX;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_Init(GPIO_CAN, &GPIO_InitStructure);
+
+    //GPIO_PinAFConfig(GPIOA, GPIO_PinSource2, GPIO_AF_USART2);
+
+
 
     /* Init CAN controler */
     CAN_DeInit(CANmodule->CANbaseAddress);
+
+#if 1
+    /* Hard-coded for 125k baudrate */
+    CAN_InitStruct.CAN_Prescaler = 16; // 125k baudrate
+    CAN_InitStruct.CAN_BS1 = CAN_BS1_14tq;
+    CAN_InitStruct.CAN_BS2 = CAN_BS2_6tq;
+#else
+    /* This code is not written for default STM32F4xx bus speed */
     CAN_StructInit(&CAN_InitStruct);
+    CAN_InitStruct.CAN_BS1 = CAN_BS1_3tq;
+    CAN_InitStruct.CAN_BS2 = CAN_BS2_2tq;
     switch (CANbitRate) {
         case 1000: CAN_InitStruct.CAN_Prescaler = 6;
             break;
@@ -260,14 +285,15 @@ int16_t CO_CANmodule_init(
         case 10: CAN_InitStruct.CAN_Prescaler = 600;
             break;
     }
+#endif
+
     CAN_InitStruct.CAN_Mode = CAN_Mode_Normal;
+    //CAN_InitStruct.CAN_Mode=CAN_Mode_Silent_LoopBack;
     CAN_InitStruct.CAN_SJW = CAN_SJW_1tq;
-    CAN_InitStruct.CAN_BS1 = CAN_BS1_3tq;
-    CAN_InitStruct.CAN_BS2 = CAN_BS2_2tq;
     CAN_InitStruct.CAN_TTCM = DISABLE;  // Time Trigger
     CAN_InitStruct.CAN_ABOM = DISABLE;	// Automatic bus off management
     CAN_InitStruct.CAN_AWUM = DISABLE;	// Automatic Wakeup mode
-    CAN_InitStruct.CAN_NART = ENABLE;	// No Automatic retransmision
+    CAN_InitStruct.CAN_NART = DISABLE;	// No Automatic retransmision
     CAN_InitStruct.CAN_RFLM = DISABLE;	// Receive FIFO locked mode
     CAN_InitStruct.CAN_TXFP = DISABLE;	// Transmit FIFO priority 1=chronologically 0=by identifier
 
@@ -295,15 +321,17 @@ int16_t CO_CANmodule_init(
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-    // preruseni od prijimace
-    NVIC_InitStructure.NVIC_IRQChannel = USB_LP_CAN1_RX0_IRQn;
+
+    // Enable CAN1 RX interrupt
+    NVIC_InitStructure.NVIC_IRQChannel = CAN1_RX0_IRQn; // | CAN1_TX_IRQn;
     NVIC_Init(&NVIC_InitStructure);
-    // preruseni od vysilace
-    NVIC_InitStructure.NVIC_IRQChannel = USB_HP_CAN1_TX_IRQn;
+
+    // Enable CAN1 TX interrupt
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
+    NVIC_InitStructure.NVIC_IRQChannel = CAN1_TX_IRQn;
     NVIC_Init(&NVIC_InitStructure);
-    // preruseni od statusu
-    //NVIC_InitStructure.NVIC_IRQChannel = CAN1_SCE_IRQn;
-    //NVIC_Init(&NVIC_InitStructure);
+
+
 
     CAN_OperatingModeRequest(CANmodule->CANbaseAddress, CAN_OperatingMode_Normal);
 
@@ -383,13 +411,15 @@ CO_CANtx_t *CO_CANtxBufferInit(
     CO_CANtx_t *buffer = &CANmodule->txArray[index];
 
     //CAN identifier, bit aligned with CAN module registers
-    uint32_t TXF;
-    TXF = ident << 21;
+
+    uint32_t TXF = 0;
+    TXF = ident << (uint32_t)21;
     TXF &= 0xFFE00000;
     if (rtr) TXF |= 0x02;
 
-    //write to buffer
     buffer->ident = TXF;
+
+    //write to buffer
     buffer->DLC = noOfBytes;
     buffer->bufferFull = 0;
     buffer->syncFlag = syncFlag ? 1 : 0;
@@ -514,7 +544,7 @@ void CO_CANverifyErrors(CO_CANmodule_t *CANmodule) {
 
 /******************************************************************************/
 int CO_CANrecFromModule(CO_CANmodule_t *CANmodule, uint8_t FIFONumber, CO_CANrxMsg_t* RxMessage) {
-    if( (CANmodule->CANbaseAddress->RF0R & CAN_RF0R_FMP0) > 0) {  // opravdu jsme neco prijali
+    if( (CANmodule->CANbaseAddress->RF0R & CAN_RF0R_FMP0) > 0) {  // We really have something
         RxMessage->IDE = (uint8_t) 0x04 & CANmodule->CANbaseAddress->sFIFOMailBox[FIFONumber].RIR;
         if (RxMessage->IDE == CAN_Id_Standard) {
             RxMessage->ident = (uint32_t) 0x000007FF & (CANmodule->CANbaseAddress->sFIFOMailBox[FIFONumber].RIR >> 21);

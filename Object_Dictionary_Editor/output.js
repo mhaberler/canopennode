@@ -1404,7 +1404,7 @@ function generateCO_OD_H(){
 		"\n"+
 		"extern struct sCO"+ODfileNameReference+"_OD_EEPROM CO"+ODfileNameReference+"_OD_EEPROM;\n"+
 		"\n"+
-		"extern CO_OD_ROM_IDENT struct sCO"+ODfileNameReference+"_OD_ROM CO"+ODfileNameReference+"_OD_ROM;\n"+
+		"extern struct sCO"+ODfileNameReference+"_OD_ROM CO"+ODfileNameReference+"_OD_ROM;\n"+
 		"\n"+
 		"\n"+
 		"/*******************************************************************************\n"+
@@ -1486,7 +1486,7 @@ function generateCO_OD_C(){
 		"\n"+
 		"\n"+
 		"/***** Definition for ROM variables *******************************************/\n"+
-		"   CO_OD_ROM_IDENT struct sCO"+ODfileNameReference+"_OD_ROM CO"+ODfileNameReference+"_OD_ROM = {    //constant variables, stored in flash\n"+
+		"   struct sCO"+ODfileNameReference+"_OD_ROM CO"+ODfileNameReference+"_OD_ROM = {    //constant variables, stored in flash\n"+
 		"           CO"+ODfileNameReference+"_OD_FIRST_LAST_WORD,\n"+
 		"\n"+
 		CO_OD_C_initROM.join("\n")+"\n"+

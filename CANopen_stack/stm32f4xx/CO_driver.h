@@ -1,10 +1,11 @@
 /*
- * CAN module object for BECK SC243 computer.
+ * CAN module object for Microchip STM32F4xx microcontroller.
  *
  * @file        CO_driver.h
- * @version     SVN: \$Id$
+ * @version     SVN: \$Id: CO_driver.h 278 2013-03-04 17:11:47Z jani $
  * @author      Janez Paternoster
- * @copyright   2004 - 2013 Janez Paternoster
+ * @author      Ondrej Netik
+ * @copyright   2004 - 2013 Janez Paternoster, Ondrej Netik
  *
  * This file is part of CANopenNode, an opensource CANopen Stack.
  * Project home page is <http://canopennode.sourceforge.net>.
@@ -28,67 +29,35 @@
 #ifndef _CO_DRIVER_H
 #define _CO_DRIVER_H
 
+#include "stm32f4xx_conf.h"
 
-#include <clib.h>       /* processor header file */
+#define PACKED_STRUCT        __attribute__((packed))
+#define ALIGN_STRUCT_DWORD       __attribute__((aligned(4)))
 
 
 /* Peripheral addresses */
-#define ADDR_CAN1    CAN_PORT_CAN1
-#define ADDR_CAN2    CAN_PORT_CAN2
+#define ADDR_CAN1    CAN1
 
 
 /* Disabling interrupts */
-#define DISABLE_INTERRUPTS()     MaskInterrupts()
-#define ENABLE_INTERRUPTS()      EnableInterrupts()
+#define DISABLE_INTERRUPTS()        __set_PRIMASK(1);
+#define ENABLE_INTERRUPTS()         __set_PRIMASK(0);
 
 
-/* Other configuration */
-#define CO_LOG_CAN_MESSAGES                 /* Call external function for each received
-                                               or transmitted CAN message. */
-#define CO_SDO_BUFFER_SIZE           889    /* Override default SDO buffer size. */
-
-
-/* Data types *
+/* Data types */
     typedef unsigned char           uint8_t;
     typedef unsigned short int      uint16_t;
-    typedef unsigned int            uint32_t;
+    typedef unsigned long int       uint32_t;
     typedef unsigned long long int  uint64_t;
     typedef signed char             int8_t;
     typedef signed short int        int16_t;
-    typedef signed int              int32_t;
+    typedef signed long int         int32_t;
     typedef signed long long int    int64_t;
     typedef float                   float32_t;
-    typedef double                  float64_t;
+    typedef long double             float64_t;
     typedef char                    char_t;
     typedef unsigned char           oChar_t;
     typedef unsigned char           domain_t;
-*/
-   #define UNSIGNED8       unsigned char
-   #define UNSIGNED16      unsigned short int
-   #define UNSIGNED32      unsigned int
-   #define UNSIGNED64      unsigned long long int
-   #define INTEGER8        signed char
-   #define INTEGER16       signed short int
-   #define INTEGER32       signed int
-   #define INTEGER64       signed long long int
-   #define REAL32          float
-   #define REAL64          double
-   #define VISIBLE_STRING  char
-   #define OCTET_STRING    unsigned char
-   #define DOMAIN          unsigned char
-   #define uint8_t       unsigned char
-    #define uint16_t      unsigned short int
-    #define uint32_t      unsigned int
-    #define uint64_t      unsigned long long int
-    #define int8_t        signed char
-    #define int16_t       signed short int
-    #define int32_t       signed int
-    #define int64_t       signed long long int
-    #define float32_t          float
-    #define float64_t          double
-    #define char_t  char
-    #define oChar_t    unsigned char
-    #define domain_t          unsigned char
 
 
 /* Return values */
@@ -111,12 +80,18 @@ typedef enum{
 }CO_ReturnError_t;
 
 
-/* CAN receive message structure as aligned in CAN module. In SC2x3 this
- * structure has the same alignment as in the _CanMsg_ structure from canAPI.h */
+/* CAN receive message structure as aligned in CAN module.
+ * prevzato z stm32f10_can.h - velikostne polozky a poradi odpovidaji. */
 typedef struct{
-    uint32_t        ident;
-    uint8_t         DLC;
-    uint8_t         data[8];
+    uint32_t    ident;          /* Standard Identifier */
+    uint32_t    ExtId;          /* Specifies the extended identifier */
+    uint8_t     IDE;            /* Specifies the type of identifier for the
+                                   message that will be received */
+    uint8_t     RTR;            /* Remote Transmission Request bit */
+    uint8_t     DLC;            /* Data length code (bits 0...3) */
+    uint8_t     data[8];        /* 8 data bytes */
+    uint8_t     FMI;            /* Specifies the index of the filter the message
+                                   stored in the mailbox passes through */
 }CO_CANrxMsg_t;
 
 
@@ -129,49 +104,64 @@ typedef struct{
 }CO_CANrx_t;
 
 
-/* Transmit message object. In SC2x3 this structure has the same alignment
- * of first three members as in the _CanMsg_ structure from canAPI.h */
+/* Transmit message object. */
 typedef struct{
     uint32_t            ident;
     uint8_t             DLC;
     uint8_t             data[8];
     volatile uint8_t    bufferFull;
     volatile uint8_t    syncFlag;
-}CO_CANtx_t;
+}CO_CANtx_t;/* ALIGN_STRUCT_DWORD; */
 
 
 /* CAN module object. */
 typedef struct{
-    uint16_t            CANbaseAddress;
+    CAN_TypeDef        *CANbaseAddress;         /* STM32F4xx specific */
     CO_CANrx_t         *rxArray;
     uint16_t            rxSize;
     CO_CANtx_t         *txArray;
     uint16_t            txSize;
     volatile uint8_t   *curentSyncTimeIsInsideWindow;
+    volatile uint8_t    useCANrxFilters;
     volatile uint8_t    bufferInhibitFlag;
     volatile uint8_t    firstCANtxMessage;
-    volatile uint8_t    error;
     volatile uint16_t   CANtxCount;
     uint32_t            errOld;
     void               *EM;
+    uint8_t             transmittingAborted;    /* STM32F4xx specific */
 }CO_CANmodule_t;
 
 
+/* Init CAN Led Interface */
+typedef enum {
+    eCoLed_None = 0,
+    eCoLed_Green = 1,
+    eCoLed_Red = 2,
+} eCoLeds;
+
+void InitCanLeds();
+void CanLedsOn(eCoLeds led);
+void CanLedsOff(eCoLeds led);
+void CanLedsSet(eCoLeds led);
+
+
 /* Endianes */
-#define BIG_ENDIAN
+#ifdef __BIG_ENDIAN__
+    #define BIG_ENDIAN
+#endif
 void memcpySwap2(uint8_t* dest, uint8_t* src);
 void memcpySwap4(uint8_t* dest, uint8_t* src);
 
 
 /* Request CAN configuration or normal mode */
-void CO_CANsetConfigurationMode(uint16_t CANbaseAddress);
-void CO_CANsetNormalMode(uint16_t CANbaseAddress);
+void CO_CANsetConfigurationMode(CAN_TypeDef *CANbaseAddress);
+void CO_CANsetNormalMode(CAN_TypeDef *CANbaseAddress);
 
 
 /* Initialize CAN module object. */
 int16_t CO_CANmodule_init(
         CO_CANmodule_t        **CANmodule,
-        uint16_t                CANbaseAddress,
+        CAN_TypeDef            *CANbaseAddress,
         uint16_t                rxSize,
         uint16_t                txSize,
         uint16_t                CANbitRate);
@@ -223,14 +213,16 @@ void CO_CANclearPendingSyncPDOs(CO_CANmodule_t *CANmodule);
 void CO_CANverifyErrors(CO_CANmodule_t *CANmodule);
 
 
-/* CAN interrupt receives and transmits CAN messages.
- *
- * @param event From _CanCallback_ function from _CAN API_ for SC243.
- * @param msg From _CanCallback_ function from _CAN API_ for SC243.
- *
- * @return For _CanCallback_ function from _CAN API_ for SC243.
- */
-int CO_CANinterrupt(CO_CANmodule_t *CANmodule, CanEvent event, const CanMsg *msg);
+/* CAN interrupts receives and transmits CAN messages. */
+void CO_CANinterrupt_Rx(CO_CANmodule_t *CANmodule);
+
+void CO_CANinterrupt_Tx(CO_CANmodule_t *CANmodule);
+
+void CO_CANinterrupt_Status(CO_CANmodule_t *CANmodule);
+
+void CO_CANsendToModule(CO_CANmodule_t *CANmodule, CO_CANtx *buffer, uint8_t transmit_mailbox);
+
+int CO_CANrecFromModule(CO_CANmodule_t *CANmodule, uint8_t FIFONumber, CO_CANrxMsg_t* RxMessage);
 
 
 #endif

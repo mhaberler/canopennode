@@ -79,7 +79,6 @@ function convertComments(text){
                             formatParam = 0;
                             break;
                         }
-                        lines.splice(i++, 0, "    /**  */");    //insert before
                         if(line.length < 40){
                             line += "                                             ";
                             line = line.slice(0, 40) + "/**<  */";
@@ -149,10 +148,8 @@ text =  text.replace(/UNSIGNED8/g,      "uint8_t")
             .replace(/CO_emergency_init/g,      "CO_EM_init")
             .replace(/CO_emergency_delete/g,    "CO_EM_delete")
             .replace(/CO_emergency_process/g,   "CO_EM_process")
-            .replace(/EM->errorStatusBits/g,    "EM->OD_errorBits")
-            .replace(/EMpr->errorRegister/g,    "EMpr->OD_errorReg")
-            .replace(/CO_CANrxArray_t/g,        "CO_CANrx")
-            .replace(/CO_CANtxArray_t/g,        "CO_CANtx");
+            .replace(/CO_CANrxArray_t/g,        "CO_CANrx_t")
+            .replace(/CO_CANtxArray_t/g,        "CO_CANtx_t");
 
 /* change intentation from three to four spaces */
 text =  text.replace(/\n                     /g, "\n\t\t\t\t\t\t\t")

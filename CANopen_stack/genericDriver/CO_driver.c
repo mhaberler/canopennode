@@ -1,20 +1,19 @@
 /*
- * Microcontroller specific code for CANopenNode.
+ * CAN module object for generic microcontroller.
  *
- * This file is a template for driver files for other microcontrollers.
+ * This file is a template for other microcontrollers.
  *
  * @file        CO_driver.c
  * @ingroup     CO_driver
- * @author      Janez Paternoster
- * @copyright   GNU Lesser General Public License (LGPL).
- * @date        2004 - 2013
  * @version     SVN: \$Id$
+ * @author      Janez Paternoster
+ * @copyright   2004 - 2013 Janez Paternoster
  *
  * This file is part of CANopenNode, an opensource CANopen Stack.
  * Project home page is <http://canopennode.sourceforge.net>.
  * For more information on CANopen see <http://www.can-cia.org/>.
  *
- * This program is free software: you can redistribute it and/or modify
+ * CANopenNode is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
@@ -31,9 +30,6 @@
 
 #include "CO_driver.h"
 #include "CO_Emergency.h"
-
-#include <string.h>     /*  for memcpy */
-#include <stdlib.h>     /*  for malloc, free */
 
 
 /******************************************************************************/
@@ -89,9 +85,9 @@ int16_t CO_CANmodule_init(
 
     /* Configure object variables */
     CANmodule->CANbaseAddress = CANbaseAddress;
-    CANmodule->rxArray = rxArray;
+    CANmodule->rxArray = 0;//rxArray;
     CANmodule->rxSize = rxSize;
-    CANmodule->txArray = txArray;
+    CANmodule->txArray = 0;//txArray;
     CANmodule->txSize = txSize;
     CANmodule->curentSyncTimeIsInsideWindow = 0;
     CANmodule->useCANrxFilters = (rxSize <= 32) ? 1 : 0;/* microcontroller dependent */

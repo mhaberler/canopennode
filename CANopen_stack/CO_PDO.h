@@ -1,657 +1,397 @@
-/*******************************************************************************
+/**
+ * CANopen Process Data Object protocol.
+ *
+ * @file        CO_PDO.h
+ * @ingroup     CO_PDO
+ * @version     SVN: \$Id$
+ * @author      Janez Paternoster
+ * @copyright   2004 - 2013 Janez Paternoster
+ *
+ * This file is part of CANopenNode, an opensource CANopen Stack.
+ * Project home page is <http://canopennode.sourceforge.net>.
+ * For more information on CANopen see <http://www.can-cia.org/>.
+ *
+ * CANopenNode is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 
-   File: CO_PDO.h
-   CANopen Process Data Object.
-
-   Copyright (C) 2004-2008 Janez Paternoster
-
-   License: GNU Lesser General Public License (LGPL).
-
-   <http://canopennode.sourceforge.net>
-*/
-/*
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU Lesser General Public License as published by
-   the Free Software Foundation, either version 3 of the License, or
-   (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU Lesser General Public License for more details.
-
-   You should have received a copy of the GNU Lesser General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-
-   Author: Janez Paternoster
-
-*******************************************************************************/
 
 #ifndef _CO_PDO_H
 #define _CO_PDO_H
 
 
-/*******************************************************************************
-   Topic: PDO
+/**
+ * @defgroup CO_PDO PDO
+ * @ingroup CO_CANopen
+ * @{
+ *
+ * CANopen Process Data Object protocol.
+ *
+ * Process data objects are used for real-time data transfer with no protocol
+ * overhead.
+ *
+ * TPDO with specific identifier is transmitted by one device and recieved by
+ * zero or more devices as RPDO. PDO communication parameters(COB-ID,
+ * transmission type, etc.) are in Object Dictionary at index 0x1400+ and
+ * 0x1800+. PDO mapping parameters (size and contents of the PDO) are in Object
+ * Dictionary at index 0x1600+ and 0x1A00+.
+ *
+ * Features of the PDO as implemented here, in CANopenNode:
+ *  - Dynamic PDO mapping.
+ *  - Map granularity of one byte.
+ *  - After RPDO is received from CAN bus, its data are copied to buffer.
+ *    Function CO_RPDO_process() (called by application) copies data to
+ *    mapped objects in Object Dictionary.
+ *  - Function CO_TPDO_process() (called by application) sends TPDO if
+ *    necessary. There are possible different transmission types, including
+ *    automatic detection of Change of State of specific variable.
+ */
 
-   Process data object (PDO).
 
-   Process data objects are used for real-time data transfer with no protocol
-   overhead.
-
-   TPDO with specific identifier is transmitted by one device and recieved by
-   zero or more devices as RPDO. PDO communication parameters(COB-ID,
-   transmission type, etc.) are in Object Dictionary at index 0x1400+ and
-   0x1800+. PDO mapping parameters (size and contents of the PDO) are in Object
-   Dictionary at index 0x1600+ and 0x1A00+.
-
-   Features of the PDO as implemented here, in CANopenNode:
-    - Dynamic PDO mapping.
-    - Map granularity of one byte.
-    - After RPDO is received from CAN bus, its data are copied to buffer.
-      Function <CO_RPDO_process> (called by application) copies data to
-      mapped objects in Object Dictionary.
-    - Function <CO_TPDO_process> (called by application) sends TPDO if
-      necessary. There are possible different transmission types, including
-      automatic detection of Change of State of specific variable.
-*******************************************************************************/
-
-
-/*******************************************************************************
-   Object: CO_RPDOCommPar_t
-
-   _RPDO communication parameter_ record from Object dictionary (index 0x1400+).
-
-   *Type definition in CO_OD.h file must be the same!*
-
-   Variables:
-      maxSubIndex       - Equal to 2.
-      COB_IDUsedByRPDO  - Communication object identifier for message received.:
-                           Bit  0-10: COB-ID for PDO, to change it bit 31 must be set.
-                           Bit 11-29: set to 0 for 11 bit COB-ID.
-                           Bit 30:    If true, rtr are NOT allowed for PDO.
-                           Bit 31:    If true, node does NOT use the PDO.
-      transmissionType  - Values:
-                           0-240:   Reciving is synchronous, process after next reception of the SYNC object.
-                           241-253: Not used.
-                           254:     Manufacturer specific.
-                           255:     Asynchronous.
-*******************************************************************************/
+/**
+ * RPDO communication parameter. The same as record from Object dictionary (index 0x1400+).
+ */
 typedef struct{
-   UNSIGNED8      maxSubIndex;
-   UNSIGNED32     COB_IDUsedByRPDO;
-   UNSIGNED8      transmissionType;
+    uint8_t             maxSubIndex;    /**< Equal to 2 */
+    /** Communication object identifier for message received. Meaning of the specific bits:
+        - Bit  0-10: COB-ID for PDO, to change it bit 31 must be set.
+        - Bit 11-29: set to 0 for 11 bit COB-ID.
+        - Bit 30:    If true, rtr are NOT allowed for PDO.
+        - Bit 31:    If true, node does NOT use the PDO. */
+    uint32_t            COB_IDUsedByRPDO;
+    /** Transmission type. Values:
+        - 0-240:   Reciving is synchronous, process after next reception of the SYNC object.
+        - 241-253: Not used.
+        - 254:     Manufacturer specific.
+        - 255:     Asynchronous. */
+    uint8_t             transmissionType;
 }CO_RPDOCommPar_t;
 
 
-/*******************************************************************************
-   Object: CO_RPDOMapPar_t
-
-   _RPDO mapping parameter_ record from Object dictionary (index 0x1600+).
-
-   *Type definition in CO_OD.h file must be the same!*
-
-   Variables:
-      numberOfMappedObjects   - Actual number of mapped objects from 0 to 8. To
-                                change mapped object, this value must be 0.
-      mappedObject(1..8)      - Bit meanings:
-                                 Bit  0-7:  data length in bits.
-                                 Bit 8-15:  subindex from object distionary.
-                                 Bit 16-31: index from object distionary.
-*******************************************************************************/
+/**
+ * RPDO mapping parameter. The same as record from Object dictionary (index 0x1600+).
+ */
 typedef struct{
-   UNSIGNED8      numberOfMappedObjects;
-   UNSIGNED32     mappedObject1;
-   UNSIGNED32     mappedObject2;
-   UNSIGNED32     mappedObject3;
-   UNSIGNED32     mappedObject4;
-   UNSIGNED32     mappedObject5;
-   UNSIGNED32     mappedObject6;
-   UNSIGNED32     mappedObject7;
-   UNSIGNED32     mappedObject8;
+    /** Actual number of mapped objects from 0 to 8. To change mapped object,
+    this value must be 0. */
+    uint8_t             numberOfMappedObjects;
+    /** Location and size of the mapped object. Bit meanings `0xIIIISSLL`:
+        - Bit  0-7:  Data Length in bits.
+        - Bit 8-15:  Subindex from object distionary.
+        - Bit 16-31: Index from object distionary. */
+    uint32_t            mappedObject1;
+    uint32_t            mappedObject2;  /**< Same */
+    uint32_t            mappedObject3;  /**< Same */
+    uint32_t            mappedObject4;  /**< Same */
+    uint32_t            mappedObject5;  /**< Same */
+    uint32_t            mappedObject6;  /**< Same */
+    uint32_t            mappedObject7;  /**< Same */
+    uint32_t            mappedObject8;  /**< Same */
 }CO_RPDOMapPar_t;
 
 
-/*******************************************************************************
-   Object: CO_TPDOCommPar_t
-
-   _TPDO communication parameter_ record from Object dictionary (index 0x1800+).
-
-   *Type definition in CO_OD.h file must be the same!*
-
-   Variables:
-      maxSubIndex        - Equal to 6.
-      COB_IDUsedByTPDO   - Communication object identifier for transmitting message.:
-                            Bit  0-10: COB-ID for PDO, to change it bit 31 must be set.
-                            Bit 11-29: set to 0 for 11 bit COB-ID.
-                            Bit 30:    If true, rtr are NOT allowed for PDO.
-                            Bit 31:    If true, node does NOT use the PDO.
-      transmissionType   - Values:
-                            0:       Transmiting is synchronous, specification in device profile.
-                            1-240:   Transmiting is synchronous after every N-th SYNC object.
-                            241-251: Not used.
-                            252-253: Transmited only on reception of Remote Transmission Request.
-                            254:     Manufacturer specific.
-                            255:     Asinchronous, specification in device profile.
-      inhibitTime        - Minimum time between transmissions of the PDO in 100micro seconds.
-                           Zero disables functionality.
-      compatibilityEntry - Not used.
-      eventTimer         - Time between periodic transmissions of the PDO in milliseconds.
-                           Zero disables functionality.
-      SYNCStartValue     - Values:
-                            0:       Counter of the SYNC message shall not be processed.
-                            1-240:   The SYNC message with the counter value equal to this value
-                                     shall be regarded as the first received SYNC message.
-*******************************************************************************/
+/**
+ * TPDO communication parameter. The same as record from Object dictionary (index 0x1800+).
+ */
 typedef struct{
-   UNSIGNED8      maxSubIndex;
-   UNSIGNED32     COB_IDUsedByTPDO;
-   UNSIGNED8      transmissionType;
-   UNSIGNED16     inhibitTime;
-   UNSIGNED8      compatibilityEntry;
-   UNSIGNED16     eventTimer;
-   UNSIGNED8      SYNCStartValue;
+    uint8_t             maxSubIndex;    /**< Equal to 6 */
+    /** Communication object identifier for transmitting message. Meaning of the specific bits:
+        - Bit  0-10: COB-ID for PDO, to change it bit 31 must be set.
+        - Bit 11-29: set to 0 for 11 bit COB-ID.
+        - Bit 30:    If true, rtr are NOT allowed for PDO.
+        - Bit 31:    If true, node does NOT use the PDO. */
+    uint32_t            COB_IDUsedByTPDO;
+    /** Transmission type. Values:
+        - 0:       Transmiting is synchronous, specification in device profile.
+        - 1-240:   Transmiting is synchronous after every N-th SYNC object.
+        - 241-251: Not used.
+        - 252-253: Transmited only on reception of Remote Transmission Request.
+        - 254:     Manufacturer specific.
+        - 255:     Asinchronous, specification in device profile. */
+    uint8_t             transmissionType;
+    /** Minimum time between transmissions of the PDO in 100micro seconds.
+    Zero disables functionality. */
+    uint16_t            inhibitTime;
+    /** Not used */
+    uint8_t             compatibilityEntry;
+    /** Time between periodic transmissions of the PDO in milliseconds.
+    Zero disables functionality. */
+    uint16_t            eventTimer;
+    /** Used with numbered SYNC messages. Values:
+        - 0:       Counter of the SYNC message shall not be processed.
+        - 1-240:   The SYNC message with the counter value equal to this value
+                   shall be regarded as the first received SYNC message. */
+    uint8_t             SYNCStartValue;
 }CO_TPDOCommPar_t;
 
 
-/*******************************************************************************
-   Object: CO_TPDOMapPar_t
-
-   _TPDO mapping parameter_ record from Object dictionary (index 0x1A00+).
-
-   *Type definition in CO_OD.h file must be the same!*
-
-   Variables:
-      numberOfMappedObjects   - Actual number of mapped objects from 0 to 8. To
-                                change mapped object, this value must be 0.
-      mappedObject(1..8)      - Bit meanings:
-                                 Bit  0-7:  data length in bits.
-                                 Bit 8-15:  subindex from object distionary.
-                                 Bit 16-31: index from object distionary.
-*******************************************************************************/
+/**
+ * TPDO mapping parameter. The same as record from Object dictionary (index 0x1A00+).
+ */
 typedef struct{
-   UNSIGNED8      numberOfMappedObjects;
-   UNSIGNED32     mappedObject1;
-   UNSIGNED32     mappedObject2;
-   UNSIGNED32     mappedObject3;
-   UNSIGNED32     mappedObject4;
-   UNSIGNED32     mappedObject5;
-   UNSIGNED32     mappedObject6;
-   UNSIGNED32     mappedObject7;
-   UNSIGNED32     mappedObject8;
+    /** Actual number of mapped objects from 0 to 8. To change mapped object,
+    this value must be 0. */
+    uint8_t             numberOfMappedObjects;
+    /** Location and size of the mapped object. Bit meanings `0xIIIISSLL`:
+        - Bit  0-7:  Data Length in bits.
+        - Bit 8-15:  Subindex from object distionary.
+        - Bit 16-31: Index from object distionary. */
+    uint32_t            mappedObject1;
+    uint32_t            mappedObject2;  /**< Same */
+    uint32_t            mappedObject3;  /**< Same */
+    uint32_t            mappedObject4;  /**< Same */
+    uint32_t            mappedObject5;  /**< Same */
+    uint32_t            mappedObject6;  /**< Same */
+    uint32_t            mappedObject7;  /**< Same */
+    uint32_t            mappedObject8;  /**< Same */
 }CO_TPDOMapPar_t;
 
 
-/*******************************************************************************
-   Object: CO_RPDO_t
-
-   Object controls one receiving PDO object.
-
-   Variables:
-      SDO               - Pointer to SDO object <CO_SDO_t>.
-      EM                - Pointer to Emergency object <CO_emergencyReport_t>.
-      RPDOCommPar       - Pointer to _RPDO communication parameter_ record from Object
-                          dictionary (index 0x1400+).
-      RPDOMapPar        - Pointer to _RPDO mapping parameter_ record from Object
-                          dictionary (index 0x1600+).
-      operatingState    - Pointer to variable indicating CANopen device NMT internal state.
-      nodeId            - CANopen Node ID of this device.
-      defaultCOB_ID     - Default COB ID for this PDO (without NodeId). See <Default COB identifiers>.
-      restrictionFlags  - Flag bits indicates, how PDO communication
-                          and mapping parameters are handled:
-                           Bit1 = 1: communication parameters are writeable
-                                     only in pre-operational NMT state.
-                           Bit2 = 1: mapping parameters are writeable
-                                     only in pre-operational NMT state.
-                           Bit3 = 1: communication parameters are read-only.
-                           Bit4 = 1: mapping parameters are read-only.
-
-      valid             - True, if PDO is enabled and valid.
-      dataLength        - Data length of the received PDO message. Calculated from mapping.
-
-      mapPointer        - Pointers to 8 data objects, where PDO will be copied.
-
-      CANrxNew          - Variable indicates, if new PDO message received from CAN bus.
-      CANrxData         - 8 data bytes of the received message.
-      CANdevRx          - CAN device for PDO reception <CO_CANmodule_t>.
-      CANdevRxIdx       - Index of receive buffer for PDO reception.
-*******************************************************************************/
+/**
+ * RPDO object.
+ */
 typedef struct{
-   CO_emergencyReport_t         *EM;
-   CO_SDO_t                     *SDO;
-   const CO_RPDOCommPar_t       *RPDOCommPar;
-   const CO_RPDOMapPar_t        *RPDOMapPar;
-   UNSIGNED8                    *operatingState;
-   UNSIGNED8                     nodeId;
-   UNSIGNED16                    defaultCOB_ID;
-   UNSIGNED8                     restrictionFlags;
-
-   UNSIGNED8                     valid;
-   UNSIGNED8                     dataLength;
-
-   UNSIGNED8                    *mapPointer[8];
-
-   UNSIGNED16                    CANrxNew;      //must be 2-byte variable because of correct alignment of CANrxData
-   UNSIGNED8                     CANrxData[8];  //take care for correct (word) alignment!
-   CO_CANmodule_t               *CANdevRx;
-   UNSIGNED16                    CANdevRxIdx;
+    CO_EM_t            *EM;             /**< From CO_RPDO_init() */
+    CO_SDO_t           *SDO;            /**< From CO_RPDO_init() */
+    const CO_RPDOCommPar_t *RPDOCommPar;/**< From CO_RPDO_init() */
+    const CO_RPDOMapPar_t  *RPDOMapPar; /**< From CO_RPDO_init() */
+    uint8_t            *operatingState; /**< From CO_RPDO_init() */
+    uint8_t             nodeId;         /**< From CO_RPDO_init() */
+    uint16_t            defaultCOB_ID;  /**< From CO_RPDO_init() */
+    uint8_t             restrictionFlags;/**< From CO_RPDO_init() */
+    /** True, if PDO is enabled and valid */
+    uint8_t             valid;
+    /** Data length of the received PDO message. Calculated from mapping */
+    uint8_t             dataLength;
+    /** Pointers to 8 data objects, where PDO will be copied */
+    uint8_t            *mapPointer[8];
+    /** Variable indicates, if new PDO message received from CAN bus.
+    Must be 2-byte variable because of correct alignment of CANrxData. */
+    uint16_t            CANrxNew;
+    /** 8 data bytes of the received message. Take care for correct (word) alignment!*/
+    uint8_t             CANrxData[8];
+    CO_CANmodule_t     *CANdevRx;       /**< From CO_RPDO_init() */
+    uint16_t            CANdevRxIdx;    /**< From CO_RPDO_init() */
 }CO_RPDO_t;
 
 
-/*******************************************************************************
-   Object: CO_TPDO_t
-
-   Object controls one receiving PDO object.
-
-   Variables:
-      SDO               - Pointer to SDO object <CO_SDO_t>.
-      EM                - Pointer to Emergency object <CO_emergencyReport_t>.
-      TPDOCommPar       - Pointer to _TPDO communication parameter_ record
-                          from Object Dictionary (index 0x1800+).
-      TPDOMapPar        - Pointer to _TPDO mapping parameter_ record from Object
-                          dictionary (index 0x1600+).
-      operatingState    - Pointer to variable indicating CANopen device NMT internal state.
-      nodeId            - CANopen Node ID of this device.
-      defaultCOB_ID     - Default COB ID for this PDO (without NodeId). See <Default COB identifiers>.
-      restrictionFlags  - Flag bits indicates, how PDO communication
-                          and mapping parameters are handled. See object <CO_RPDO_t>.
-
-      valid             - True, if PDO is enabled and valid.
-      dataLength        - Data length of the transmitting PDO message. Calculated from mapping.
-      sendRequest       - If application set this flag, PDO will be later sent by
-                          function <CO_TPDO_process> (if correct transmission type).
-
-      mapPointer        - Pointers to 8 data objects, where PDO will be copied.
-      sendIfCOSFlags    - Each flag bit is connected with one mapPointer. If flag bit
-                          is true, <CO_TPDO_process> functiuon will send PDO if
-                          Change of State is detected on value pointed by that mapPointer.
-
-      syncCounter       - SYNC counter used for PDO sending.
-      SYNCtimerPrevious - Previous timer from <CO_SYNC_t>.
-      inhibitTimer      - Inhibit timer used for inhibit PDO sending.
-      eventTimer        - Event timer used for PDO sending.
-
-      CANdevTx          - Pointer to CAN device used for PDO transmission <CO_CANmodule_t>.
-      CANtxBuff         - CAN transmit buffer inside CANdev for CAN tx message.
-      CANdevTxIdx       - Index of CAN device TX buffer used for this PDO.
-*******************************************************************************/
+/**
+ * TPDO object.
+ */
 typedef struct{
-   CO_emergencyReport_t         *EM;
-   CO_SDO_t                     *SDO;
-   const CO_TPDOCommPar_t       *TPDOCommPar;
-   const CO_TPDOMapPar_t        *TPDOMapPar;
-   UNSIGNED8                    *operatingState;
-   UNSIGNED8                     nodeId;
-   UNSIGNED16                    defaultCOB_ID;
-   UNSIGNED8                     restrictionFlags;
-
-   UNSIGNED8                     valid;
-   UNSIGNED8                     dataLength;
-   UNSIGNED8                     sendRequest;
-
-   UNSIGNED8                    *mapPointer[8];
-   UNSIGNED8                     sendIfCOSFlags;
-
-   UNSIGNED8                     syncCounter;
-   UNSIGNED32                    SYNCtimerPrevious;
-   UNSIGNED16                    inhibitTimer;
-   UNSIGNED16                    eventTimer;
-
-   CO_CANmodule_t               *CANdevTx;
-   CO_CANtxArray_t              *CANtxBuff;
-   UNSIGNED16                    CANdevTxIdx;
+    CO_EM_t            *EM;             /**< From CO_TPDO_init() */
+    CO_SDO_t           *SDO;            /**< From CO_TPDO_init() */
+    const CO_TPDOCommPar_t *TPDOCommPar;/**< From CO_TPDO_init() */
+    const CO_TPDOMapPar_t  *TPDOMapPar; /**< From CO_TPDO_init() */
+    uint8_t            *operatingState; /**< From CO_TPDO_init() */
+    uint8_t             nodeId;         /**< From CO_TPDO_init() */
+    uint16_t            defaultCOB_ID;  /**< From CO_TPDO_init() */
+    uint8_t             restrictionFlags;/**< From CO_TPDO_init() */
+    uint8_t             valid;          /**< True, if PDO is enabled and valid */
+    /** Data length of the transmitting PDO message. Calculated from mapping */
+    uint8_t             dataLength;
+    /** If application set this flag, PDO will be later sent by
+    function CO_TPDO_process(). Depends on transmission type. */
+    uint8_t             sendRequest;
+    /** Pointers to 8 data objects, where PDO will be copied */
+    uint8_t            *mapPointer[8];
+    /** Each flag bit is connected with one mapPointer. If flag bit
+    is true, CO_TPDO_process() functiuon will send PDO if
+    Change of State is detected on value pointed by that mapPointer */
+    uint8_t             sendIfCOSFlags;
+    /** SYNC counter used for PDO sending */
+    uint8_t             syncCounter;
+    /** Previous timer from CO_SYNC_t */
+    uint32_t            SYNCtimerPrevious;
+    /** Inhibit timer used for inhibit PDO sending */
+    uint16_t            inhibitTimer;
+    /** Event timer used for PDO sending */
+    uint16_t            eventTimer;
+    CO_CANmodule_t     *CANdevTx;       /**< From CO_TPDO_init() */
+    CO_CANtx_t         *CANtxBuff;      /**< CAN transmit buffer inside CANdev */
+    uint16_t            CANdevTxIdx;    /**< From CO_TPDO_init() */
 }CO_TPDO_t;
 
 
-/*******************************************************************************
-   Function: CO_PDO_receive
-
-   Read received message from CAN module.
-
-   Function will be called (by CAN receive interrupt) every time, when CAN
-   message with correct identifier will be received. For more information and
-   description of parameters see topic <Receive CAN message function>.
-*******************************************************************************/
-INTEGER16 CO_PDO_receive(void *object, CO_CANrxMsg_t *msg);
-
-
-/*******************************************************************************
-   Function: CO_RPDOconfigCom
-
-   Configure RPDO Communication parameter.
-
-   Function is called from commuincation reset or when parameter changes.
-
-   Function configures following variable from <CO_RPDO_t>: _valid_. It also
-   configures CAN rx buffer. If configuration fails, emergency message is send
-   and device is not able to enter NMT operational.
-
-   Parameters:
-      RPDO              - Pointer to RPDO object <CO_RPDO_t>.
-      COB_IDUsedByRPDO  - _RPDO communication parameter_, _COB-ID for PDO_ variable
-                          from Object dictionary (index 0x1400+, subindex 1).
-*******************************************************************************/
-void CO_RPDOconfigCom(CO_RPDO_t* RPDO, UNSIGNED32 COB_IDUsedByRPDO);
-
-
-/*******************************************************************************
-   Function: CO_TPDOconfigCom
-
-   Configure TPDO Communication parameter.
-
-   Function is called from commuincation reset or when parameter changes.
-
-   Function configures following variable from <CO_TPDO_t>: _valid_. It also
-   configures CAN tx buffer. If configuration fails, emergency message is send
-   and device is not able to enter NMT operational.
-
-   Parameters:
-      TPDO              - Pointer to TPDO object <CO_TPDO_t>.
-      COB_IDUsedByTPDO  - _TPDO communication parameter_, _COB-ID for PDO_ variable
-                          from Object dictionary (index 0x1400+, subindex 1).
-      syncFlag          - Indicate, if TPDO is synchronous.
-*******************************************************************************/
-void CO_TPDOconfigCom(CO_TPDO_t* TPDO, UNSIGNED32 COB_IDUsedByTPDO, UNSIGNED8 syncFlag);
+/**
+ * Initialize RPDO object.
+ *
+ * Function must be called in the communication reset section.
+ *
+ * @param RPDO This object will be initialized.
+ * @param EM Emergency object.
+ * @param SDO SDO server object.
+ * @param operatingState Pointer to variable indicating CANopen device NMT internal state.
+ * @param nodeId CANopen Node ID of this device. If default COB_ID is used, value will be added.
+ * @param defaultCOB_ID Default COB ID for this PDO (without NodeId).
+ * See @ref CO_CANopen_identifiers.
+ * @param restrictionFlags Flag bits indicates, how PDO communication
+ * and mapping parameters are handled:
+ *  - Bit1: If true, communication parameters are writeable only in pre-operational NMT state.
+ *  - Bit2: If true, mapping parameters are writeable only in pre-operational NMT state.
+ *  - Bit3: If true, communication parameters are read-only.
+ *  - Bit4: If true, mapping parameters are read-only.
+ * @param RPDOCommPar Pointer to _RPDO communication parameter_ record from Object
+ * dictionary (index 0x1400+).
+ * @param RPDOMapPar Pointer to _RPDO mapping parameter_ record from Object
+ * dictionary (index 0x1600+).
+ * @param idx_RPDOCommPar Index in Object Dictionary.
+ * @param idx_RPDOMapPar Index in Object Dictionary.
+ * @param CANdevRx CAN device for PDO reception.
+ * @param CANdevRxIdx Index of receive buffer in the above CAN device.
+ *
+ * @return #CO_ReturnError_t: CO_ERROR_NO or CO_ERROR_ILLEGAL_ARGUMENT.
+ */
+int16_t CO_RPDO_init(
+        CO_RPDO_t             **RPDO,
+        CO_EM_t                *EM,
+        CO_SDO_t               *SDO,
+        uint8_t                *operatingState,
+        uint8_t                 nodeId,
+        uint16_t                defaultCOB_ID,
+        uint8_t                 restrictionFlags,
+        const CO_RPDOCommPar_t *RPDOCommPar,
+        const CO_RPDOMapPar_t  *RPDOMapPar,
+        uint16_t                idx_RPDOCommPar,
+        uint16_t                idx_RPDOMapPar,
+        CO_CANmodule_t         *CANdevRx,
+        uint16_t                CANdevRxIdx);
 
 
-/*******************************************************************************
-   Function: CO_PDOfindMap
-
-   Find mapped variable in Object Dictionary.
-
-   Function is called from CO_R(T)PDOconfigMap or when mapping parameter changes.
-
-   Parameters:
-      SDO             - Pointer to SDO object <CO_SDO_t>.
-      map             - PDO mapping parameter.
-      R_T             - 0 for RPDO map, 1 for TPDO map.
-      ppData          - Pointer to returning parameter: pointer to data of mapped variable.
-      pLength         - Pointer to returning parameter: *add* length of mapped variable.
-      pSendIfCOSFlags - Pointer to returning parameter: sendIfCOSFlags variable.
-      pIsMultibyteVar - Pointer to returning parameter: true for multibyte variable.
-
-   Return:
-      0 on success, otherwise <SDO abort code>.
-*******************************************************************************/
-UNSIGNED32 CO_PDOfindMap(  CO_SDO_t      *SDO,
-                           UNSIGNED32     map,
-                           UNSIGNED8      R_T,
-                           UNSIGNED8    **ppData,
-                           UNSIGNED8     *pLength,
-                           UNSIGNED8     *pSendIfCOSFlags,
-                           UNSIGNED8     *pIsMultibyteVar);
-
-
-/*******************************************************************************
-   Function: CO_RPDOconfigMap
-
-   Configure RPDO Mapping parameter.
-
-   Function is called from communication reset or when parameter changes.
-
-   Function configures following variables from <CO_RPDO_t>: _dataLength_ and
-   _mapPointer_.
-
-   Parameters:
-      RPDO              - Pointer to RPDO object <CO_RPDO_t>.
-      noOfMappedObjects - Number of mapped object (from OD).
-
-   Return:
-      0 on success, otherwise <SDO abort code>.
-*******************************************************************************/
-UNSIGNED32 CO_RPDOconfigMap(CO_RPDO_t* RPDO, UNSIGNED8 noOfMappedObjects);
-
-
-/*******************************************************************************
-   Function: CO_TPDOconfigMap
-
-   Configure TPDO Mapping parameter.
-
-   Function is called from communication reset or when parameter changes.
-
-   Function configures following variables from <CO_TPDO_t>: _dataLength_,
-   _mapPointer_ and _sendIfCOSFlags_.
-
-   Parameters:
-      TPDO              - Pointer to TPDO object <CO_TPDO_t>.
-      noOfMappedObjects - Number of mapped object (from OD).
-
-   Return:
-      0 on success, otherwise <SDO abort code>.
-*******************************************************************************/
-UNSIGNED32 CO_TPDOconfigMap(CO_TPDO_t* TPDO, UNSIGNED8 noOfMappedObjects);
-
-
-/*******************************************************************************
-   Function: CO_ODF_RPDOcom
-
-   Function for accessing _RPDO communication parameter_ (index 0x1400+) from SDO server.
-
-   For more information see topic <Object dictionary function>.
-*******************************************************************************/
-UNSIGNED32 CO_ODF_RPDOcom(CO_ODF_arg_t *ODF_arg);
-
-
-/*******************************************************************************
-   Function: CO_ODF_TPDOcom
-
-   Function for accessing _TPDO communication parameter_ (index 0x1800+) from SDO server.
-
-   For more information see topic <Object dictionary function>.
-*******************************************************************************/
-UNSIGNED32 CO_ODF_TPDOcom(CO_ODF_arg_t *ODF_arg);
-
-
-/*******************************************************************************
-   Function: CO_ODF_RPDOmap
-
-   Function for accessing _RPDO mapping parameter_ (index 0x1600+) from SDO server.
-
-   For more information see topic <Object dictionary function>.
-*******************************************************************************/
-UNSIGNED32 CO_ODF_RPDOmap(CO_ODF_arg_t *ODF_arg);
-
-
-/*******************************************************************************
-   Function: CO_ODF_TPDOmap
-
-   Function for accessing _TPDO mapping parameter_ (index 0x1A00+) from SDO server.
-
-   For more information see topic <Object dictionary function>.
-*******************************************************************************/
-UNSIGNED32 CO_ODF_TPDOmap(CO_ODF_arg_t *ODF_arg);
-
-
-/*******************************************************************************
-   Function: CO_RPDO_init
-
-   Initialize receiving PDO object.
-
-   Function must be called in the communication reset section.
-
-   Parameters:
-      ppRPDO                     - Pointer to address of RPDO object <CO_RPDO_t>.
-                                   If address is zero, memory for new object will be
-                                   allocated and address will be set.
-      EM                         - Pointer to Emergency object <CO_emergencyReport_t>.
-      SDO                        - Pointer to SDO object <CO_SDO_t>.
-      operatingState             - Pointer to variable indicating CANopen device NMT internal state.
-      nodeId                     - CANopen Node ID of this device. If default COB_ID is used, value will be added.
-      defaultCOB_ID              - Default COB ID for this PDO (without NodeId). See <Default COB identifiers>.
-      restrictionFlags           - Flag bits indicates, how PDO communication
-                                   and mapping parameters are handled. See object <CO_RPDO_t>.
-      RPDOCommPar                - Pointer to _RPDO communication parameter_ record from Object
-                                   dictionary (index 0x1400+).
-      RPDOMapPar                 - Pointer to _RPDO mapping parameter_ record from Object
-                                   dictionary (index 0x1600+).
-      ObjDictIndex_RPDOCommPar   - Index in Object Dictionary.
-      ObjDictIndex_RPDOMapPar    - Index in Object Dictionary.
-      CANdevRx                   - CAN device for PDO reception <CO_CANmodule_t>.
-      CANdevRxIdx                - Index of receive buffer for PDO reception.
-
-   Return <CO_ReturnError>:
-      CO_ERROR_NO                - Operation completed successfully.
-      CO_ERROR_ILLEGAL_ARGUMENT  - Error in function arguments.
-      CO_ERROR_OUT_OF_MEMORY     - Memory allocation failed.
-*******************************************************************************/
-INTEGER16 CO_RPDO_init(
-      CO_RPDO_t                      **ppRPDO,
-      CO_emergencyReport_t            *EM,
-      CO_SDO_t                        *SDO,
-      UNSIGNED8                       *operatingState,
-      UNSIGNED8                        nodeId,
-      UNSIGNED16                       defaultCOB_ID,
-      UNSIGNED8                        restrictionFlags,
-      const CO_RPDOCommPar_t          *RPDOCommPar,
-      const CO_RPDOMapPar_t           *RPDOMapPar,
-      UNSIGNED16                       ObjDictIndex_RPDOCommPar,
-      UNSIGNED16                       ObjDictIndex_RPDOMapPar,
-      CO_CANmodule_t *CANdevRx, UNSIGNED16 CANdevRxIdx);
-
-
-/*******************************************************************************
-   Function: CO_RPDO_delete
-
-   Delete RPDO object and free memory.
-
-   Parameters:
-      ppRPDO       - Pointer to pointer to RPDO object <CO_RPDO_t>.
-                     Pointer to RPDO object is set to 0.
-*******************************************************************************/
+/**
+ * Delete RPDO object and free memory.
+ *
+ * @param ppRPDO Pointer to pointer to RPDO object CO_RPDO_t.
+ * Pointer to RPDO object is set to 0.
+ */
 void CO_RPDO_delete(CO_RPDO_t **ppRPDO);
 
 
-/*******************************************************************************
-   Function: CO_TPDO_init
-
-   Initialize transmitting PDO object.
-
-   Function must be called in the communication reset section.
-
-   Parameters:
-      ppTPDO                     - Pointer to address of TPDO object <CO_TPDO_t>.
-                                   If address is zero, memory for new object will be
-                                   allocated and address will be set.
-      EM                         - Pointer to Emergency object <CO_emergencyReport_t>.
-      SDO                        - Pointer to SDO object <CO_SDO_t>.
-      operatingState             - Pointer to variable indicating CANopen device NMT internal state.
-      nodeId                     - CANopen Node ID of this device. If default COB_ID is used, value will be added.
-      defaultCOB_ID              - Default COB ID for this PDO (without NodeId). See <Default COB identifiers>.
-      restrictionFlags           - Flag bits indicates, how PDO communication
-                                   and mapping parameters are handled. See object <CO_RPDO_t>.
-      TPDOCommPar                - Pointer to _TPDO communication parameter_ record from Object
-                                   dictionary (index 0x1400+).
-      TPDOMapPar                 - Pointer to _TPDO mapping parameter_ record from Object
-                                   dictionary (index 0x1600+).
-      ObjDictIndex_TPDOCommPar   - Index in Object Dictionary.
-      ObjDictIndex_TPDOMapPar    - Index in Object Dictionary.
-      CANdevTx                   - Pointer to CAN device used for PDO transmission <CO_CANmodule_t>.
-      CANdevTxIdx                - Index of CAN device TX buffer used for this PDO.
-
-   Return <CO_ReturnError>:
-      CO_ERROR_NO                - Operation completed successfully.
-      CO_ERROR_ILLEGAL_ARGUMENT  - Error in function arguments.
-      CO_ERROR_OUT_OF_MEMORY     - Memory allocation failed.
-*******************************************************************************/
-INTEGER16 CO_TPDO_init(
-      CO_TPDO_t                      **ppTPDO,
-      CO_emergencyReport_t            *EM,
-      CO_SDO_t                        *SDO,
-      UNSIGNED8                       *operatingState,
-      UNSIGNED8                        nodeId,
-      UNSIGNED16                       defaultCOB_ID,
-      UNSIGNED8                        restrictionFlags,
-      const CO_TPDOCommPar_t          *TPDOCommPar,
-      const CO_TPDOMapPar_t           *TPDOMapPar,
-      UNSIGNED16                       ObjDictIndex_TPDOCommPar,
-      UNSIGNED16                       ObjDictIndex_TPDOMapPar,
-      CO_CANmodule_t *CANdevTx, UNSIGNED16 CANdevTxIdx);
+/**
+ * Initialize TPDO object.
+ *
+ * Function must be called in the communication reset section.
+ *
+ * @param TPDO This object will be initialized.
+ * @param EM Emergency object.
+ * @param SDO SDO object.
+ * @param operatingState Pointer to variable indicating CANopen device NMT internal state.
+ * @param nodeId CANopen Node ID of this device. If default COB_ID is used, value will be added.
+ * @param defaultCOB_ID Default COB ID for this PDO (without NodeId).
+ * See @ref CO_CANopen_identifiers.
+ * @param restrictionFlags Flag bits indicates, how PDO communication
+ * and mapping parameters are handled:
+ *  - Bit1: If true, communication parameters are writeable only in pre-operational NMT state.
+ *  - Bit2: If true, mapping parameters are writeable only in pre-operational NMT state.
+ *  - Bit3: If true, communication parameters are read-only.
+ *  - Bit4: If true, mapping parameters are read-only.
+ * @param TPDOCommPar Pointer to _TPDO communication parameter_ record from Object
+ * dictionary (index 0x1400+).
+ * @param TPDOMapPar Pointer to _TPDO mapping parameter_ record from Object
+ * dictionary (index 0x1600+).
+ * @param idx_TPDOCommPar Index in Object Dictionary.
+ * @param idx_TPDOMapPar Index in Object Dictionary.
+ * @param CANdevTx CAN device used for PDO transmission.
+ * @param CANdevTxIdx Index of transmit buffer in the above CAN device.
+ *
+ * @return #CO_ReturnError_t: CO_ERROR_NO or CO_ERROR_ILLEGAL_ARGUMENT.
+ */
+int16_t CO_TPDO_init(
+        CO_TPDO_t             **TPDO,
+        CO_EM_t                *EM,
+        CO_SDO_t               *SDO,
+        uint8_t                *operatingState,
+        uint8_t                 nodeId,
+        uint16_t                defaultCOB_ID,
+        uint8_t                 restrictionFlags,
+        const CO_TPDOCommPar_t *TPDOCommPar,
+        const CO_TPDOMapPar_t  *TPDOMapPar,
+        uint16_t                idx_TPDOCommPar,
+        uint16_t                idx_TPDOMapPar,
+        CO_CANmodule_t         *CANdevTx,
+        uint16_t                CANdevTxIdx);
 
 
-/*******************************************************************************
-   Function: CO_TPDO_delete
-
-   Delete TPDO object and free memory.
-
-   Parameters:
-      ppTPDO       - Pointer to pointer to TPDO object <CO_TPDO_t>.
-                     Pointer to TPDO object is set to 0.
-*******************************************************************************/
+/**
+ * Delete TPDO object and free memory.
+ *
+ * @param ppTPDO Pointer to pointer to TPDO object CO_TPDO_t.
+ * Pointer to TPDO object is set to 0.
+ */
 void CO_TPDO_delete(CO_TPDO_t **ppTPDO);
 
 
-/*******************************************************************************
-   Function: CO_TPDOisCOS
-
-   Verify Change of State of the PDO.
-
-   Function verifies if variable mapped to TPDO has changed its value. Verified
-   are only variables, which has set attribute _CO_ODA_TPDO_DETECT_COS_ in
-   <Attribute flags for sCO_OD_object>.
-
-   Function may be called by application just before <CO_TPDO_process> function,
-   for example:
->  TPDOx->sendRequest = CO_TPDOisCOS(TPDOx);
->  CO_TPDO_process(TPDOx, ....
-
-   Parameters:
-      TPDO  - Pointer to TPDO object <CO_TPDO_t>.
-
-   Return:
-      True if COS was detected.
-*******************************************************************************/
-UNSIGNED8 CO_TPDOisCOS(CO_TPDO_t *TPDO);
+/**
+ * Verify Change of State of the PDO.
+ *
+ * Function verifies if variable mapped to TPDO has changed its value. Verified
+ * are only variables, which has set attribute _CO_ODA_TPDO_DETECT_COS_ in
+ * #CO_SDO_OD_attributes.
+ *
+ * Function may be called by application just before CO_TPDO_process() function,
+ * for example: `TPDOx->sendRequest = CO_TPDOisCOS(TPDOx); CO_TPDO_process(TPDOx, ....`
+ *
+ * @param TPDO TPDO object.
+ *
+ * @return True if COS was detected.
+ */
+uint8_t CO_TPDOisCOS(CO_TPDO_t *TPDO);
 
 
-/*******************************************************************************
-   Function: CO_TPDOsend
+/**
+ * Send TPDO message.
+ *
+ * Function prepares TPDO data from Object Dictionary variables. It should not
+ * be called by application, it is called from CO_TPDO_process().
+ *
+ *
+ * @param TPDO TPDO object.
+ *
+ * @return Same as CO_CANsend().
+ */
+int16_t CO_TPDOsend(CO_TPDO_t *TPDO);
 
-   Send TPDO message. Prepare TPDO data from Object Dictionary variables.
 
-   Parameters:
-      TPDO  - Pointer to TPDO object <CO_TPDO_t>.
-
-   Return:
-      Same as <CO_CANsend>.
-*******************************************************************************/
-INTEGER16 CO_TPDOsend(CO_TPDO_t *TPDO);
-
-
-/*******************************************************************************
-   Function: CO_RPDO_process
-
-   Process received PDO messages.
-
-   Function must be called cyclically in any NMT state. It copies data from RPDO
-   to Object Dictionary variables if: new PDO receives and PDO is valid and NMT
-   operating state is operational. It does not verify _transmission type_.
-
-   Parameters:
-      RPDO     - Pointer to RPDO object <CO_RPDO_t>.
-*******************************************************************************/
+/**
+ * Process received PDO messages.
+ *
+ * Function must be called cyclically in any NMT state. It copies data from RPDO
+ * to Object Dictionary variables if: new PDO receives and PDO is valid and NMT
+ * operating state is operational. It does not verify _transmission type_.
+ *
+ * @param RPDO This object.
+ */
 void CO_RPDO_process(CO_RPDO_t *RPDO);
 
 
-/*******************************************************************************
-   Function: CO_TPDO_process
-
-   Process transmitting PDO messages.
-
-   Function must be called cyclically in any NMT state. It prepares and sends
-   TPDO if necessary. If Change of State needs to be detected, function
-   <CO_TPDOisCOS> must be called before.
-
-   Parameters:
-      TPDO                 - Pointer to TPDO object <CO_TPDO_t>.
-      SYNC                 - Pointer to SYNC object <CO_SYNC_t>. Ignored if NULL.
-      timeDifference_100us - Time difference from previous function call in [100 * microseconds].
-      timeDifference_ms    - Time difference from previous function call in [milliseconds].
-*******************************************************************************/
-void CO_TPDO_process(   CO_TPDO_t     *TPDO,
-                        CO_SYNC_t     *SYNC,
-                        UNSIGNED16     timeDifference_100us,
-                        UNSIGNED16     timeDifference_ms);
+/**
+ * Process transmitting PDO messages.
+ *
+ * Function must be called cyclically in any NMT state. It prepares and sends
+ * TPDO if necessary. If Change of State needs to be detected, function
+ * CO_TPDOisCOS() must be called before.
+ *
+ * @param TPDO This object.
+ * @param SYNC SYNC object. Ignored if NULL.
+ * @param timeDifference_100us Time difference from previous function call in [100 * microseconds].
+ * @param timeDifference_ms Time difference from previous function call in [milliseconds].
+ */
+void CO_TPDO_process(
+        CO_TPDO_t              *TPDO,
+        CO_SYNC_t              *SYNC,
+        uint16_t                timeDifference_100us,
+        uint16_t                timeDifference_ms);
 
 
+/** @} */
 #endif

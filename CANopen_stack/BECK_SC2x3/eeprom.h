@@ -1,179 +1,110 @@
-/*******************************************************************************
-
-   File: eeprom.h
-   Object for retentive storage of Object Dictionary.
-
-   Copyright (C) 2004-2010 Janez Paternoster
-
-   License: GNU Lesser General Public License (LGPL).
-
-   <http://canopennode.sourceforge.net>
-*/
 /*
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU Lesser General Public License as published by
-   the Free Software Foundation, either version 3 of the License, or
-   (at your option) any later version.
+ * Eeprom object for BECK SC243 computer.
+ *
+ * @file        eeprom.h
+ * @version     SVN: \$Id$
+ * @author      Janez Paternoster
+ * @copyright   2004 - 2013 Janez Paternoster
+ *
+ * This file is part of CANopenNode, an opensource CANopen Stack.
+ * Project home page is <http://canopennode.sourceforge.net>.
+ * For more information on CANopen see <http://www.can-cia.org/>.
+ *
+ * CANopenNode is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU Lesser General Public License for more details.
-
-   You should have received a copy of the GNU Lesser General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-
-   Author: Janez Paternoster
-
-*******************************************************************************/
 
 #ifndef _EEPROM_H
 #define _EEPROM_H
 
 
-/*******************************************************************************
-   Topic: EEPROM
+/* For documentation see file genericDriver/eeprom.h */
 
-   Usage of device file system or SRAM for storing non-volatile variables.
 
-   Two blocks of CANopen Object Dictionary data are stored as non-volatile:
-   OD_EEPROM - Stored is in internal battery powered SRAM from address 0. Data
-               are stored automatically on change. No data corruption control
-               is made. Data are load on startup.
-   OD_ROM    - Stored in file named "OD_ROM01.dat". Data integrity is
-               verified with CRC.
-               Data are stored on special CANopen command - Writing 0x65766173
-               into Object dictionary (index 1010, subindex 1). Default values
-               are restored after reset, if writing 0x64616F6C into (1011, 1).
-               Backup is stored to "OD_ROM01.old".
-*******************************************************************************/
+/*
+ * SC243 specific
+ *
+ * Usage of device file system or SRAM for storing non-volatile variables.
+ *
+ * Two blocks of CANopen Object Dictionary data are stored as non-volatile:
+ * OD_EEPROM - Stored is in internal battery powered SRAM from address 0. Data
+ *             are stored automatically on change. No data corruption control
+ *             is made. Data are load on startup.
+ * OD_ROM    - Stored in file named "OD_ROM01.dat". Data integrity is
+ *             verified with CRC.
+ *             Data are stored on special CANopen command - Writing 0x65766173
+ *             into Object dictionary (index 1010, subindex 1). Default values
+ *             are restored after reset, if writing 0x64616F6C into (1011, 1).
+ *             Backup is stored to "OD_ROM01.old".
+ */
+
+
+/* Filename */
 #ifndef EE_ROM_FILENAME
-	#define EE_ROM_FILENAME       "OD_ROM01.dat"
+    #define EE_ROM_FILENAME       "OD_ROM01.dat"
 #endif
 #ifndef EE_ROM_FILENAME_OLD
-	#define EE_ROM_FILENAME_OLD   "OD_ROM01.old"
+    #define EE_ROM_FILENAME_OLD   "OD_ROM01.old"
 #endif
 
 
-/*******************************************************************************
-   Object: EE_t
-
-   Variables for eeprom object.
-
-   Variables:
-      OD_EEPROMAddress        - See parameters in <EE_init_1>.
-      OD_EEPROMSize           - OD_EEPROMSize in words (not bytes).
-      OD_ROMAddress           - See parameters in <EE_init_1>.
-      OD_ROMSize              - See parameters in <EE_init_1>.
-      pSRAM                   - Pointer to start address of the battery powered SRAM
-      OD_EEPROMCurrentIndex   - Internal variable controls the OD_EEPROM vrite.
-      OD_EEPROMWriteEnable    - Writing to EEPROM is enabled.
-*******************************************************************************/
+/* Eeprom object */
 typedef struct{
-   UNSIGNED32    *OD_EEPROMAddress;
-   UNSIGNED32     OD_EEPROMSize;
-   UNSIGNED8     *OD_ROMAddress;
-   UNSIGNED32     OD_ROMSize;
-   UNSIGNED32    *pSRAM;
-   UNSIGNED32     OD_EEPROMCurrentIndex;
-   UNSIGNED8      OD_EEPROMWriteEnable;
+    uint32_t           *OD_EEPROMAddress;
+    uint32_t            OD_EEPROMSize;
+    uint8_t            *OD_ROMAddress;
+    uint32_t            OD_ROMSize;
+    uint32_t           *pSRAM;          /* SC243 specific: Pointer to start
+                                           address of the battery powered SRAM */
+    uint32_t            OD_EEPROMCurrentIndex;
+    uint8_t             OD_EEPROMWriteEnable;
 }EE_t;
 
 
-/*******************************************************************************
-   Function: CO_ODF_1010
-
-   Function for accessing _Store parameters_ (index 0x1010) from SDO server.
-
-   For more information see topic <Object dictionary function>.
-*******************************************************************************/
-UNSIGNED32 CO_ODF_1010(CO_ODF_arg_t *ODF_arg);
-
-
-/*******************************************************************************
-   Function: CO_ODF_1011
-
-   Function for accessing _Restore default parameters_ (index 0x1011) from SDO server.
-
-   For more information see topic <Object dictionary function>.
-*******************************************************************************/
-UNSIGNED32 CO_ODF_1011(CO_ODF_arg_t *ODF_arg);
+/* Eeprom object
+ *  @param SRAMAddress Address of battery powered SRAM memory.
+ */
+int16_t EE_init_1(
+        EE_t                  **EE,
+        uint8_t                *SRAMAddress,
+        uint8_t                *OD_EEPROMAddress,
+        uint32_t                OD_EEPROMSize,
+        uint8_t                *OD_ROMAddress,
+        uint32_t                OD_ROMSize);
 
 
 /*******************************************************************************
-   Function: EE_init_1
+    Function: EE_delete
 
-   First part of eeprom initialization. Called once after microcontroller reset.
+    Delete EEPROM object and free memory.
 
-   Allocate memory for object, configure SPI port for use with 25LCxxx, read
-   eeprom and store to OD_EEPROM and OD_ROM.
-
-   Variables:
-      ppEE                    - Pointer to address of eeprom object <EE_t>.
-      SRAMAddress             - Address of battery powered SRAM memory.
-      OD_EEPROMAddress        - Address of OD_EEPROM structure from object dictionary.
-      OD_EEPROMSize           - Size of OD_EEPROM structure from object dictionary.
-      OD_ROMAddress           - Address of OD_ROM structure from object dictionary.
-      OD_ROMSize              - Size of OD_ROM structure from object dictionary.
-
-   Return:
-      CO_ERROR_NO             - Operation completed successfully.
-      CO_ERROR_OUT_OF_MEMORY  - Memory allocation failed.
-      CO_ERROR_DATA_CORRUPT   - Data in eeprom corrupt.
-      CO_ERROR_CRC            - CRC from MBR does not match the CRC of OD_ROM block in eeprom.
-*******************************************************************************/
-INTEGER16 EE_init_1(
-      EE_t            **ppEE,
-      UNSIGNED8        *SRAMAddress,
-      UNSIGNED8        *OD_EEPROMAddress,
-      UNSIGNED32        OD_EEPROMSize,
-      UNSIGNED8        *OD_ROMAddress,
-      UNSIGNED32        OD_ROMSize);
-
-
-/*******************************************************************************
-   Function: EE_delete
-
-   Delete EEPROM object and free memory.
-
-   Parameters:
-      ppEE              - Pointer to pointer to EEPROM object <EE_t>.
-                          Pointer to object is set to 0.
+    Parameters:
+        ppEE              - Pointer to pointer to EEPROM object <EE_t>.
+                                 Pointer to object is set to 0.
 *******************************************************************************/
 void EE_delete(EE_t **ppEE);
 
 
-/*******************************************************************************
-   Function: EE_init_2
-
-   Second part of eeprom initialization. Called after CANopen communication reset.
-
-   Call functions CO_OD_configureArgumentForODF() and CO_errorReport() if necessary.
-
-   Variables:
-      EE          - Pointer eeprom object <EE_t>.
-      EEStatus    - Return value from <EE_init_1>.
-      SDO         - Pointer to SDO object <CO_SDO_t>.
-      EM          - Pointer to Emergency object <CO_emergencyReport_t>.
-*******************************************************************************/
-#define EE_init_2(EE, EEStatus, SDO, EM)                                   \
-   CO_OD_configure(SDO, 0x1010, CO_ODF_1010, (void*)EE);                   \
-   CO_OD_configure(SDO, 0x1011, CO_ODF_1011, (void*)EE);                   \
-   if(EEStatus) CO_errorReport(EM, ERROR_NON_VOLATILE_MEMORY, EEStatus)
+/* Second part of eeprom initialization. */
+void EE_init_2(
+        EE_t                   *EE, 
+        int16_t                 EEStatus,
+        CO_SDO_t               *SDO,
+        CO_EM_t                *EM);
 
 
-/*******************************************************************************
-   Function: EE_process
-
-   Process eeprom object.
-
-   Function must be called cyclically. It strores variables from OD_EEPROM data
-   block into eeprom byte by byte (only if values are different).
-
-   Parameters:
-      EE       - Pointer to eeprom object <EE_t>.
-*******************************************************************************/
+/* Process eeprom object. */
 void EE_process(EE_t *EE);
 
 

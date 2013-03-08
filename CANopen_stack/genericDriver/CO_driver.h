@@ -1,20 +1,19 @@
 /**
- * Microcontroller specific code for CANopenNode.
+ * CAN module object for generic microcontroller.
  *
- * This file is a template for driver files for other microcontrollers.
+ * This file is a template for other microcontrollers.
  *
  * @file        CO_driver.h
  * @ingroup     CO_driver
- * @author      Janez Paternoster
- * @copyright   GNU Lesser General Public License (LGPL).
- * @date        2004 - 2013
  * @version     SVN: \$Id$
+ * @author      Janez Paternoster
+ * @copyright   2004 - 2013 Janez Paternoster
  *
  * This file is part of CANopenNode, an opensource CANopen Stack.
  * Project home page is <http://canopennode.sourceforge.net>.
  * For more information on CANopen see <http://www.can-cia.org/>.
  *
- * This program is free software: you can redistribute it and/or modify
+ * CANopenNode is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
@@ -42,7 +41,7 @@
  * @{
  *
  * Microcontroller specific code for CANopenNode.
- * 
+ *
  * This file contains type definitions, functions and macros for:
  *  - Basic data types.
  *  - Receive and transmit buffers for CANopen messages.
@@ -81,7 +80,7 @@
  * Callback function must be fast and must only make the necessary calculations
  * and copying.
  *
- * Received CAN messages are processed by CAN receive interrupt function. 
+ * Received CAN messages are processed by CAN receive interrupt function.
  * After CAN message is received, function first tries to find matching CAN
  * identifier from CO_CANrx_t array. If found, then a corresponding callback
  * function is called.
@@ -90,7 +89,7 @@
  *  - object is pointer to object registered by CO_CANrxBufferInit().
  *  - msg  is pointer to CAN message of type CO_CANrxMsg_t.
  *
- * Callback function must return CO_ReturnError: CO_ERROR_NO,
+ * Callback function must return #CO_ReturnError_t: CO_ERROR_NO,
  * CO_ERROR_RX_OVERFLOW, CO_ERROR_RX_PDO_OVERFLOW, CO_ERROR_RX_MSG_LENGTH or
  * CO_ERROR_RX_PDO_LENGTH.
  *
@@ -114,70 +113,11 @@
 
 
 /**
- * @defgroup CO_dataTypes Data types
- * @{
- *
- * According to Misra C
- */
-    #define uint8_t     unsigned char           /**< uint8_t */
-    #define uint16_t    unsigned short int      /**< uint16_t */
-    #define uint32_t    unsigned long int       /**< uint32_t */
-    #define uint64_t    unsigned long long int  /**< uint64_t */
-    #define int8_t      signed char             /**< int8_t */
-    #define int16_t     signed short int        /**< int16_t */
-    #define int32_t     signed long int         /**< int32_t */
-    #define int64_t     signed long long int    /**< int64_t */
-    #define float32_t   float                   /**< float32_t */
-    #define float64_t   long double             /**< float64_t */
-    #define char_t      char                    /**< char_t */
-    #define oChar_t     unsigned char           /**< oChar_t */
-    #define domain_t    unsigned char           /**< domain_t */
-
-   #define UNSIGNED8       unsigned char
-   #define UNSIGNED16      unsigned short int
-   #define UNSIGNED32      unsigned long int
-   #define UNSIGNED64      unsigned long long int
-   #define INTEGER8        signed char
-   #define INTEGER16       signed short int
-   #define INTEGER32       signed long int
-   #define INTEGER64       signed long long int
-   #define REAL32          float
-   #define REAL64          long double
-   #define VISIBLE_STRING  char
-   #define OCTET_STRING    unsigned char
-   #define DOMAIN          unsigned char
-/** @} */
-
-
-/**
- * Return values of some CANopen functions. If function was executed
- * successfully it returns 0 otherwise it returns <0.
- */
-enum CO_ReturnError{
-    CO_ERROR_NO                 = 0,    /**< Operation completed successfully */
-    CO_ERROR_ILLEGAL_ARGUMENT   = -1,   /**< Error in function arguments */
-    CO_ERROR_OUT_OF_MEMORY      = -2,   /**< Memory allocation failed */
-    CO_ERROR_TIMEOUT            = -3,   /**< Function timeout */
-    CO_ERROR_ILLEGAL_BAUDRATE   = -4,   /**< Illegal baudrate passed to function CO_CANmodule_init() */
-    CO_ERROR_RX_OVERFLOW        = -5,   /**< Previous message was not processed yet */
-    CO_ERROR_RX_PDO_OVERFLOW    = -6,   /**< previous PDO was not processed yet */
-    CO_ERROR_RX_MSG_LENGTH      = -7,   /**< Wrong receive message length */
-    CO_ERROR_RX_PDO_LENGTH      = -8,   /**< Wrong receive PDO length */
-    CO_ERROR_TX_OVERFLOW        = -9,   /**< Previous message is still waiting, buffer full */
-    CO_ERROR_TX_PDO_WINDOW      = -10,  /**< Synchronous TPDO is outside window */
-    CO_ERROR_TX_UNCONFIGURED    = -11,  /**< Transmit buffer was not confugured properly */
-    CO_ERROR_PARAMETERS         = -12,  /**< Error in function function parameters */
-    CO_ERROR_DATA_CORRUPT       = -13,  /**< Stored data are corrupt */
-    CO_ERROR_CRC                = -14   /**< CRC does not match */
-};
-
-
-/**
  * @name CAN module base address
  * @{
  */
     #define ADDR_CAN1   0   /**< Starting address of CAN module 1 registers */
-    #define ADDR_CAN2  (_CAN2_BASE_ADDRESS - _CAN1_BASE_ADDRESS)    /**< Starting address of CAN module 2 registers */
+    #define ADDR_CAN2   1   /**< Starting address of CAN module 2 registers */
 /** @} */
 
 
@@ -194,11 +134,56 @@ enum CO_ReturnError{
 
 
 /**
+ * @defgroup CO_dataTypes Data types
+ * @{
+ *
+ * According to Misra C
+ */
+    typedef unsigned char           uint8_t;    /**< uint8_t */
+    typedef unsigned short int      uint16_t;   /**< uint16_t */
+    typedef unsigned long int       uint32_t;   /**< uint32_t */
+    typedef unsigned long long int  uint64_t;   /**< uint64_t */
+    typedef signed char             int8_t;     /**< int8_t */
+    typedef signed short int        int16_t;    /**< int16_t */
+    typedef signed long int         int32_t;    /**< int32_t */
+    typedef signed long long int    int64_t;    /**< int64_t */
+    typedef float                   float32_t;  /**< float32_t */
+    typedef long double             float64_t;  /**< float64_t */
+    typedef char                    char_t;     /**< char_t */
+    typedef unsigned char           oChar_t;    /**< oChar_t */
+    typedef unsigned char           domain_t;   /**< domain_t */
+/** @} */
+
+
+/**
+ * Return values of some CANopen functions. If function was executed
+ * successfully it returns 0 otherwise it returns <0.
+ */
+typedef enum{
+    CO_ERROR_NO                 = 0,    /**< Operation completed successfully */
+    CO_ERROR_ILLEGAL_ARGUMENT   = -1,   /**< Error in function arguments */
+    CO_ERROR_OUT_OF_MEMORY      = -2,   /**< Memory allocation failed */
+    CO_ERROR_TIMEOUT            = -3,   /**< Function timeout */
+    CO_ERROR_ILLEGAL_BAUDRATE   = -4,   /**< Illegal baudrate passed to function CO_CANmodule_init() */
+    CO_ERROR_RX_OVERFLOW        = -5,   /**< Previous message was not processed yet */
+    CO_ERROR_RX_PDO_OVERFLOW    = -6,   /**< previous PDO was not processed yet */
+    CO_ERROR_RX_MSG_LENGTH      = -7,   /**< Wrong receive message length */
+    CO_ERROR_RX_PDO_LENGTH      = -8,   /**< Wrong receive PDO length */
+    CO_ERROR_TX_OVERFLOW        = -9,   /**< Previous message is still waiting, buffer full */
+    CO_ERROR_TX_PDO_WINDOW      = -10,  /**< Synchronous TPDO is outside window */
+    CO_ERROR_TX_UNCONFIGURED    = -11,  /**< Transmit buffer was not confugured properly */
+    CO_ERROR_PARAMETERS         = -12,  /**< Error in function function parameters */
+    CO_ERROR_DATA_CORRUPT       = -13,  /**< Stored data are corrupt */
+    CO_ERROR_CRC                = -14   /**< CRC does not match */
+}CO_ReturnError_t;
+
+
+/**
  * CAN receive message structure as aligned in CAN module. It is different in
  * different microcontrollers. It usually contains other variables.
  */
 typedef struct{
-    /** CAN identifier. it must be read through CO_CANrxMsg_readIdent() function. */
+    /** CAN identifier. It must be read through CO_CANrxMsg_readIdent() function. */
     uint32_t            ident;
     uint8_t             DLC ;           /**< Length of CAN message */
     uint8_t             data[8];        /**< 8 data bytes */
@@ -270,23 +255,23 @@ typedef struct{
 /* #define BIG_ENDIAN */
 
 /**
- * Copy 2 data bytes from source to destination. Swap bytes if 
+ * Copy 2 data bytes from source to destination. Swap bytes if
  * microcontroller is big-endian.
  *
  * @param dest Destination location.
  * @param src Source location.
  */
 void memcpySwap2(uint8_t* dest, uint8_t* src);
- 
+
 /**
- * Copy 4 data bytes from source to destination. Swap bytes if 
+ * Copy 4 data bytes from source to destination. Swap bytes if
  * microcontroller is big-endian.
  *
  * @param dest Destination location.
  * @param src Source location.
  */
 void memcpySwap4(uint8_t* dest, uint8_t* src);
- 
+
 /** @} */
 
 
@@ -321,7 +306,7 @@ void CO_CANsetNormalMode(uint16_t CANbaseAddress);
  * @param CANbitRate Valid values are (in kbps): 10, 20, 50, 125, 250, 500, 800, 1000.
  * If value is illegal, bitrate defaults to 125.
  *
- * Return CO_ReturnError: CO_ERROR_NO or CO_ERROR_ILLEGAL_ARGUMENT.
+ * Return #CO_ReturnError_t: CO_ERROR_NO or CO_ERROR_ILLEGAL_ARGUMENT.
  */
 int16_t CO_CANmodule_init(
         CO_CANmodule_t         *CANmodule,
@@ -362,7 +347,7 @@ uint16_t CO_CANrxMsg_readIdent(CO_CANrxMsg_t *rxMsg);
  * @param pFunct Pointer to function, which will be called, if received CAN
  * message matches the identifier. It must be fast function.
  *
- * Return CO_ReturnError: CO_ERROR_NO CO_ERROR_ILLEGAL_ARGUMENT or
+ * Return #CO_ReturnError_t: CO_ERROR_NO CO_ERROR_ILLEGAL_ARGUMENT or
  * CO_ERROR_OUT_OF_MEMORY (not enough masks for configuration).
  */
 int16_t CO_CANrxBufferInit(
@@ -409,7 +394,7 @@ CO_CANtx_t *CO_CANtxBufferInit(
  * @param buffer Pointer to transmit buffer, returned by CO_CANtxBufferInit().
  * Data bytes must be written in buffer before function call.
  *
- * @return CO_ReturnError: CO_ERROR_NO, CO_ERROR_TX_OVERFLOW or
+ * @return #CO_ReturnError_t: CO_ERROR_NO, CO_ERROR_TX_OVERFLOW or
  * CO_ERROR_TX_PDO_WINDOW (Synchronous TPDO is outside window).
  */
 int16_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer);

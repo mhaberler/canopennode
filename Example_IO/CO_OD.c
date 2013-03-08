@@ -82,7 +82,7 @@ struct sCO_OD_EEPROM CO_OD_EEPROM = {
 
 
 /***** Definition for ROM variables *******************************************/
-   CO_OD_ROM_IDENT struct sCO_OD_ROM CO_OD_ROM = {    //constant variables, stored in flash
+   struct sCO_OD_ROM CO_OD_ROM = {    //constant variables, stored in flash
            CO_OD_FIRST_LAST_WORD,
 
 /*1000*/ 0x0L,

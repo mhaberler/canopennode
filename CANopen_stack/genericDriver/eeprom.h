@@ -1,20 +1,19 @@
 /**
- * Microcontroller specific code for CANopenNode nonvolatile variables.
+ * Eeprom object for generic microcontroller.
  *
  * This file is a template for other microcontrollers.
  *
  * @file        eeprom.h
  * @ingroup     CO_eeprom
- * @author      Janez Paternoster
- * @copyright   GNU Lesser General Public License (LGPL).
- * @date        2004 - 2013
  * @version     SVN: \$Id$
+ * @author      Janez Paternoster
+ * @copyright   2004 - 2013 Janez Paternoster
  *
  * This file is part of CANopenNode, an opensource CANopen Stack.
  * Project home page is <http://canopennode.sourceforge.net>.
  * For more information on CANopen see <http://www.can-cia.org/>.
  *
- * This program is free software: you can redistribute it and/or modify
+ * CANopenNode is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
@@ -26,7 +25,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
-  */
+ */
 
 
 #ifndef _EEPROM_H
@@ -38,7 +37,7 @@
  * @ingroup CO_CANopen
  * @{
  *
- * Storage of nonvolatile variables CANopen into the eeprom.
+ * Storage of nonvolatile CANopen variables into the eeprom.
  */
 
 
@@ -64,7 +63,7 @@ typedef struct{
  * @param OD_ROMAddress Address of OD_ROM structure from object dictionary.
  * @param OD_ROMSize Size of OD_ROM structure from object dictionary.
  *
- * @return: CO_ERROR_NO, CO_ERROR_DATA_CORRUPT (Data in eeprom corrupt) or
+ * @return #CO_ReturnError_t: CO_ERROR_NO, CO_ERROR_DATA_CORRUPT (Data in eeprom corrupt) or
  * CO_ERROR_CRC (CRC from MBR does not match the CRC of OD_ROM block in eeprom).
  */
 int16_t EE_init_1(

@@ -13,8 +13,6 @@
       <itemPath>../../CANopen_stack/CO_SDO.h</itemPath>
       <itemPath>../../CANopen_stack/CO_SYNC.h</itemPath>
       <itemPath>../../CANopen_stack/dsPIC30F/CO_driver.h</itemPath>
-      <itemPath>../../CANopen_stack/dsPIC30F/eeprom.h</itemPath>
-      <itemPath>../../CANopen_stack/dsPIC30F/memcpyram2flash.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -24,8 +22,6 @@
                    displayName="Source Files"
                    projectFiles="true">
       <itemPath>../../CANopen_stack/dsPIC30F/CO_driver.c</itemPath>
-      <itemPath>../../CANopen_stack/dsPIC30F/eeprom.c</itemPath>
-      <itemPath>../../CANopen_stack/dsPIC30F/memcpyram2flash.c</itemPath>
       <itemPath>../../CANopen_stack/CANopen.c</itemPath>
       <itemPath>../../CANopen_stack/CO_Emergency.c</itemPath>
       <itemPath>../../CANopen_stack/CO_HBconsumer.c</itemPath>
@@ -52,7 +48,7 @@
         <targetPluginBoard></targetPluginBoard>
         <platformTool>ICD3PlatformTool</platformTool>
         <languageToolchain>XC16</languageToolchain>
-        <languageToolchainVersion>1.10</languageToolchainVersion>
+        <languageToolchainVersion>1.11</languageToolchainVersion>
         <platform>3</platform>
       </toolsSet>
       <compileType>
