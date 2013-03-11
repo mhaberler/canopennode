@@ -88,7 +88,9 @@ typedef struct{
  * @param SDO SDO server object.
  * @param HBconsTime Pointer to _Consumer Heartbeat Time_ array
  * from Object Dictionary (index 0x1016). Size of array is equal to numberOfMonitoredNodes.
- * @param numberOfMonitoredNodes Total size of the above array.
+ * @param monitoredNodes Pointer to the externaly defined array of the same size
+ * as numberOfMonitoredNodes.
+ * @param numberOfMonitoredNodes Total size of the above arrays.
  * @param CANdevRx CAN device for Heartbeat reception.
  * @param CANdevRxIdxStart Starting index of receive buffer in the above CAN device.
  * Number of used indexes is equal to numberOfMonitoredNodes.
@@ -96,22 +98,14 @@ typedef struct{
  * @return #CO_ReturnError_t CO_ERROR_NO or CO_ERROR_ILLEGAL_ARGUMENT.
  */
 int16_t CO_HBconsumer_init(
-        CO_HBconsumer_t       **HBcons,
+        CO_HBconsumer_t        *HBcons,
         CO_EM_t                *EM,
         CO_SDO_t               *SDO,
         const uint32_t         *HBconsTime,
+        CO_HBconsNode_t        *monitoredNodes,
         uint8_t                 numberOfMonitoredNodes,
         CO_CANmodule_t         *CANdevRx,
         uint16_t                CANdevRxIdxStart);
-
-
-/**
- * Delete Heartbeat consumer object and free memory.
- *
- * @param HBcons Pointer to pointer to HBconsumer object CO_HBconsumer_t.
- * Pointer to HBconsumer object is set to 0.
- */
-void CO_HBconsumer_delete(CO_HBconsumer_t **HBcons);
 
 
 /**

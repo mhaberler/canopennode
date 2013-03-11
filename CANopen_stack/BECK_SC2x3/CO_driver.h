@@ -48,7 +48,7 @@
 #define CO_SDO_BUFFER_SIZE           889    /* Override default SDO buffer size. */
 
 
-/* Data types *
+/* Data types */
     typedef unsigned char           uint8_t;
     typedef unsigned short int      uint16_t;
     typedef unsigned int            uint32_t;
@@ -62,33 +62,6 @@
     typedef char                    char_t;
     typedef unsigned char           oChar_t;
     typedef unsigned char           domain_t;
-*/
-   #define UNSIGNED8       unsigned char
-   #define UNSIGNED16      unsigned short int
-   #define UNSIGNED32      unsigned int
-   #define UNSIGNED64      unsigned long long int
-   #define INTEGER8        signed char
-   #define INTEGER16       signed short int
-   #define INTEGER32       signed int
-   #define INTEGER64       signed long long int
-   #define REAL32          float
-   #define REAL64          double
-   #define VISIBLE_STRING  char
-   #define OCTET_STRING    unsigned char
-   #define DOMAIN          unsigned char
-   #define uint8_t       unsigned char
-    #define uint16_t      unsigned short int
-    #define uint32_t      unsigned int
-    #define uint64_t      unsigned long long int
-    #define int8_t        signed char
-    #define int16_t       signed short int
-    #define int32_t       signed int
-    #define int64_t       signed long long int
-    #define float32_t          float
-    #define float64_t          double
-    #define char_t  char
-    #define oChar_t    unsigned char
-    #define domain_t          unsigned char
 
 
 /* Return values */
@@ -170,20 +143,17 @@ void CO_CANsetNormalMode(uint16_t CANbaseAddress);
 
 /* Initialize CAN module object. */
 int16_t CO_CANmodule_init(
-        CO_CANmodule_t        **CANmodule,
+        CO_CANmodule_t         *CANmodule,
         uint16_t                CANbaseAddress,
+        CO_CANrx_t             *rxArray,
         uint16_t                rxSize,
+        CO_CANtx_t             *txArray,
         uint16_t                txSize,
         uint16_t                CANbitRate);
 
 
-/**
- * Delete CANmodule object and free memory.
- *
- * @param ppCANmodule Pointer to pointer to CAN module object <CO_CANmodule_t>.
- * Pointer to CAN module object is set to 0.
- */
-void CO_CANmodule_delete(CO_CANmodule_t **ppCANmodule);
+/* Switch off CANmodule. */
+void CO_CANmodule_disable(CO_CANmodule_t *CANmodule);
 
 
 /* Read CAN identifier */

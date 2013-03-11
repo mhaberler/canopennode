@@ -362,25 +362,22 @@ void CO_CANsetNormalMode(uint16_t CANbaseAddress);
  * @param CANmsgBuffDMAoffset dsPIC33F specific: DMA offset of the above buffer.
  */
 int16_t CO_CANmodule_init(
-        CO_CANmodule_t        **CANmodule,
+        CO_CANmodule_t         *CANmodule,
         uint16_t                CANbaseAddress,
         uint16_t                DMArxBaseAddress,
         uint16_t                DMAtxBaseAddress,
         CO_CANrxMsg_t          *CANmsgBuff,
         uint8_t                 CANmsgBuffSize,
         uint16_t                CANmsgBuffDMAoffset,
+        CO_CANrx_t             *rxArray,
         uint16_t                rxSize,
+        CO_CANtx_t             *txArray,
         uint16_t                txSize,
         uint16_t                CANbitRate);
 
 
-/**
- * Delete CANmodule object and free memory.
- *
- * @param ppCANmodule Pointer to pointer to CAN module object <CO_CANmodule_t>.
- * Pointer to CAN module object is set to 0.
- */
-void CO_CANmodule_delete(CO_CANmodule_t **ppCANmodule);
+/* Switch off CANmodule. */
+void CO_CANmodule_disable(CO_CANmodule_t *CANmodule);
 
 
 /* Read CAN identifier */

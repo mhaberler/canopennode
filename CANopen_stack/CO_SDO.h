@@ -465,9 +465,9 @@ typedef struct{
     uint32_t          (*pODFunc)(CO_ODF_arg_t *ODF_arg);
     /** Pointer to object, which will be passed to @ref CO_SDO_OD_function */
     void               *object;
-    /** Array of #CO_SDO_OD_flags. If object type is array or record, length
-    of flags[] is larger than 1. */
-    uint8_t             flags[1];
+    /** Pointer to #CO_SDO_OD_flags. If object type is array or record, this
+    variable points to array with length equal to number of subindexes. */
+    uint8_t            *flags;
 }CO_OD_extension_t;
 
 
@@ -481,13 +481,13 @@ typedef struct{
     uint8_t             databuffer[CO_SDO_BUFFER_SIZE]; /* Take care for correct (word) alignment! */
     /** Internal flag indicates, that this object has own OD */
     uint8_t             ownOD;
-    /** Pointer to the @ref CO_SDO_objectDictionary */
+    /** Pointer to the @ref CO_SDO_objectDictionary (array) */
     const CO_OD_entry_t *OD;
     /** Size of the @ref CO_SDO_objectDictionary */
     uint16_t            ODSize;
-    /** Pointer to array of pointers to CO_OD_extension_t object. Separate
-    objects are generated dynamically (malloc) inside CO_OD_configure() */
-    CO_OD_extension_t **ODExtensions;
+    /** Pointer to array of CO_OD_extension_t objects. Size of the array is
+    equal to ODSize. */
+    CO_OD_extension_t  *ODExtensions;
     /** Offset in buffer of next data segment being read/written */
     uint16_t            bufferOffset;
     /** Sequence number of OD entry as returned from CO_OD_find() */
@@ -533,9 +533,12 @@ typedef struct{
  * @param ObjDictIndex_SDOServerParameter Index in Object dictionary.
  * @param parentSDO Pointer to SDO object, which contains object dictionary and
  * its extension. For first (default) SDO object this argument must be NULL.
- * If this argument is specified, then OD and ODSize arguments are ignored.
- * @param OD Pointer to @ref CO_SDO_objectDictionary.
- * @param ODSize Size of @ref CO_SDO_objectDictionary.
+ * If this argument is specified, then OD, ODSize and ODExtensions arguments
+ * are ignored.
+ * @param OD Pointer to @ref CO_SDO_objectDictionary array defined externally.
+ * @param ODSize Size of the above array.
+ * @param ODExtensions Pointer to the externaly defined array of the same size
+ * as ODSize.
  * @param nodeId CANopen Node ID of this device. Value will be added to COB_IDs.
  * @param CANdevRx CAN device for SDO server reception.
  * @param CANdevRxIdx Index of receive buffer in the above CAN device.
@@ -545,27 +548,19 @@ typedef struct{
  * @return #CO_ReturnError_t: CO_ERROR_NO or CO_ERROR_ILLEGAL_ARGUMENT.
  */
 int16_t CO_SDO_init(
-        CO_SDO_t              **SDO,
+        CO_SDO_t               *SDO,
         uint16_t                COB_IDClientToServer,
         uint16_t                COB_IDServerToClient,
         uint16_t                ObjDictIndex_SDOServerParameter,
         CO_SDO_t               *parentSDO,
         const CO_OD_entry_t    *OD,
         uint16_t                ODSize,
+        CO_OD_extension_t      *ODExtensions,
         uint8_t                 nodeId,
         CO_CANmodule_t         *CANdevRx,
         uint16_t                CANdevRxIdx,
         CO_CANmodule_t         *CANdevTx,
         uint16_t                CANdevTxIdx);
-
-
-/**
- * Delete SDO object and free memory.
- *
- * @param ppSDO Pointer to pointer to SDO object CO_SDO_t.
- * Pointer to SDO object is set to 0.
- */
-void CO_SDO_delete(CO_SDO_t **ppSDO);
 
 
 /**
@@ -594,25 +589,30 @@ int8_t CO_SDO_process(
  * Configure additional functionality to one @ref CO_SDO_objectDictionary entry.
  *
  * Additional functionality include: @ref CO_SDO_OD_function and
- * #CO_SDO_OD_flags. First call to this function allocates memory for
- * 'ODExtensions' in CO_SDO_t object. Then it finds @ref CO_SDO_objectDictionary entry
- * specified with index. In corresponding position in 'ODExtensions' function
- * then allocates CO_OD_extension_t object and initializes it.
+ * #CO_SDO_OD_flags. It is optional feature and can be used on any object in
+ * Object dictionary.
  *
  * @param SDO This object.
  * @param index Index of object in the Object dictionary.
  * @param pODFunc Pointer to @ref CO_SDO_OD_function, specified by application.
+ * If NULL, @ref CO_SDO_OD_function will not be used on this object.
  * @param object Pointer to object, which will be passed to @ref CO_SDO_OD_function.
+ * @param flags Pointer to array of #CO_SDO_OD_flags defined externally. If
+ * zero, #CO_SDO_OD_flags will not be used on this OD entry.
+ * @param flagsSize Size of the above array. It must be equal to number
+ * of sub-objects in object dictionary entry. Otherwise #CO_SDO_OD_flags will
+ * not be used on this OD entry.
  *
  * @return Sequence number of the @ref CO_SDO_objectDictionary entry, 0xFFFF
- * if not found. Value is the same as in CO_OD_find(). If memory allocation
- * fails, function also returns 0xFFFF.
+ * if not found. Value is the same as in CO_OD_find().
  */
 uint16_t CO_OD_configure(
         CO_SDO_t               *SDO,
         uint16_t                index,
         uint32_t              (*pODFunc)(CO_ODF_arg_t *ODF_arg),
-        void                   *object);
+        void                   *object,
+        uint8_t                *flags,
+        uint8_t                 flagsSize);
 
 
 /**

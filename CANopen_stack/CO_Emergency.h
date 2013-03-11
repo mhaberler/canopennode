@@ -251,6 +251,13 @@
 
 
 /**
+ * Size of internal buffer, whwre emergencies are stored after CO_errorReport().
+ * Buffer is cleared by CO_EM_process().
+ */
+#define CO_EM_INTERNAL_BUFFER_SIZE      10
+
+
+/**
  * Emergerncy object for CO_errorReport(). It contains error buffer, to which new emergency
  * messages are written, when CO_errorReport() is called. This object is included in
  * CO_EMpr_t object.
@@ -258,8 +265,8 @@
 typedef struct{
     uint8_t            *errorStatusBits;/**< From CO_EM_init() */
     uint8_t             errorStatusBitsSize;/**< From CO_EM_init() */
-    /** Internal buffer for storing unsent emergency messages. From CO_EM_init() */
-    uint8_t            *buf;
+    /** Internal buffer for storing unsent emergency messages.*/
+    uint8_t             buf[CO_EM_INTERNAL_BUFFER_SIZE * 8];
     uint8_t            *bufEnd;         /**< End+1 address of the above buffer */
     uint8_t            *bufWritePtr;    /**< Write pointer in the above buffer */
     uint8_t            *bufReadPtr;     /**< Read pointer in the above buffer */
@@ -370,7 +377,6 @@ typedef struct{
  * @param preDefErr Pointer to _Pre defined error field_ array from Object
  * dictionary, index 0x1003.
  * @param preDefErrSize Size of the above array.
- * @param bufSize Size for internal Emergency message buffer.
  * @param CANdev CAN device for Emergency transmission.
  * @param CANdevTxIdx Index of transmit buffer in the above CAN device.
  * @param CANidTxEM CAN identifier for Emergency message.
@@ -378,27 +384,17 @@ typedef struct{
  * @return #CO_ReturnError_t CO_ERROR_NO or CO_ERROR_ILLEGAL_ARGUMENT.
  */
 int16_t CO_EM_init(
-        CO_EM_t               **EM,
-        CO_EMpr_t             **EMpr,
+        CO_EM_t                *EM,
+        CO_EMpr_t              *EMpr,
         CO_SDO_t               *SDO,
         uint8_t                *errorStatusBits,
         uint8_t                 errorStatusBitsSize,
         uint8_t                *errorRegister,
         uint32_t               *preDefErr,
         uint8_t                 preDefErrSize,
-        uint8_t                 bufSize,
         CO_CANmodule_t         *CANdev,
         uint16_t                CANdevTxIdx,
         uint16_t                CANidTxEM);
-
-
-/**
- * Delete Emergency object and free memory.
- *
- * @param EM Pointer to pointer to Emergency report object. It is set to 0.
- * @param EMpr Pointer to pointer to Emergency process object. It is set to 0.
- */
-void CO_EM_delete(CO_EM_t **EM, CO_EMpr_t **EMpr);
 
 
 /**

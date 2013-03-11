@@ -819,7 +819,7 @@ main cycle max time - maximum mainline function cycle time in percent of timer p
     </CANopenObject>
   </CANopenObjectList>
   <other>
-    <file fileName="IO" fileCreator="-" fileCreationDate="2012-11-19" fileCreationTime="08:15:03" fileVersion="3.0"/>
+    <file fileName="IO" fileCreator="-" fileCreationDate="2013-03-09" fileCreationTime="13:23:28" fileVersion="3.0"/>
     <DeviceIdentity>
       <vendorName>Paternoster</vendorName>
       <productName>CANopenNode</productName>

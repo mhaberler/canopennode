@@ -31,8 +31,8 @@
 
 #include "stm32f10x_conf.h"
 
-#define PACKED_STRUCT        __attribute__((packed))
-#define ALIGN_STRUCT_DWORD       __attribute__((aligned(4)))
+#define PACKED_STRUCT               __attribute__((packed))
+#define ALIGN_STRUCT_DWORD          __attribute__((aligned(4)))
 
 
 /* Peripheral addresses */
@@ -160,20 +160,17 @@ void CO_CANsetNormalMode(CAN_TypeDef *CANbaseAddress);
 
 /* Initialize CAN module object. */
 int16_t CO_CANmodule_init(
-        CO_CANmodule_t        **CANmodule,
+        CO_CANmodule_t         *CANmodule,
         CAN_TypeDef            *CANbaseAddress,
+        CO_CANrx_t             *rxArray,
         uint16_t                rxSize,
+        CO_CANtx_t             *txArray,
         uint16_t                txSize,
         uint16_t                CANbitRate);
 
 
-/**
- * Delete CANmodule object and free memory.
- *
- * @param ppCANmodule Pointer to pointer to CAN module object <CO_CANmodule_t>.
- * Pointer to CAN module object is set to 0.
- */
-void CO_CANmodule_delete(CO_CANmodule_t **ppCANmodule);
+/* Switch off CANmodule. */
+void CO_CANmodule_disable(CO_CANmodule_t *CANmodule);
 
 
 /* Read CAN identifier */

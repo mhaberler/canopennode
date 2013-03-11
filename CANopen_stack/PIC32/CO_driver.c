@@ -28,8 +28,6 @@
 #include "CO_driver.h"
 #include "CO_Emergency.h"
 
-#include <stdlib.h>     /* for malloc, free */
-
 
 extern const CO_CANbitRateData_t  CO_CANbitRateData[8];
 unsigned int CO_interruptStatus = 0;
@@ -107,30 +105,22 @@ void CO_CANsetNormalMode(uint16_t CANbaseAddress){
 
 /******************************************************************************/
 int16_t CO_CANmodule_init(
-        CO_CANmodule_t        **ppCANmodule,
+        CO_CANmodule_t         *CANmodule,
         uint16_t                CANbaseAddress,
+        CO_CANrx_t             *rxArray,
         uint16_t                rxSize,
+        CO_CANtx_t             *txArray,
         uint16_t                txSize,
         uint16_t                CANbitRate)
 {
     uint16_t i;
-    uint8_t FIFOSize = 33; /* 32 buffers for receive, 1 buffer for transmit */
-
-    /* allocate memory if not already allocated */
-    if((*ppCANmodule) == NULL){
-        if(((*ppCANmodule)             = (CO_CANmodule_t *) malloc(         sizeof(CO_CANmodule_t ))) == NULL){                                                                                                     return CO_ERROR_OUT_OF_MEMORY;}
-        if(((*ppCANmodule)->CANmsgBuff = (CO_CANrxMsg_t *)  malloc(FIFOSize*sizeof(CO_CANrxMsg_t  ))) == NULL){                                                                 free(*ppCANmodule); *ppCANmodule=0; return CO_ERROR_OUT_OF_MEMORY;}
-        if(((*ppCANmodule)->rxArray    = (CO_CANrx_t *)malloc(  rxSize*sizeof(CO_CANrx_t))) == NULL){                               free((*ppCANmodule)->CANmsgBuff); free(*ppCANmodule); *ppCANmodule=0; return CO_ERROR_OUT_OF_MEMORY;}
-        if(((*ppCANmodule)->txArray    = (CO_CANtx_t *)malloc(  txSize*sizeof(CO_CANtx_t))) == NULL){free((*ppCANmodule)->rxArray); free((*ppCANmodule)->CANmsgBuff); free(*ppCANmodule); *ppCANmodule=0; return CO_ERROR_OUT_OF_MEMORY;}
-    }
-    else if((*ppCANmodule)->CANmsgBuff == NULL || (*ppCANmodule)->rxArray == NULL || (*ppCANmodule)->txArray == NULL) return CO_ERROR_ILLEGAL_ARGUMENT;
-
-    CO_CANmodule_t *CANmodule = *ppCANmodule; /* pointer to (newly created) object */
 
     /* Configure object variables */
     CANmodule->CANbaseAddress = CANbaseAddress;
-    CANmodule->CANmsgBuffSize = FIFOSize;
+    CANmodule->CANmsgBuffSize = 33; /* Must be the same as size of CANmodule->CANmsgBuff array. */
+    CANmodule->rxArray = rxArray;
     CANmodule->rxSize = rxSize;
+    CANmodule->txArray = txArray;
     CANmodule->txSize = txSize;
     CANmodule->curentSyncTimeIsInsideWindow = 0;
     CANmodule->useCANrxFilters = (rxSize <= 32) ? 1 : 0;
@@ -149,7 +139,7 @@ int16_t CO_CANmodule_init(
     /* clear FIFO */
     if(sizeof(CO_CANrxMsg_t) != 16) while(1);/* some safety */
     uint32_t* f = (uint32_t*) CANmodule->CANmsgBuff;
-    for(i=0; i<(FIFOSize*4); i++){
+    for(i=0; i<(CANmodule->CANmsgBuffSize*4); i++){
         *(f++) = 0;
     }
 
@@ -224,14 +214,8 @@ int16_t CO_CANmodule_init(
 
 
 /******************************************************************************/
-void CO_CANmodule_delete(CO_CANmodule_t** ppCANmodule){
-    if(*ppCANmodule){
-        free((*ppCANmodule)->txArray);
-        free((*ppCANmodule)->rxArray);
-        free((*ppCANmodule)->CANmsgBuff);
-        free(*ppCANmodule);
-        *ppCANmodule = 0;
-    }
+void CO_CANmodule_disable(CO_CANmodule_t *CANmodule){
+    CO_CANsetConfigurationMode(CANmodule->CANbaseAddress);
 }
 
 

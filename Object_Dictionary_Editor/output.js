@@ -65,10 +65,10 @@
 		var ODfileNameReference;
 		var errorMessages = [];
 		//following object is used with advanced and useful feature of Object dictionary editor. It enables combining
-		//multiple objects into 'c' array. For example PDO mapping or communication parameters. Another example is 
+		//multiple objects into 'c' array. For example PDO mapping or communication parameters. Another example is
 		//implementation of multiple similar devices in one canopen device. First device has multiple objects from index
 		//6000h to 6FFFh, next device from 7000h to 7FFFh with same variables, and so on. If objects are combined,
-		//then array is generated from each object, so application programmer can have something like OD_variable[0] for 
+		//then array is generated from each object, so application programmer can have something like OD_variable[0] for
 		//first device and OD_variable[1] for second device.
 		//following object 'combinedObjects' is collection of objects (one record for one combined object with specific
 		//index), which are combined together into array:
@@ -82,7 +82,7 @@
 				//count - number of array members with braces
 				//name
 				//objectType
-				//subNumber 
+				//subNumber
 				//memoryType
 				//dataType
 				//accessType
@@ -108,7 +108,7 @@ function generateFiles(){
 	else
 	{
 		ODfileNameReference = "";
-	}	
+	}
 //	document.title = fileName + " output - CANopenNode";
 
 	//output g_project directly
@@ -174,7 +174,7 @@ function calculateDeviceIdentity(){
 	var buildDate = idt.buildDate.toString();
 	var specificationRevision = idt.specificationRevision.toString();
 	var instanceName = idt.instanceName.toString();
-	
+
 	/*** Generate contents CO_OD - c source code ***/
 	CO_OD_H_info.push("      VendorName:     "+vendorName);
 	CO_OD_H_info.push("      VendorNumber:   "+(vendorID?vendorID:"0"));
@@ -348,8 +348,8 @@ function calculateObjects(){
 	var combinedInitializationsRAM = [];
 	var combinedInitializationsEEPROM = [];
 	var combinedInitializationsROM = [];
-	
-   var buttons = 
+
+   var buttons =
          <li>
             <input type="button" pf="butReadAll" value="Read All"/>
             <input type="button" pf="butReadRR" value="Read RAM"/>
@@ -360,9 +360,9 @@ function calculateObjects(){
    DOCobjDictManufIndex += buttons;
    DOCobjDictProfileIndex += buttons;
 
-	//MCO	
+	//MCO
 	CO_OD_C_functions.push("UNSIGNED32 CO_ODF"+ODfileNameReference+"(void*, UNSIGNED16, UNSIGNED8, UNSIGNED16*, UNSIGNED16, UNSIGNED8, void*, const void*);\n");
-	
+
 	for each(var object in g_project.CANopenObjectList.CANopenObject){
 		if(object.@disabled != "true"){
 			var index = object.@index.toString().toUpperCase();
@@ -601,7 +601,7 @@ function calculateObjects(){
 						var makeAliases = true;
 						//first make sure, that names of subObjects inside object are all different
 						for(var i=0; i<subAlias.length; i++)
-							for(var j=0; j<i; j++) 
+							for(var j=0; j<i; j++)
 								if(subAlias[i] == subAlias[j]) makeAliases = false;
 						if(makeAliases)
 							for(var i=0; i<subAlias.length; i++)
@@ -625,7 +625,7 @@ function calculateObjects(){
 						//name
 						var subName = subObject.@name.toString();
 						var subNameNoSpace = name2c_code(subName);
-						for(var j=0; j<i; j++) 
+						for(var j=0; j<i; j++)
 							if(subNameNoSpace == subNames[j])
 								errorMessages.push("Error in object " + index + ": Each SubObject must have unique name!");
 						subNames.push(subNameNoSpace);
@@ -848,7 +848,7 @@ function calculateObjects(){
                var docAccType = accessType;
                if(docAccType == "const") docAccType = "ro";
                if(memoryType == "RAM" && docAccType.search("r") >= 0) docAccType = "r" + docAccType;
-               DOCobjectIndex = 
+               DOCobjectIndex =
                   <li>
                      <a docref={DOChref}>{index}</a> - {name}:
                      <input addr={index+"00"+"00"+size}
@@ -903,7 +903,7 @@ function calculateObjects(){
                   var docAccType = accessType;
                   if(docAccType == "const") docAccType = "ro";
                   if(memoryType == "RAM" && docAccType.search("r") >= 0) docAccType = "r" + docAccType;
-                  DOCobjectSubIdx += 
+                  DOCobjectSubIdx +=
                      <li>{subObject.@subIndex} - {subObject.@name}:
                         <input addr={index+subObject.@subIndex+"00"+size}
                                format={format}
@@ -1253,7 +1253,7 @@ function attribute4c_code(memoryType, dataType, accessType, PDOmapping, TPDOdete
 
 function extractLabels(element){
 	var output = <></>;
-	
+
 	//get languages
 	var langs = [];
 	for each(var lang in element.label.@lang)
@@ -1261,7 +1261,7 @@ function extractLabels(element){
 	for each(var lang in element.description.@lang)
 		if(langs.indexOf(lang.toString()) < 0) langs.push(lang.toString());
 	langs.sort();
-		
+
 	for(var i=0; i<langs.length; i++){
 		var lang = langs[i];
 		var label = element.label.(@lang==lang).toString();
@@ -1330,6 +1330,25 @@ function generateCO_OD_H(){
 		"\n"+
 		"#ifndef _CO_OD"+ODfileNameReference+"_H\n"+
 		"#define _CO_OD"+ODfileNameReference+"_H\n"+
+		"\n"+
+		"\n"+
+		"/*******************************************************************************\n"+
+		"   CANopen DATA DYPES\n"+
+		"*******************************************************************************/\n"+
+		"   typedef uint8_t      UNSIGNED8;\n"+
+		"   typedef uint16_t     UNSIGNED16;\n"+
+		"   typedef uint32_t     UNSIGNED32;\n"+
+		"   typedef uint64_t     UNSIGNED64;\n"+
+		"   typedef int8_t       INTEGER8;\n"+
+		"   typedef int16_t      INTEGER16;\n"+
+		"   typedef int32_t      INTEGER32;\n"+
+		"   typedef int64_t      INTEGER64;\n"+
+		"   typedef float32_t    REAL32;\n"+
+		"   typedef float64_t    REAL64;\n"+
+		"   typedef char_t       VISIBLE_STRING;\n"+
+		"   typedef oChar_t      OCTET_STRING;\n"+
+		"   typedef domain_t     DOMAIN;\n"+
+		"\n"+
 		"\n"+
 		"/*******************************************************************************\n"+
 		"   FILE INFO:\n"+
@@ -1416,7 +1435,7 @@ function generateCO_OD_H(){
 
 		g_openerWindow.source.postMessage(text, "*");
 }
-	
+
 function generateCO_OD_C(){
 	var text = "ODC"+
 		"/*******************************************************************************\n"+

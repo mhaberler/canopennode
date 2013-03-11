@@ -113,6 +113,10 @@ typedef struct{
 }CO_t;
 
 
+/** CANopen object */
+    extern CO_t *CO;
+
+
 /**
  * Function CO_sendNMTcommand() is simple function, which sends CANopen message.
  * This part of code is an example of custom definition of simple CANopen
@@ -136,21 +140,16 @@ typedef struct{
  *
  * Function must be called in the communication reset section.
  *
- * @param CO This object will be initialized.
- *
  * @return #CO_ReturnError_t: CO_ERROR_NO, CO_ERROR_ILLEGAL_ARGUMENT,
  * CO_ERROR_OUT_OF_MEMORY, CO_ERROR_ILLEGAL_BAUDRATE
  */
-int16_t CO_init(CO_t **CO);
+int16_t CO_init();
 
 
 /**
- * Delete CANopen object and free memory.
- *
- * @param ppCO Pointer to pointer to CANopen object CO_t.
- * Pointer to object is set to 0.
+ * Delete CANopen object and free memory. Must be called at program exit.
  */
-void CO_delete(CO_t **ppCO);
+void CO_delete();
 
 
 /**

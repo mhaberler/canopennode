@@ -319,6 +319,14 @@ int16_t CO_CANmodule_init(
 
 
 /**
+ * Switch off CANmodule. Call at program exit.
+ *
+ * @param CANmodule CAN module object.
+ */
+void CO_CANmodule_disable(CO_CANmodule_t *CANmodule);
+
+
+/**
  * Read CAN identifier from received message
  *
  * @param rxMsg Pointer to received message

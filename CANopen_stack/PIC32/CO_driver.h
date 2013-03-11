@@ -47,7 +47,7 @@ extern unsigned int CO_interruptStatus;
 #define ENABLE_INTERRUPTS()     INTRestoreInterrupts(CO_interruptStatus)
 
 
-/* Data types *
+/* Data types */
     typedef unsigned char           uint8_t;
     typedef unsigned short int      uint16_t;
     typedef unsigned long int       uint32_t;
@@ -61,33 +61,6 @@ extern unsigned int CO_interruptStatus;
     typedef char                    char_t;
     typedef unsigned char           oChar_t;
     typedef unsigned char           domain_t;
-*/
-   #define UNSIGNED8       unsigned char
-   #define UNSIGNED16      unsigned short int
-   #define UNSIGNED32      unsigned long int
-   #define UNSIGNED64      unsigned long long int
-   #define INTEGER8        signed char
-   #define INTEGER16       signed short int
-   #define INTEGER32       signed long int
-   #define INTEGER64       signed long long int
-   #define REAL32          float
-   #define REAL64          long double
-   #define VISIBLE_STRING  char
-   #define OCTET_STRING    unsigned char
-   #define DOMAIN          unsigned char
-   #define uint8_t       unsigned char
-    #define uint16_t      unsigned short int
-    #define uint32_t      unsigned long int
-    #define uint64_t      unsigned long long int
-    #define int8_t        signed char
-    #define int16_t       signed short int
-    #define int32_t       signed long int
-    #define int64_t       signed long long int
-    #define float32_t          float
-    #define float64_t          long double
-    #define char_t  char
-    #define oChar_t    unsigned char
-    #define domain_t          unsigned char
 
 
 /* CAN bit rates
@@ -364,8 +337,8 @@ typedef struct{
 /* CAN module object. */
 typedef struct{
     uint16_t            CANbaseAddress;
-    CO_CANrxMsg_t      *CANmsgBuff;     /* PIC32 specific: CAN message buffer for CAN module */
-    uint8_t             CANmsgBuffSize; /* PIC32 specific: Size of the above buffer */
+    CO_CANrxMsg_t       CANmsgBuff[33]; /* PIC32 specific: CAN message buffer for CAN module. 32 buffers for receive, 1 buffer for transmit */
+    uint8_t             CANmsgBuffSize; /* PIC32 specific: Size of the above buffer == 33. Take care initial value! */
     CO_CANrx_t         *rxArray;
     uint16_t            rxSize;
     CO_CANtx_t         *txArray;
@@ -400,20 +373,17 @@ void CO_CANsetNormalMode(uint16_t CANbaseAddress);
  * not use all structure members.
  */
 int16_t CO_CANmodule_init(
-        CO_CANmodule_t        **CANmodule,
+        CO_CANmodule_t         *CANmodule,
         uint16_t                CANbaseAddress,
+        CO_CANrx_t             *rxArray,
         uint16_t                rxSize,
+        CO_CANtx_t             *txArray,
         uint16_t                txSize,
         uint16_t                CANbitRate);
 
 
-/**
- * Delete CANmodule object and free memory.
- *
- * @param ppCANmodule Pointer to pointer to CAN module object <CO_CANmodule_t>.
- * Pointer to CAN module object is set to 0.
- */
-void CO_CANmodule_delete(CO_CANmodule_t **ppCANmodule);
+/* Switch off CANmodule. */
+void CO_CANmodule_disable(CO_CANmodule_t *CANmodule);
 
 
 /* Read CAN identifier */

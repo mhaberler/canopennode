@@ -37,12 +37,31 @@
 #ifndef _CO_OD_H
 #define _CO_OD_H
 
+
+/*******************************************************************************
+   CANopen DATA DYPES
+*******************************************************************************/
+   typedef uint8_t      UNSIGNED8;
+   typedef uint16_t     UNSIGNED16;
+   typedef uint32_t     UNSIGNED32;
+   typedef uint64_t     UNSIGNED64;
+   typedef int8_t       INTEGER8;
+   typedef int16_t      INTEGER16;
+   typedef int32_t      INTEGER32;
+   typedef int64_t      INTEGER64;
+   typedef float32_t    REAL32;
+   typedef float64_t    REAL64;
+   typedef char_t       VISIBLE_STRING;
+   typedef oChar_t      OCTET_STRING;
+   typedef domain_t     DOMAIN;
+
+
 /*******************************************************************************
    FILE INFO:
       FileName:     SC243
       FileVersion:  3.0
-      CreationTime: 08:13:26
-      CreationDate: 2012-11-19
+      CreationTime: 16:45:39
+      CreationDate: 2013-03-10
       CreatedBy:    -
 *******************************************************************************/
 
@@ -235,7 +254,7 @@ extern struct sCO_OD_RAM CO_OD_RAM;
 
 extern struct sCO_OD_EEPROM CO_OD_EEPROM;
 
-extern CO_OD_ROM_IDENT struct sCO_OD_ROM CO_OD_ROM;
+extern struct sCO_OD_ROM CO_OD_ROM;
 
 
 /*******************************************************************************

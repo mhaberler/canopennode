@@ -147,7 +147,7 @@ static int16_t CO_SDOclient_receive(void *object, CO_CANrxMsg_t *msg){
 
 /******************************************************************************/
 int16_t CO_SDOclient_init(
-        CO_SDOclient_t        **ppSDO_C,
+        CO_SDOclient_t         *SDO_C,
         CO_SDO_t               *SDO,
         CO_SDOclientPar_t      *SDOClientPar,
         CO_CANmodule_t         *CANdevRx,
@@ -155,17 +155,9 @@ int16_t CO_SDOclient_init(
         CO_CANmodule_t         *CANdevTx,
         uint16_t                CANdevTxIdx)
 {
-    CO_SDOclient_t *SDO_C;
 
     /* verify parameters */
     if(SDOClientPar->maxSubIndex!=3) return CO_ERROR_ILLEGAL_ARGUMENT;
-
-    /* allocate memory if not already allocated */
-    if((*ppSDO_C) == NULL){
-        if(((*ppSDO_C) = (CO_SDOclient_t*) malloc(sizeof(CO_SDOclient_t))) == NULL){return CO_ERROR_OUT_OF_MEMORY;}
-    }
-
-    SDO_C = *ppSDO_C; /* pointer to (newly created) object */
 
     /* Configure object variables */
     SDO_C->state = 0;
@@ -187,15 +179,6 @@ int16_t CO_SDOclient_init(
     CO_SDOclient_setup(SDO_C, 0, 0, 0);
 
     return CO_ERROR_NO;
-}
-
-
-/******************************************************************************/
-void CO_SDOclient_delete(CO_SDOclient_t **ppSDOclient){
-    if(*ppSDOclient){
-        free(*ppSDOclient);
-        *ppSDOclient = 0;
-    }
 }
 
 

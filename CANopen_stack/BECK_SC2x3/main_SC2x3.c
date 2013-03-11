@@ -35,8 +35,7 @@
 
 /* Global variables and objects */
     volatile uint16_t   CO_timer1ms=0;  /* variable increments each millisecond */
-    CO_t               *CO = 0;         /* pointer to CANopen object */
-    EE_t               *EE = 0;         /* pointer to eeprom object */
+    EE_t                EEO;            /* Eeprom object */
 
     CgiLog_t            CgiLogObj;
     CgiCli_t            CgiCliObj;
@@ -117,7 +116,7 @@ int main (void){
 
 
     /* initialize EEPROM - part 1 */
-    int16_t EEStatus = EE_init_1(&EE, SRAM.EEPROMptr, (uint8_t*) &CO_OD_EEPROM, sizeof(CO_OD_EEPROM),
+    int16_t EEStatus = EE_init_1(&EEO, SRAM.EEPROMptr, (uint8_t*) &CO_OD_EEPROM, sizeof(CO_OD_EEPROM),
                             (uint8_t*) &CO_OD_ROM, sizeof(CO_OD_ROM));
 
 
@@ -145,7 +144,7 @@ int main (void){
 
     while(reset < 2){
 /* CANopen communication reset - initialize CANopen objects *******************/
-        enum CO_ReturnError err;
+        CO_ReturnError_t err;
         uint16_t timer1msPrevious;
 
         printf("\nCANopenNode - communication reset ...");
@@ -156,7 +155,7 @@ int main (void){
 
 
         /* initialize CANopen */
-        err = CO_init(&CO);
+        err = CO_init();
         if(err){
             printf("\nError: CANopen initialization failed.");
             return 0;
@@ -165,7 +164,7 @@ int main (void){
 
 
         /* initialize eeprom - part 2 */
-        EE_init_2(EE, EEStatus, CO->SDO, CO->EM);
+        EE_init_2(&EEO, EEStatus, CO->SDO, CO->EM);
 
 
         communicationReset();
@@ -234,7 +233,7 @@ int main (void){
             RTX_Sleep_Time(50);
 
 
-            EE_process(EE);
+            EE_process(&EEO);
         }
     }
 
@@ -245,8 +244,7 @@ int main (void){
 
     /* delete objects from memory */
     programEnd();
-    CO_delete(&CO);
-    EE_delete(&EE);
+    CO_delete();
     CgiLog_delete(CgiLog);
     CgiCli_delete(CgiCli);
     CgiSend_delete(CgiSend);

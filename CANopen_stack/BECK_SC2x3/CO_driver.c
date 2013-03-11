@@ -28,8 +28,6 @@
 #include "CO_driver.h"
 #include "CO_Emergency.h"
 
-#include <stdlib.h>     /* for malloc, free */
-
 
 int CAN1callback(CanEvent event, const CanMsg *msg);
 int CAN2callback(CanEvent event, const CanMsg *msg);
@@ -64,27 +62,21 @@ void CO_CANsetNormalMode(uint16_t CANbaseAddress){
 
 /******************************************************************************/
 int16_t CO_CANmodule_init(
-        CO_CANmodule_t        **ppCANmodule,
+        CO_CANmodule_t         *CANmodule,
         uint16_t                CANbaseAddress,
+        CO_CANrx_t             *rxArray,
         uint16_t                rxSize,
+        CO_CANtx_t             *txArray,
         uint16_t                txSize,
         uint16_t                CANbitRate)
 {
     uint16_t i;
 
-    /* allocate memory if not already allocated */
-    if((*ppCANmodule) == NULL){
-        if(((*ppCANmodule)          = (CO_CANmodule_t *) malloc(       sizeof(CO_CANmodule_t ))) == NULL){                                                                   return CO_ERROR_OUT_OF_MEMORY;}
-        if(((*ppCANmodule)->rxArray = (CO_CANrx_t *)malloc(rxSize*sizeof(CO_CANrx_t))) == NULL){                               free(*ppCANmodule); *ppCANmodule=0; return CO_ERROR_OUT_OF_MEMORY;}
-        if(((*ppCANmodule)->txArray = (CO_CANtx_t *)malloc(txSize*sizeof(CO_CANtx_t))) == NULL){free((*ppCANmodule)->rxArray); free(*ppCANmodule); *ppCANmodule=0; return CO_ERROR_OUT_OF_MEMORY;}
-    }
-    else if((*ppCANmodule)->rxArray == NULL || (*ppCANmodule)->txArray == NULL) return CO_ERROR_ILLEGAL_ARGUMENT;
-
-    CO_CANmodule_t *CANmodule = *ppCANmodule; /* pointer to (newly created) object */
-
     /* Configure object variables */
     CANmodule->CANbaseAddress = CANbaseAddress;
+    CANmodule->rxArray = rxArray;
     CANmodule->rxSize = rxSize;
+    CANmodule->txArray = txArray;
     CANmodule->txSize = txSize;
     CANmodule->curentSyncTimeIsInsideWindow = 0;
     CANmodule->bufferInhibitFlag = 0;
@@ -139,14 +131,8 @@ int16_t CO_CANmodule_init(
 
 
 /******************************************************************************/
-void CO_CANmodule_delete(CO_CANmodule_t** ppCANmodule){
-    if(*ppCANmodule){
-        canDeinit((*ppCANmodule)->CANbaseAddress);
-        free((*ppCANmodule)->txArray);
-        free((*ppCANmodule)->rxArray);
-        free(*ppCANmodule);
-        *ppCANmodule = 0;
-    }
+void CO_CANmodule_disable(CO_CANmodule_t *CANmodule){
+    canDeinit(CANmodule->CANbaseAddress);
 }
 
 

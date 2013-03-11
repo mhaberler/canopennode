@@ -378,6 +378,7 @@ typedef struct{
     volatile uint8_t   *curentSyncTimeIsInsideWindow;
     volatile uint8_t    useCANrxFilters;
     volatile uint8_t    bufferInhibitFlag;
+    volatile uint8_t    transmittingAborted; /* dsPIC30F specific: If true, CAN transmit buffer was just aborted. */
     volatile uint8_t    firstCANtxMessage;
     volatile uint16_t   CANtxCount;
     uint32_t            errOld;
@@ -398,20 +399,17 @@ void CO_CANsetNormalMode(uint16_t CANbaseAddress);
 
 /* Initialize CAN module object. */
 int16_t CO_CANmodule_init(
-        CO_CANmodule_t        **CANmodule,
+        CO_CANmodule_t         *CANmodule,
         uint16_t                CANbaseAddress,
+        CO_CANrx_t             *rxArray,
         uint16_t                rxSize,
+        CO_CANtx_t             *txArray,
         uint16_t                txSize,
         uint16_t                CANbitRate);
 
 
-/**
- * Delete CANmodule object and free memory.
- *
- * @param ppCANmodule Pointer to pointer to CAN module object <CO_CANmodule_t>.
- * Pointer to CAN module object is set to 0.
- */
-void CO_CANmodule_delete(CO_CANmodule_t **ppCANmodule);
+/* Switch off CANmodule. */
+void CO_CANmodule_disable(CO_CANmodule_t *CANmodule);
 
 
 /* Read CAN identifier */

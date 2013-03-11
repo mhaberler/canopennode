@@ -92,47 +92,31 @@ static uint32_t CO_ODF_1014(CO_ODF_arg_t *ODF_arg){
 
 /******************************************************************************/
 int16_t CO_EM_init(
-        CO_EM_t               **ppEmergencyReport,
-        CO_EMpr_t             **ppEmergencyProcess,
+        CO_EM_t                *EM,
+        CO_EMpr_t              *EMpr,
         CO_SDO_t               *SDO,
         uint8_t                *errorStatusBits,
         uint8_t                 errorStatusBitsSize,
         uint8_t                *errorRegister,
         uint32_t               *preDefErr,
         uint8_t                 preDefErrSize,
-        uint8_t                 bufSize,
         CO_CANmodule_t         *CANdev,
         uint16_t                CANdevTxIdx,
         uint16_t                CANidTxEM)
 {
     uint8_t i;
-    CO_EMpr_t *EMpr;
-    CO_EM_t  *EM;
-
-    if(bufSize < 2) bufSize = 2;
-
-    /* allocate memory if not already allocated */
-    if((*ppEmergencyProcess) == NULL){
-        if(((*ppEmergencyProcess)     = (CO_EMpr_t*)malloc(sizeof(CO_EMpr_t))) == NULL){                                                                                                      return CO_ERROR_OUT_OF_MEMORY;}
-        if(((*ppEmergencyReport)      = (CO_EM_t*)  malloc(sizeof(CO_EM_t)))   == NULL){                                                  free(*ppEmergencyProcess); *ppEmergencyProcess = 0; return CO_ERROR_OUT_OF_MEMORY;}
-        if(((*ppEmergencyReport)->buf = (uint8_t*)  malloc(bufSize*8))         == NULL){free(*ppEmergencyReport); *ppEmergencyReport = 0; free(*ppEmergencyProcess); *ppEmergencyProcess = 0; return CO_ERROR_OUT_OF_MEMORY;}
-    }
-    else if((*ppEmergencyReport) == NULL || (*ppEmergencyReport)->buf == NULL) return CO_ERROR_ILLEGAL_ARGUMENT;
-
-    EMpr = *ppEmergencyProcess; /* pointer to (newly created) object */
-    EM = *ppEmergencyReport;
-    EMpr->EM = EM;
 
     /* Configure object variables */
     EM->errorStatusBits         = errorStatusBits;
     EM->errorStatusBitsSize     = errorStatusBitsSize; if(errorStatusBitsSize < 6) return CO_ERROR_ILLEGAL_ARGUMENT;
-    EM->bufEnd                  = EM->buf + bufSize*8;
+    EM->bufEnd                  = EM->buf + CO_EM_INTERNAL_BUFFER_SIZE * 8;
     EM->bufWritePtr             = EM->buf;
     EM->bufReadPtr              = EM->buf;
     EM->bufFull                 = 0;
     EM->wrongErrorReport        = 0;
     EM->errorReportBusy         = 0;
     EM->errorReportBusyError    = 0;
+    EMpr->EM                    = EM;
     EMpr->errorRegister         = errorRegister;
     EMpr->preDefErr             = preDefErr;
     EMpr->preDefErrSize         = preDefErrSize;
@@ -143,8 +127,8 @@ int16_t CO_EM_init(
     for(i=0; i<errorStatusBitsSize; i++) EM->errorStatusBits[i] = 0;
 
     /* Configure Object dictionary entry at index 0x1003 and 0x1014 */
-    CO_OD_configure(SDO, 0x1003, CO_ODF_1003, (void*)EMpr);
-    CO_OD_configure(SDO, 0x1014, CO_ODF_1014, (void*)&SDO->nodeId);
+    CO_OD_configure(SDO, 0x1003, CO_ODF_1003, (void*)EMpr, 0, 0);
+    CO_OD_configure(SDO, 0x1014, CO_ODF_1014, (void*)&SDO->nodeId, 0, 0);
 
     /* configure emergency message CAN transmission */
     EMpr->CANdev = CANdev;
@@ -158,20 +142,6 @@ int16_t CO_EM_init(
             0);                 /* synchronous message flag bit */
 
     return CO_ERROR_NO;
-}
-
-
-/******************************************************************************/
-void CO_EM_delete(CO_EM_t **ppEmergencyReport, CO_EMpr_t **ppEmergencyProcess){
-    if(*ppEmergencyReport){
-        free((*ppEmergencyReport)->buf);
-        free(*ppEmergencyReport);
-        *ppEmergencyReport = 0;
-    }
-    if(*ppEmergencyProcess){
-        free(*ppEmergencyProcess);
-        *ppEmergencyProcess = 0;
-    }
 }
 
 

@@ -85,9 +85,9 @@ int16_t CO_CANmodule_init(
 
     /* Configure object variables */
     CANmodule->CANbaseAddress = CANbaseAddress;
-    CANmodule->rxArray = 0;//rxArray;
+    CANmodule->rxArray = rxArray;
     CANmodule->rxSize = rxSize;
-    CANmodule->txArray = 0;//txArray;
+    CANmodule->txArray = txArray;
     CANmodule->txSize = txSize;
     CANmodule->curentSyncTimeIsInsideWindow = 0;
     CANmodule->useCANrxFilters = (rxSize <= 32) ? 1 : 0;/* microcontroller dependent */
@@ -130,6 +130,12 @@ int16_t CO_CANmodule_init(
 
 
     return CO_ERROR_NO;
+}
+
+
+/******************************************************************************/
+void CO_CANmodule_disable(CO_CANmodule_t *CANmodule){
+    CO_CANsetConfigurationMode(CANmodule->CANbaseAddress);
 }
 
 

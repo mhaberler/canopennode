@@ -140,29 +140,21 @@ static uint32_t CO_ODF_1016(CO_ODF_arg_t *ODF_arg){
 
 /******************************************************************************/
 int16_t CO_HBconsumer_init(
-        CO_HBconsumer_t       **ppHBcons,
+        CO_HBconsumer_t        *HBcons,
         CO_EM_t                *EM,
         CO_SDO_t               *SDO,
         const uint32_t         *HBconsTime,
+        CO_HBconsNode_t        *monitoredNodes,
         uint8_t                 numberOfMonitoredNodes,
         CO_CANmodule_t         *CANdevRx,
         uint16_t                CANdevRxIdxStart)
 {
     uint8_t i;
-    CO_HBconsumer_t *HBcons;
-
-    /* allocate memory if not already allocated */
-    if((*ppHBcons) == NULL){
-        if(((*ppHBcons)                 = (CO_HBconsumer_t*)malloc(                       sizeof(CO_HBconsumer_t))) == NULL){                                return CO_ERROR_OUT_OF_MEMORY;}
-        if(((*ppHBcons)->monitoredNodes = (CO_HBconsNode_t*)malloc(numberOfMonitoredNodes*sizeof(CO_HBconsNode_t))) == NULL){free(*ppHBcons); *ppHBcons = 0; return CO_ERROR_OUT_OF_MEMORY;}
-    }
-    else if((*ppHBcons)->monitoredNodes == NULL) return CO_ERROR_ILLEGAL_ARGUMENT;
-
-    HBcons = *ppHBcons; /* pointer to (newly created) object */
 
     /* Configure object variables */
     HBcons->EM = EM;
     HBcons->HBconsTime = HBconsTime;
+    HBcons->monitoredNodes = monitoredNodes;
     HBcons->numberOfMonitoredNodes = numberOfMonitoredNodes;
     HBcons->allMonitoredOperational = 0;
     HBcons->CANdevRx = CANdevRx;
@@ -172,19 +164,9 @@ int16_t CO_HBconsumer_init(
         CO_HBconsumer_monitoredNodeConfig(HBcons, i);
 
     /* Configure Object dictionary entry at index 0x1016 */
-    CO_OD_configure(SDO, 0x1016, CO_ODF_1016, (void*)HBcons);
+    CO_OD_configure(SDO, 0x1016, CO_ODF_1016, (void*)HBcons, 0, 0);
 
     return CO_ERROR_NO;
-}
-
-
-/******************************************************************************/
-void CO_HBconsumer_delete(CO_HBconsumer_t **ppHBcons){
-    if(*ppHBcons){
-        free((*ppHBcons)->monitoredNodes);
-        free(*ppHBcons);
-        *ppHBcons = 0;
-    }
 }
 
 

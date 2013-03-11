@@ -33,7 +33,6 @@
 
 /* Global variables and objects */
     volatile uint16_t CO_timer1ms=0;    /* variable increments each millisecond */
-    CO_t *CO = 0;                       /* pointer to CANopen object */
 
 
 /* main ***********************************************************************/
@@ -56,14 +55,14 @@ int main (void){
 
     while(reset < 2){
 /* CANopen communication reset - initialize CANopen objects *******************/
-        enum CO_ReturnError err;
+        CO_ReturnError_t err;
         uint16_t timer1msPrevious;
 
         /* disable timer and CAN interrupts */
 
 
         /* initialize CANopen */
-        err = CO_init(&CO);
+        err = CO_init();
         if(err){
             while(1);
             /* CO_errorReport(CO->EM, ERROR_MEMORY_ALLOCATION_ERROR, err); */
@@ -121,7 +120,7 @@ int main (void){
 
 
     /* delete objects from memory */
-    CO_delete(&CO);
+    CO_delete();
 
 
     /* reset */

@@ -127,7 +127,7 @@ void communicationReset(void){
     errorRegisterPrev = 0;
 
 #ifdef OD_testVar
-    CO_OD_configure(CO->SDO, ODF_testDomain_index, ODF_testDomain, 0);
+    CO_OD_configure(CO->SDO, ODF_testDomain_index, ODF_testDomain, 0, 0, 0);
 #endif
 
     CAN_RUN_LED_OFF(); CAN_ERROR_LED_OFF();

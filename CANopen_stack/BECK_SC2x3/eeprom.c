@@ -146,19 +146,13 @@ static uint32_t CO_ODF_1011(CO_ODF_arg_t *ODF_arg){
 
 /******************************************************************************/
 int16_t EE_init_1(
-        EE_t                  **ppEE,
+        EE_t                   *EE,
         uint8_t                *SRAMAddress,
         uint8_t                *OD_EEPROMAddress,
         uint32_t                OD_EEPROMSize,
         uint8_t                *OD_ROMAddress,
         uint32_t                OD_ROMSize)
 {
-    /* allocate memory if not already allocated */
-    if((*ppEE) == NULL){
-        if(((*ppEE) = (EE_t*)malloc(sizeof(EE_t))) == NULL){return CO_ERROR_OUT_OF_MEMORY;}
-    }
-
-    EE_t *EE = *ppEE; /* pointer to (newly created) object */
 
     /* configure object variables */
     EE->pSRAM = (uint32_t*)SRAMAddress;
@@ -226,18 +220,9 @@ void EE_init_2(
         CO_SDO_t               *SDO,
         CO_EM_t                *EM)
 {
-    CO_OD_configure(SDO, 0x1010, CO_ODF_1010, (void*)EE);
-    CO_OD_configure(SDO, 0x1011, CO_ODF_1011, (void*)EE);
+    CO_OD_configure(SDO, 0x1010, CO_ODF_1010, (void*)EE, 0, 0);
+    CO_OD_configure(SDO, 0x1011, CO_ODF_1011, (void*)EE, 0, 0);
     if(EEStatus) CO_errorReport(EM, ERROR_NON_VOLATILE_MEMORY, EEStatus);
-}
-
-
-/******************************************************************************/
-void EE_delete(EE_t **ppEE){
-    if(*ppEE){
-        free(*ppEE);
-        *ppEE = 0;
-    }
 }
 
 

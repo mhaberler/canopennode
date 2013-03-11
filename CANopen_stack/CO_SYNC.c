@@ -195,7 +195,7 @@ static uint32_t CO_ODF_1019(CO_ODF_arg_t *ODF_arg){
 
 /******************************************************************************/
 int16_t CO_SYNC_init(
-        CO_SYNC_t             **ppSYNC,
+        CO_SYNC_t              *SYNC,
         CO_EM_t                *EM,
         CO_SDO_t               *SDO,
         uint8_t                *operatingState,
@@ -208,14 +208,6 @@ int16_t CO_SYNC_init(
         uint16_t                CANdevTxIdx)
 {
     uint8_t len = 0;
-    CO_SYNC_t *SYNC;
-
-    /* allocate memory if not already allocated */
-    if((*ppSYNC) == NULL){
-        if(((*ppSYNC) = (CO_SYNC_t*) malloc(sizeof(CO_SYNC_t))) == NULL){ return CO_ERROR_OUT_OF_MEMORY;}
-    }
-
-    SYNC = *ppSYNC; /* pointer to (newly created) object */
 
     /* Configure object variables */
     SYNC->isProducer = (COB_ID_SYNCMessage&0x40000000L) ? 1 : 0;
@@ -242,9 +234,9 @@ int16_t CO_SYNC_init(
     SYNC->CANdevRxIdx = CANdevRxIdx;
 
     /* Configure Object dictionary entry at index 0x1005, 0x1006 and 0x1019 */
-    CO_OD_configure(SDO, 0x1005, CO_ODF_1005, (void*)SYNC);
-    CO_OD_configure(SDO, 0x1006, CO_ODF_1006, (void*)SYNC);
-    CO_OD_configure(SDO, 0x1019, CO_ODF_1019, (void*)SYNC);
+    CO_OD_configure(SDO, 0x1005, CO_ODF_1005, (void*)SYNC, 0, 0);
+    CO_OD_configure(SDO, 0x1006, CO_ODF_1006, (void*)SYNC, 0, 0);
+    CO_OD_configure(SDO, 0x1019, CO_ODF_1019, (void*)SYNC, 0, 0);
 
     /* configure SYNC CAN reception */
     CO_CANrxBufferInit(
@@ -268,15 +260,6 @@ int16_t CO_SYNC_init(
             0);                     /* synchronous message flag bit */
 
     return CO_ERROR_NO;
-}
-
-
-/******************************************************************************/
-void CO_SYNC_delete(CO_SYNC_t **ppSYNC){
-    if(*ppSYNC){
-        free(*ppSYNC);
-        *ppSYNC = 0;
-    }
 }
 
 

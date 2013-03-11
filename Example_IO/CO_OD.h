@@ -37,12 +37,31 @@
 #ifndef _CO_OD_H
 #define _CO_OD_H
 
+
+/*******************************************************************************
+   CANopen DATA DYPES
+*******************************************************************************/
+   typedef uint8_t      UNSIGNED8;
+   typedef uint16_t     UNSIGNED16;
+   typedef uint32_t     UNSIGNED32;
+   typedef uint64_t     UNSIGNED64;
+   typedef int8_t       INTEGER8;
+   typedef int16_t      INTEGER16;
+   typedef int32_t      INTEGER32;
+   typedef int64_t      INTEGER64;
+   typedef float32_t    REAL32;
+   typedef float64_t    REAL64;
+   typedef char_t       VISIBLE_STRING;
+   typedef oChar_t      OCTET_STRING;
+   typedef domain_t     DOMAIN;
+
+
 /*******************************************************************************
    FILE INFO:
       FileName:     IO
       FileVersion:  3.0
-      CreationTime: 08:15:03
-      CreationDate: 2012-11-19
+      CreationTime: 13:23:28
+      CreationDate: 2013-03-09
       CreatedBy:    -
 *******************************************************************************/
 

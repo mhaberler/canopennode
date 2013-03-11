@@ -27,6 +27,7 @@
 
 #include "CO_driver.h"
 #include "CO_SDO.h"
+#include "CO_Emergency.h"
 #include "eeprom.h"
 #include "crc16-ccitt.h"
 
@@ -163,21 +164,13 @@ uint32_t CO_ODF_1011(CO_ODF_arg_t *ODF_arg){
 
 /******************************************************************************/
 int16_t EE_init_1(
-        EE_t                  **ppEE,
+        EE_t                   *EE,
         uint8_t                *OD_EEPROMAddress,
         uint32_t                OD_EEPROMSize,
         uint8_t                *OD_ROMAddress,
         uint32_t                OD_ROMSize)
 {
     uint32_t rdata;
-
-    /* allocate memory if not already allocated */
-    if((*ppEE) == NULL){
-        if(((*ppEE) = (EE_t*)malloc(sizeof(EE_t))) == NULL){return CO_ERROR_OUT_OF_MEMORY;}
-    }
-
-    EE_t *EE = *ppEE; /* pointer to (newly created) object */
-
 
     /* Configure SPI port for use with eeprom */
     SPICON = 0;           /* Stops and restes the SPI */
@@ -241,11 +234,15 @@ int16_t EE_init_1(
 
 
 /******************************************************************************/
-void EE_delete(EE_t **ppEE){
-    if(*ppEE){
-        free(*ppEE);
-        *ppEE = 0;
-    }
+void EE_init_2(
+        EE_t                   *EE,
+        int16_t                 EEStatus,
+        CO_SDO_t               *SDO,
+        CO_EM_t                *EM)
+{
+    CO_OD_configure(SDO, 0x1010, CO_ODF_1010, (void*)EE, 0, 0);
+    CO_OD_configure(SDO, 0x1011, CO_ODF_1011, (void*)EE, 0, 0);
+    if(EEStatus) CO_errorReport(EM, ERROR_NON_VOLATILE_MEMORY, EEStatus);
 }
 
 

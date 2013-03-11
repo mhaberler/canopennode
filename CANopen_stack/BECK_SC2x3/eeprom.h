@@ -72,28 +72,16 @@ typedef struct{
 }EE_t;
 
 
-/* Eeprom object
+/* First part of eeprom initialization.
  *  @param SRAMAddress Address of battery powered SRAM memory.
  */
 int16_t EE_init_1(
-        EE_t                  **EE,
+        EE_t                   *EE,
         uint8_t                *SRAMAddress,
         uint8_t                *OD_EEPROMAddress,
         uint32_t                OD_EEPROMSize,
         uint8_t                *OD_ROMAddress,
         uint32_t                OD_ROMSize);
-
-
-/*******************************************************************************
-    Function: EE_delete
-
-    Delete EEPROM object and free memory.
-
-    Parameters:
-        ppEE              - Pointer to pointer to EEPROM object <EE_t>.
-                                 Pointer to object is set to 0.
-*******************************************************************************/
-void EE_delete(EE_t **ppEE);
 
 
 /* Second part of eeprom initialization. */

@@ -46,7 +46,7 @@
 
 
 /* Configuration bits */
-    _FOSCSEL(FNOSC_PRIPLL);     /*  Primary (XT, HS, EC) Oscillator /* PLL enabled */ */
+    _FOSCSEL(FNOSC_PRIPLL);     /*  Primary (XT, HS, EC) Oscillator / PLL enabled / */
     _FOSC(FCKSM_CSDCMD & OSCIOFNC_OFF  & POSCMD_XT);
                                 /*  Clock Switching and Fail Safe Clock Monitor is disabled */
                                 /*  OSC2 Pin Function: OSC2 is Clock Output */
@@ -71,7 +71,6 @@
 /* Global variables */
     const CO_CANbitRateData_t  CO_CANbitRateData[8] = {CO_CANbitRateDataInitializers};
     volatile uint16_t CO_timer1ms;
-    CO_t *CO = 0;   /* pointer to CANopen stack object */
     /* (not implemented) eeprom_t eeprom; */
 
 
@@ -119,7 +118,7 @@ int main (void){
     while(reset != 2){
 /* CANopen communication reset - initialize CANopen objects *******************/
         static uint16_t timer1msPrevious;
-        enum CO_ReturnError err;
+        CO_ReturnError_t err;
 
         /* disable timer and CAN interrupts, turn on red LED */
         CO_TMR_ISR_ENABLE = 0;
@@ -139,7 +138,7 @@ int main (void){
 
 
         /* initialize CANopen */
-        err = CO_init(&CO);
+        err = CO_init();
         if(err){
             while(1) ClrWdt();
             /* CO_errorReport(CO->EM, ERROR_MEMORY_ALLOCATION_ERROR, err); */
@@ -214,7 +213,7 @@ int main (void){
     CAN_ERROR_LED = 1;
 
     /* delete CANopen object from memory */
-    CO_delete(&CO);
+    CO_delete();
 
     /* reset */
     return 0;

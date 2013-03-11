@@ -71,7 +71,7 @@ static int16_t CO_NMT_receive(void *object, CO_CANrxMsg_t *msg){
 
 /******************************************************************************/
 int16_t CO_NMT_init(
-        CO_NMT_t              **ppNMT,
+        CO_NMT_t               *NMT,
         CO_EMpr_t              *EMpr,
         uint8_t                 nodeId,
         uint16_t                firstHBTime,
@@ -82,14 +82,6 @@ int16_t CO_NMT_init(
         uint16_t                HB_txIdx,
         uint16_t                CANidTxHB)
 {
-    CO_NMT_t *NMT;
-
-    /* allocate memory if not already allocated */
-    if((*ppNMT) == NULL){
-        if(((*ppNMT) = (CO_NMT_t*) malloc(sizeof(CO_NMT_t))) == NULL){ return CO_ERROR_OUT_OF_MEMORY;}
-    }
-
-    NMT = *ppNMT; /* pointer to (newly created) object */
 
     /* blinking bytes */
     NMT->LEDflickering          = 0;
@@ -130,15 +122,6 @@ int16_t CO_NMT_init(
             0);                 /* synchronous message flag bit */
                                 
     return CO_ERROR_NO;
-}
-
-
-/******************************************************************************/
-void CO_NMT_delete(CO_NMT_t **ppNMT){
-    if(*ppNMT){
-        free(*ppNMT);
-        *ppNMT = 0;
-    }
 }
 
 

@@ -157,7 +157,7 @@ typedef struct{
  * @return #CO_ReturnError_t CO_ERROR_NO or CO_ERROR_ILLEGAL_ARGUMENT.
  */
 int16_t CO_NMT_init(
-        CO_NMT_t              **NMT,
+        CO_NMT_t               *NMT,
         CO_EMpr_t              *EMpr,
         uint8_t                 nodeId,
         uint16_t                firstHBTime,
@@ -167,15 +167,6 @@ int16_t CO_NMT_init(
         CO_CANmodule_t         *HB_CANdev,
         uint16_t                HB_txIdx,
         uint16_t                CANidTxHB);
-
-
-/**
- * Delete NMT object and free memory.
- *
- * @param ppNMT Pointer to pointer to NMT object.
- * Pointer to NMT object is set to 0.
- */
-void CO_NMT_delete(CO_NMT_t **ppNMT);
 
 
 /**

@@ -37,7 +37,6 @@
 
 /* Global variables */
 volatile uint32_t CO_timer1ms = 0;
-CO_t *CO = 0; /* pointer to CANopen stack object */
 /* (not implemented) eeprom_t eeprom; */
 uint8_t canTimerOff = 1;
 
@@ -94,14 +93,14 @@ int main(void) {
     while (reset != 2) {
         /* CANopen communication reset - initialize CANopen objects *******************/
         static uint32_t timer1msPrevious;
-        enum CO_ReturnError err;
+        CO_ReturnError_t err;
 
         /* disable timer interrupts, turn on red LED */
         canTimerOff = 1;
         CanLedsSet(eCoLed_Red);
 
         /* initialize CANopen */
-        err = CO_init(&CO);
+        err = CO_init();
         if (err) {
             TRACE_FATAL("CO_init\n\r");
             /* CO_errorReport(CO->EM, ERROR_MEMORY_ALLOCATION_ERROR, err); */
@@ -147,7 +146,7 @@ int main(void) {
     /* (not implemented) eeprom_saveAll(&eeprom); */
     CanLedsSet(eCoLed_Red);
     /* delete CANopen object from memory */
-    CO_delete(&CO);
+    CO_delete();
 
     /* reset - by WD */
     return 0;

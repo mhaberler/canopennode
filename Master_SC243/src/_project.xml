@@ -1322,7 +1322,7 @@ Parameters:
     </CANopenObject>
   </CANopenObjectList>
   <other>
-    <file fileName="SC243" fileCreator="-" fileCreationDate="2012-11-19" fileCreationTime="08:13:26" fileVersion="3.0"/>
+    <file fileName="SC243" fileCreator="-" fileCreationDate="2013-03-10" fileCreationTime="16:45:39" fileVersion="3.0"/>
     <DeviceIdentity>
       <vendorName>Paternoster</vendorName>
       <productName>CANopenNode</productName>

@@ -108,7 +108,7 @@ typedef struct{
  * @return #CO_ReturnError_t: CO_ERROR_NO or CO_ERROR_ILLEGAL_ARGUMENT.
  */
 int16_t CO_SYNC_init(
-        CO_SYNC_t             **SYNC,
+        CO_SYNC_t              *SYNC,
         CO_EM_t                *EM,
         CO_SDO_t               *SDO,
         uint8_t                *operatingState,
@@ -119,15 +119,6 @@ int16_t CO_SYNC_init(
         uint16_t                CANdevRxIdx,
         CO_CANmodule_t         *CANdevTx,
         uint16_t                CANdevTxIdx);
-
-
-/**
- * Delete SYNC object and free memory.
- *
- * @param ppSYNC Pointer to pointer to SYNC object CO_SYNC_t.
- * Pointer to SYNC object is set to 0.
- */
-void CO_SYNC_delete(CO_SYNC_t **ppSYNC);
 
 
 /**

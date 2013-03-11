@@ -142,8 +142,8 @@ void EE_init_2(
         CO_SDO_t               *SDO,
         CO_EM_t                *EM)
 {
-    CO_OD_configure(SDO, 0x1010, CO_ODF_1010, (void*)EE);
-    CO_OD_configure(SDO, 0x1011, CO_ODF_1011, (void*)EE);
+    CO_OD_configure(SDO, 0x1010, CO_ODF_1010, (void*)EE, 0, 0);
+    CO_OD_configure(SDO, 0x1011, CO_ODF_1011, (void*)EE, 0, 0);
     if(EEStatus) CO_errorReport(EM, ERROR_NON_VOLATILE_MEMORY, EEStatus);
 }
 

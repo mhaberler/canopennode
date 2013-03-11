@@ -13,6 +13,7 @@
       <itemPath>../../CANopen_stack/CO_SDO.h</itemPath>
       <itemPath>../../CANopen_stack/CO_SYNC.h</itemPath>
       <itemPath>../../CANopen_stack/dsPIC30F/CO_driver.h</itemPath>
+      <itemPath>../../CANopen_stack/crc16-ccitt.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -31,6 +32,7 @@
       <itemPath>../../CANopen_stack/CO_SYNC.c</itemPath>
       <itemPath>../CO_OD.c</itemPath>
       <itemPath>../main_dsPIC30F.c</itemPath>
+      <itemPath>../../CANopen_stack/crc16-ccitt.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -48,7 +50,7 @@
         <targetPluginBoard></targetPluginBoard>
         <platformTool>ICD3PlatformTool</platformTool>
         <languageToolchain>XC16</languageToolchain>
-        <languageToolchainVersion>1.11</languageToolchainVersion>
+        <languageToolchainVersion>1.10</languageToolchainVersion>
         <platform>3</platform>
       </toolsSet>
       <compileType>
@@ -102,7 +104,7 @@
         <property key="oXC16gcc-sfr-warn" value="false"/>
         <property key="oXC16gcc-smar-io-lvl" value="1"/>
         <property key="oXC16gcc-smart-io-fmt" value=""/>
-        <property key="optimization-level" value="0"/>
+        <property key="optimization-level" value="1"/>
         <property key="post-instruction-scheduling" value="default"/>
         <property key="pre-instruction-scheduling" value="default"/>
         <property key="preprocessor-macros" value=""/>
@@ -112,6 +114,7 @@
       <C30-AS>
       </C30-AS>
       <C30-LD>
+        <property key="additional-options-use-response-files" value="false"/>
         <property key="boot-eeprom" value="no_eeprom"/>
         <property key="boot-flash" value="no_flash"/>
         <property key="boot-ram" value="no_ram"/>
@@ -125,7 +128,7 @@
         <property key="general-code-protect" value="no_code_protect"/>
         <property key="general-write-protect" value="no_write_protect"/>
         <property key="generate-cross-reference-file" value="false"/>
-        <property key="heap-size" value="1500"/>
+        <property key="heap-size" value="1000"/>
         <property key="input-libraries" value=""/>
         <property key="linker-symbols" value=""/>
         <property key="map-file" value=""/>

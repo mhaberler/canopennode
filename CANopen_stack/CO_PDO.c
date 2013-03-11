@@ -690,7 +690,7 @@ static uint32_t CO_ODF_TPDOmap(CO_ODF_arg_t *ODF_arg){
 
 /******************************************************************************/
 int16_t CO_RPDO_init(
-        CO_RPDO_t             **ppRPDO,
+        CO_RPDO_t              *RPDO,
         CO_EM_t                *EM,
         CO_SDO_t               *SDO,
         uint8_t                *operatingState,
@@ -704,14 +704,6 @@ int16_t CO_RPDO_init(
         CO_CANmodule_t         *CANdevRx,
         uint16_t                CANdevRxIdx)
 {
-    CO_RPDO_t *RPDO;
-
-    /* allocate memory if not already allocated */
-    if((*ppRPDO) == NULL){
-        if(((*ppRPDO) = (CO_RPDO_t*) malloc(sizeof(CO_RPDO_t))) == NULL){ return CO_ERROR_OUT_OF_MEMORY;}
-    }
-
-    RPDO = *ppRPDO; /* pointer to (newly created) object */
 
     /* Configure object variables */
     RPDO->EM = EM;
@@ -724,8 +716,8 @@ int16_t CO_RPDO_init(
     RPDO->restrictionFlags = restrictionFlags;
 
     /* Configure Object dictionary entry at index 0x1400+ and 0x1600+ */
-    CO_OD_configure(SDO, idx_RPDOCommPar, CO_ODF_RPDOcom, (void*)RPDO);
-    CO_OD_configure(SDO, idx_RPDOMapPar, CO_ODF_RPDOmap, (void*)RPDO);
+    CO_OD_configure(SDO, idx_RPDOCommPar, CO_ODF_RPDOcom, (void*)RPDO, 0, 0);
+    CO_OD_configure(SDO, idx_RPDOMapPar, CO_ODF_RPDOmap, (void*)RPDO, 0, 0);
 
     /* configure communication and mapping */
     RPDO->CANrxNew = 0;
@@ -740,17 +732,8 @@ int16_t CO_RPDO_init(
 
 
 /******************************************************************************/
-void CO_RPDO_delete(CO_RPDO_t **ppRPDO){
-    if(*ppRPDO){
-        free(*ppRPDO);
-        *ppRPDO = 0;
-    }
-}
-
-
-/******************************************************************************/
 int16_t CO_TPDO_init(
-        CO_TPDO_t             **ppTPDO,
+        CO_TPDO_t              *TPDO,
         CO_EM_t                *EM,
         CO_SDO_t               *SDO,
         uint8_t                *operatingState,
@@ -764,14 +747,6 @@ int16_t CO_TPDO_init(
         CO_CANmodule_t         *CANdevTx,
         uint16_t                CANdevTxIdx)
 {
-    CO_TPDO_t *TPDO;
-
-    /* allocate memory if not already allocated */
-    if((*ppTPDO) == NULL){
-        if(((*ppTPDO) = (CO_TPDO_t*) malloc(sizeof(CO_TPDO_t))) == NULL){return CO_ERROR_OUT_OF_MEMORY;}
-    }
-
-    TPDO = *ppTPDO; /* pointer to (newly created) object */
 
     /* Configure object variables */
     TPDO->EM = EM;
@@ -784,8 +759,8 @@ int16_t CO_TPDO_init(
     TPDO->restrictionFlags = restrictionFlags;
 
     /* Configure Object dictionary entry at index 0x1800+ and 0x1A00+ */
-    CO_OD_configure(SDO, idx_TPDOCommPar, CO_ODF_TPDOcom, (void*)TPDO);
-    CO_OD_configure(SDO, idx_TPDOMapPar, CO_ODF_TPDOmap, (void*)TPDO);
+    CO_OD_configure(SDO, idx_TPDOCommPar, CO_ODF_TPDOcom, (void*)TPDO, 0, 0);
+    CO_OD_configure(SDO, idx_TPDOMapPar, CO_ODF_TPDOmap, (void*)TPDO, 0, 0);
 
     /* configure communication and mapping */
     TPDO->CANdevTx = CANdevTx;
@@ -806,15 +781,6 @@ int16_t CO_TPDO_init(
     }
 
     return CO_ERROR_NO;
-}
-
-
-/******************************************************************************/
-void CO_TPDO_delete(CO_TPDO_t **ppTPDO){
-    if(*ppTPDO){
-        free(*ppTPDO);
-        *ppTPDO = 0;
-    }
 }
 
 

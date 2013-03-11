@@ -117,50 +117,35 @@ static uint32_t CO_ODF_1200(CO_ODF_arg_t *ODF_arg){
 
 /******************************************************************************/
 int16_t CO_SDO_init(
-        CO_SDO_t              **ppSDO,
+        CO_SDO_t               *SDO,
         uint16_t                COB_IDClientToServer,
         uint16_t                COB_IDServerToClient,
         uint16_t                ObjDictIndex_SDOServerParameter,
         CO_SDO_t               *parentSDO,
         const CO_OD_entry_t    *OD,
         uint16_t                ODSize,
+        CO_OD_extension_t      *ODExtensions,
         uint8_t                 nodeId,
         CO_CANmodule_t         *CANdevRx,
         uint16_t                CANdevRxIdx,
         CO_CANmodule_t         *CANdevTx,
         uint16_t                CANdevTxIdx)
 {
-    CO_SDO_t *SDO;
-
-    /* allocate memory if not already allocated */
-    if((*ppSDO) == NULL){
-        if(((*ppSDO) = (CO_SDO_t *) malloc(sizeof(CO_SDO_t))) == NULL){return CO_ERROR_OUT_OF_MEMORY;}
-        (*ppSDO)->ODExtensions = 0;
-    }
-    else if((*ppSDO)->ODExtensions == NULL) return CO_ERROR_ILLEGAL_ARGUMENT;
-
-    SDO = *ppSDO; /* pointer to (newly created) object */
 
     /* configure own object dictionary */
     if(parentSDO == 0){
-        /* setup OD */
+        uint16_t i;
+
         SDO->ownOD = 1;
         SDO->OD = OD;
         SDO->ODSize = ODSize;
+        SDO->ODExtensions = ODExtensions;
 
-        /* allocate memory for ODExtensions, if not allready allocated */
-        if(SDO->ODExtensions == NULL){
-            uint16_t i;
-
-            SDO->ODExtensions = (void*) malloc(ODSize * sizeof(CO_OD_extension_t *));
-            if(SDO->ODExtensions == 0){
-                free(*ppSDO);
-                *ppSDO = 0;
-                return CO_ERROR_OUT_OF_MEMORY;
-            }
-
-            /* clear pointers in ODExtensions */
-            for(i=0; i<ODSize; i++) SDO->ODExtensions[i] = 0;
+        /* clear pointers in ODExtensions */
+        for(i=0; i<ODSize; i++){
+            SDO->ODExtensions[i].pODFunc = 0;
+            SDO->ODExtensions[i].object = 0;
+            SDO->ODExtensions[i].flags = 0;
         }
     }
     /* copy object dictionary from parent */
@@ -178,7 +163,7 @@ int16_t CO_SDO_init(
 
     /* Configure Object dictionary entry at index 0x1200 */
     if(ObjDictIndex_SDOServerParameter == 0x1200)
-        CO_OD_configure(SDO, ObjDictIndex_SDOServerParameter, CO_ODF_1200, (void*)&SDO->nodeId);
+        CO_OD_configure(SDO, ObjDictIndex_SDOServerParameter, CO_ODF_1200, (void*)&SDO->nodeId, 0, 0);
 
     /* configure SDO server CAN reception */
     CO_CANrxBufferInit(
@@ -205,50 +190,36 @@ int16_t CO_SDO_init(
 
 
 /******************************************************************************/
-void CO_SDO_delete(CO_SDO_t **ppSDO){
-    if(*ppSDO){
-        CO_SDO_t *SDO = *ppSDO;
-        if(SDO->ODExtensions && SDO->ownOD){
-            uint16_t i;
-            for(i=0; i<SDO->ODSize; i++){
-                if(SDO->ODExtensions[i]) free(SDO->ODExtensions[i]);
-            }
-            free(SDO->ODExtensions);
-        }
-
-        free(*ppSDO);
-        *ppSDO = 0;
-    }
-}
-
-
-/******************************************************************************/
 uint16_t CO_OD_configure(
         CO_SDO_t               *SDO,
         uint16_t                index,
         uint32_t              (*pODFunc)(CO_ODF_arg_t *ODF_arg),
-        void                   *object)
+        void                   *object,
+        uint8_t                *flags,
+        uint8_t                 flagsSize)
 {
     uint16_t entryNo;
-    uint16_t i;
+    CO_OD_extension_t *ext;
     uint8_t maxSubIndex;
 
     entryNo = CO_OD_find(SDO, index);
     if(entryNo == 0xFFFF) return 0xFFFF;   /* index not found in Object dictionary */
 
-    /* allocate CO_OD_extension_t */
-    CO_OD_extension_t *ext = SDO->ODExtensions[entryNo];
+    ext = &SDO->ODExtensions[entryNo];
     maxSubIndex = SDO->OD[entryNo].maxSubIndex;
-    if(ext == NULL){
-        ext = (CO_OD_extension_t*) malloc(sizeof(CO_OD_extension_t) + maxSubIndex);
-        if(ext == 0) return 0xFFFF;   /* memory allocation failed */
-        SDO->ODExtensions[entryNo] = ext;
-    }
 
     ext->pODFunc = pODFunc;
     ext->object = object;
-    for(i=0; i<=maxSubIndex; i++)
-        ext->flags[i] = 0;
+    if(flags != NULL && flagsSize != 0 && flagsSize == maxSubIndex){
+        uint16_t i;
+        ext->flags = flags;
+        for(i=0; i<=maxSubIndex; i++){
+            ext->flags[i] = 0;
+        }
+    }
+    else{
+        ext->flags = NULL;
+    }
 
     return entryNo;
 }
@@ -368,14 +339,13 @@ void* CO_OD_getDataPointer(CO_SDO_t *SDO, uint16_t entryNo, uint8_t subIndex){
 
 /******************************************************************************/
 uint8_t* CO_OD_getFlagsPointer(CO_SDO_t *SDO, uint16_t entryNo, uint8_t subIndex){
-    CO_OD_extension_t* obj_ext;
+    CO_OD_extension_t* ext;
 
     if(entryNo == 0xFFFF || SDO->ODExtensions == 0) return 0;
 
-    obj_ext = SDO->ODExtensions[entryNo];
-    if(obj_ext == 0) return 0;
+    ext = &SDO->ODExtensions[entryNo];
 
-    return &obj_ext->flags[subIndex];
+    return &ext->flags[subIndex];
 }
 
 
@@ -395,10 +365,10 @@ uint32_t CO_SDO_initTransfer(CO_SDO_t *SDO, uint16_t index, uint8_t subIndex){
     SDO->ODF_arg.ODdataStorage = CO_OD_getDataPointer(SDO, SDO->entryNo, subIndex);
 
     /* fill ODF_arg */
-    SDO->ODF_arg.object = 0;
+    SDO->ODF_arg.object = NULL;
     if(SDO->ODExtensions){
-        CO_OD_extension_t *ext = SDO->ODExtensions[SDO->entryNo];
-        if(ext) SDO->ODF_arg.object = ext->object;
+        CO_OD_extension_t *ext = &SDO->ODExtensions[SDO->entryNo];
+        SDO->ODF_arg.object = ext->object;
     }
     SDO->ODF_arg.data = SDO->databuffer;
     SDO->ODF_arg.dataLength = CO_OD_getLength(SDO, SDO->entryNo, subIndex);
@@ -434,7 +404,7 @@ uint32_t CO_SDO_readOD(CO_SDO_t *SDO, uint16_t SDOBufferSize){
 
     /* find extension */
     if(SDO->ODExtensions){
-        ext = SDO->ODExtensions[SDO->entryNo];
+        ext = &SDO->ODExtensions[SDO->entryNo];
     }
 
     /* copy data from OD to SDO buffer if not domain */
@@ -445,12 +415,12 @@ uint32_t CO_SDO_readOD(CO_SDO_t *SDO, uint16_t SDOBufferSize){
     }
     /* if domain, Object dictionary function MUST exist */
     else{
-        if(ext == 0) return 0x06040047L;     /* general internal incompatibility in the device */
+        if(ext->pODFunc == NULL) return 0x06040047L;     /* general internal incompatibility in the device */
     }
 
     /* call Object dictionary function if registered */
     SDO->ODF_arg.reading = 1;
-    if(ext){
+    if(ext->pODFunc){
         uint32_t abortCode = ext->pODFunc(&SDO->ODF_arg);
         if(abortCode) return abortCode;
 
@@ -516,9 +486,9 @@ uint32_t CO_SDO_writeOD(CO_SDO_t *SDO, uint16_t length){
     /* call Object dictionary function if registered */
     SDO->ODF_arg.reading = 0;
     if(SDO->ODExtensions){
-        CO_OD_extension_t *ext = SDO->ODExtensions[SDO->entryNo];
+        CO_OD_extension_t *ext = &SDO->ODExtensions[SDO->entryNo];
 
-        if(ext){
+        if(ext->pODFunc){
             uint32_t abortCode = ext->pODFunc(&SDO->ODF_arg);
             if(abortCode) return abortCode;
         }

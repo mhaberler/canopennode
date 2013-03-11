@@ -86,9 +86,8 @@
 /* Global variables and objects */
     const CO_CANbitRateData_t   CO_CANbitRateData[8] = {CO_CANbitRateDataInitializers};
     volatile uint16_t           CO_timer1ms=0;  /* variable increments each millisecond */
-    CO_t                       *CO = 0;         /* pointer to CANopen object */
 #ifdef USE_EEPROM
-    EE_t                       *EE = 0;         /* pointer to eeprom object */
+    EE_t                        EEO;            /* Eeprom object */
 #endif
 
 
@@ -114,12 +113,8 @@ int main (void){
 
     /* initialize EEPROM - part 1 */
 #ifdef USE_EEPROM
-    int16_t EEStatus = EE_init_1(
-                              &EE,
-             (uint8_t*) &CO_OD_EEPROM,
-                               sizeof(CO_OD_EEPROM),
-             (uint8_t*) &CO_OD_ROM,
-                               sizeof(CO_OD_ROM));
+    int16_t EEStatus = EE_init_1(&EEO, (uint8_t*) &CO_OD_EEPROM, sizeof(CO_OD_EEPROM),
+                            (uint8_t*) &CO_OD_ROM, sizeof(CO_OD_ROM));
 #endif
 
 
@@ -143,7 +138,7 @@ int main (void){
 
 
         /* initialize CANopen */
-        err = CO_init(&CO);
+        err = CO_init();
         if(err){
             while(1) ClearWDT();
             /* CO_errorReport(CO->EM, ERROR_MEMORY_ALLOCATION_ERROR, err); */
@@ -152,7 +147,7 @@ int main (void){
 
         /* initialize eeprom - part 2 */
 #ifdef USE_EEPROM
-        EE_init_2(EE, EEStatus, CO->SDO, CO->EM);
+        EE_init_2(&EEO, EEStatus, CO->SDO, CO->EM);
 #endif
 
 
@@ -237,7 +232,7 @@ int main (void){
 
 
 #ifdef USE_EEPROM
-            EE_process(EE);
+            EE_process(&EEO);
 #endif
         }
     }
@@ -248,10 +243,7 @@ int main (void){
 
     /* delete objects from memory */
     programEnd();
-    CO_delete(&CO);
-#ifdef USE_EEPROM
-    EE_delete(&EE);
-#endif
+    CO_delete();
 
     /* reset */
     SoftReset();

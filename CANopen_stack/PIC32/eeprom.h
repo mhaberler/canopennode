@@ -80,29 +80,19 @@ typedef struct{
  * eeprom and store to OD_EEPROM and OD_ROM.
  */
 int16_t EE_init_1(
-        EE_t                  **EE,
+        EE_t                   *EE,
         uint8_t                *OD_EEPROMAddress,
         uint32_t                OD_EEPROMSize,
         uint8_t                *OD_ROMAddress,
         uint32_t                OD_ROMSize);
 
 
-/**
- * Delete EEPROM object and free memory.
- *
- * @param ppEE Pointer to pointer to EEPROM object <EE_t>.
- * Pointer to object is set to 0.
- */
-uint32_t CO_ODF_1010(CO_ODF_arg_t *ODF_arg);
-uint32_t CO_ODF_1011(CO_ODF_arg_t *ODF_arg);
-void EE_delete(EE_t **ppEE);
-
-
 /* Second part of eeprom initialization. */
-#define EE_init_2(EE, EEStatus, SDO, EM)                                   \
-    CO_OD_configure(SDO, 0x1010, CO_ODF_1010, (void*)EE);                  \
-    CO_OD_configure(SDO, 0x1011, CO_ODF_1011, (void*)EE);                  \
-    if(EEStatus) CO_errorReport(EM, ERROR_NON_VOLATILE_MEMORY, EEStatus)
+void EE_init_2(
+        EE_t                   *EE, 
+        int16_t                 EEStatus,
+        CO_SDO_t               *SDO,
+        CO_EM_t                *EM);
 
 
 /* Process eeprom object. */
