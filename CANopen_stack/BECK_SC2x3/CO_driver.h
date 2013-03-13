@@ -95,8 +95,8 @@ typedef struct{
 
 /* Received message object */
 typedef struct{
-    uint16_t            ident;
-    uint16_t            mask;
+    uint32_t            ident;
+    uint32_t            mask;
     void               *object;
     int16_t           (*pFunct)(void *object, CO_CANrxMsg_t *message);
 }CO_CANrx_t;
