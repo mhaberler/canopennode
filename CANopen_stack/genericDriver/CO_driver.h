@@ -133,6 +133,12 @@
 /** @} */
 
 
+/** Null */
+#ifndef	NULL
+#define	NULL	(0)
+#endif
+
+
 /**
  * @defgroup CO_dataTypes Data types
  * @{

@@ -204,7 +204,7 @@ int16_t CO_CANmodule_init(
     /* Enable 'RX buffer not empty' (RXNEMPTYIE) interrupt in FIFO 0 (third layer interrupt) */
     CAN_REG(CANbaseAddress, C_FIFOINT) = 0x00010000;
     /* Enable 'Tx buffer empty' (TXEMPTYIE) interrupt in FIFO 1 (third layer interrupt) */
-    /* CAN_REG(CANbaseAddress, C_FIFOINT+0x40) = 0x01000000; //will be enabled in CO_CANsend */
+    CAN_REG(CANbaseAddress, C_FIFOINT+0x40) = 0x00000000; /* will be enabled in CO_CANsend */
     /* Enable receive (RBIE) and transmit (TBIE) buffer interrupt (secont layer interrupt) */
     CAN_REG(CANbaseAddress, C_INT) = 0x00030000;
     /* CAN interrupt (first layer) must be configured by application */
@@ -345,65 +345,86 @@ CO_CANtx_t *CO_CANtxBufferInit(
 
 
 /******************************************************************************/
-int16_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t  *buffer){
-    uint16_t addr = CANmodule->CANbaseAddress;
+int16_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer){
+    CO_ReturnError_t err = CO_ERROR_NO;
 
-    /* Was previous message sent or it is still waiting? */
+    /* Verify overflow */
     if(buffer->bufferFull){
         if(!CANmodule->firstCANtxMessage)/* don't set error, if bootup message is still on buffers */
             CO_errorReport((CO_EM_t*)CANmodule->EM, ERROR_CAN_TX_OVERFLOW, 0);
-        return CO_ERROR_TX_OVERFLOW;
+        err = CO_ERROR_TX_OVERFLOW;
     }
 
     /* messages with syncFlag set (synchronous PDOs) must be transmited inside preset time window */
     if(CANmodule->curentSyncTimeIsInsideWindow && buffer->syncFlag && !(*CANmodule->curentSyncTimeIsInsideWindow)){
         CO_errorReport((CO_EM_t*)CANmodule->EM, ERROR_TPDO_OUTSIDE_WINDOW, 0);
-        return CO_ERROR_TX_PDO_WINDOW;
+        err = CO_ERROR_TX_PDO_WINDOW;
     }
 
-    /* CAN TX message buffer */
-    uint32_t* TXmsgBuffer = PA_TO_KVA1(CAN_REG(addr, C_FIFOUA+0x40));
-    uint32_t* message = (uint32_t*) buffer;
-    volatile uint32_t* TX_FIFOcon = &CAN_REG(addr, C_FIFOCON+0x40);
-    volatile uint32_t* TX_FIFOconSet = &CAN_REG(addr, C_FIFOCON+0x48);
+    if(err != CO_ERROR_TX_PDO_WINDOW){
+        uint16_t addr = CANmodule->CANbaseAddress;
+        volatile uint32_t* TX_FIFOcon = &CAN_REG(addr, C_FIFOCON+0x40);
+        volatile uint32_t* TX_FIFOconSet = &CAN_REG(addr, C_FIFOCON+0x48);
+        uint32_t* TXmsgBuffer = PA_TO_KVA1(CAN_REG(addr, C_FIFOUA+0x40));
+        uint32_t* message = (uint32_t*) buffer;
 
-    DISABLE_INTERRUPTS();
-    /* if CAN TB buffer is free, copy message to it */
-    if((*TX_FIFOcon & 0x8) == 0 && CANmodule->CANtxCount == 0){
-        CANmodule->bufferInhibitFlag = buffer->syncFlag;
-        *(TXmsgBuffer++) = *(message++);
-        *(TXmsgBuffer++) = *(message++);
-        *(TXmsgBuffer++) = *(message++);
-        *(TXmsgBuffer++) = *(message++);
-        *TX_FIFOconSet = 0x2000;   /* set UINC */
-        *TX_FIFOconSet = 0x0008;   /* set TXREQ */
-    }
-    /* if no buffer is free, message will be sent by interrupt */
-    else{
-        buffer->bufferFull = 1;
-        CANmodule->CANtxCount++;
+        DISABLE_INTERRUPTS();
+        /* if CAN TX buffer is free, copy message to it */
+        if((*TX_FIFOcon & 0x8) == 0){
+            CANmodule->bufferInhibitFlag = buffer->syncFlag;
+            *(TXmsgBuffer++) = *(message++);
+            *(TXmsgBuffer++) = *(message++);
+            *(TXmsgBuffer++) = *(message++);
+            *(TXmsgBuffer++) = *(message++);
+            *TX_FIFOconSet = 0x2000;   /* set UINC */
+            *TX_FIFOconSet = 0x0008;   /* set TXREQ */
+        }
+        /* if no buffer is free, message will be sent by interrupt */
+        else{
+            buffer->bufferFull = 1;
+            CANmodule->CANtxCount++;
+        }
         /* Enable 'Tx buffer empty' (TXEMPTYIE) interrupt in FIFO 1 (third layer interrupt) */
         CAN_REG(addr, C_FIFOINT+0x48) = 0x01000000;
+        ENABLE_INTERRUPTS();
     }
-    ENABLE_INTERRUPTS();
 
-    return CO_ERROR_NO;
+    return err;
 }
 
 
 /******************************************************************************/
 void CO_CANclearPendingSyncPDOs(CO_CANmodule_t *CANmodule){
-
+    uint8_t tpdoDeleted = 0;
+    volatile uint32_t* TX_FIFOcon = &CAN_REG(CANmodule->CANbaseAddress, C_FIFOCON+0x40);
     volatile uint32_t* TX_FIFOconClr = &CAN_REG(CANmodule->CANbaseAddress, C_FIFOCON+0x44);
+    CO_CANtx_t *buffer = CANmodule->txArray;
 
     DISABLE_INTERRUPTS();
-    if(CANmodule->bufferInhibitFlag){
+    /* Abort message from CAN module, if there is synchronous TPDO.
+     * Take special care with this functionality. */
+    if((*TX_FIFOcon & 0x8) && CANmodule->bufferInhibitFlag){
         *TX_FIFOconClr = 0x0008;   /* clear TXREQ */
-        ENABLE_INTERRUPTS();
-        CO_errorReport((CO_EM_t*)CANmodule->EM, ERROR_TPDO_OUTSIDE_WINDOW, 1);
+        CANmodule->bufferInhibitFlag = 0;
+        tpdoDeleted = 1;
     }
-    else{
-        ENABLE_INTERRUPTS();
+    /* delete also pending synchronous TPDOs in TX buffers */
+    if(CANmodule->CANtxCount){
+        uint16_t i;
+        for(i = CANmodule->txSize; i > 0; i--){
+            if(buffer->bufferFull && buffer->syncFlag){
+                buffer->bufferFull = 0;
+                CANmodule->CANtxCount--;
+                tpdoDeleted = 2;
+            }
+            buffer++;
+        }
+    }
+    ENABLE_INTERRUPTS();
+
+
+    if(tpdoDeleted){
+        CO_errorReport((CO_EM_t*)CANmodule->EM, ERROR_TPDO_OUTSIDE_WINDOW, tpdoDeleted);
     }
 }
 
@@ -508,9 +529,6 @@ void CO_CANinterrupt(CO_CANmodule_t *CANmodule){
 
         /* Update the message buffer pointer */
         CAN_REG(CANmodule->CANbaseAddress, C_FIFOCON+0x08) = 0x2000;   /* set UINC */
-
-        /* Clear interrupt flag */
-        /* (not needed) */
     }
 
 
@@ -520,53 +538,55 @@ void CO_CANinterrupt(CO_CANmodule_t *CANmodule){
         CANmodule->firstCANtxMessage = 0;
         /* clear flag from previous message */
         CANmodule->bufferInhibitFlag = 0;
-        /* Are there any new messages waiting to be send and buffer is free */
+        /* Are there any new messages waiting to be send */
         if(CANmodule->CANtxCount > 0){
-            uint16_t index;          /* index of transmitting message */
-            CANmodule->CANtxCount--;
+            uint16_t i;             /* index of transmitting message */
 
             /* first buffer */
             CO_CANtx_t *buffer = CANmodule->txArray;
             /* search through whole array of pointers to transmit message buffers. */
-            for(index = CANmodule->txSize; index > 0; index--){
+            for(i = CANmodule->txSize; i > 0; i--){
                 /* if message buffer is full, send it. */
                 if(buffer->bufferFull){
+                    uint8_t skipMessage = 0;
+                    buffer->bufferFull = 0;
+                    CANmodule->CANtxCount--;
+
                     /* messages with syncFlag set (synchronous PDOs) must be transmited inside preset time window */
                     if(CANmodule->curentSyncTimeIsInsideWindow && buffer->syncFlag){
                         if(!(*CANmodule->curentSyncTimeIsInsideWindow)){
-                            CO_errorReport((CO_EM_t*)CANmodule->EM, ERROR_TPDO_OUTSIDE_WINDOW, 2);
-                            /* release buffer */
-                            buffer->bufferFull = 0;
-                            /* exit for loop */
-                            break;
+                            CO_errorReport((CO_EM_t*)CANmodule->EM, ERROR_TPDO_OUTSIDE_WINDOW, 3);
+                            skipMessage = 1;
                         }
-                        CANmodule->bufferInhibitFlag = 1;
+                        else{
+                            CANmodule->bufferInhibitFlag = 1;
+                        }
                     }
 
                     /* Copy message to CAN buffer */
-                    uint32_t* TXmsgBuffer = PA_TO_KVA1(CAN_REG(CANmodule->CANbaseAddress, C_FIFOUA+0x40));
-                    uint32_t* message = (uint32_t*) buffer;
-                    volatile uint32_t* TX_FIFOconSet = &CAN_REG(CANmodule->CANbaseAddress, C_FIFOCON+0x48);
-                    *(TXmsgBuffer++) = *(message++);
-                    *(TXmsgBuffer++) = *(message++);
-                    *(TXmsgBuffer++) = *(message++);
-                    *(TXmsgBuffer++) = *(message++);
-                    *TX_FIFOconSet = 0x2000;   /* set UINC */
-                    *TX_FIFOconSet = 0x0008;   /* set TXREQ */
-
-                    /* release buffer */
-                    buffer->bufferFull = 0;
-                    /* exit for loop */
-                    break;
+                    if(skipMessage == 0){
+                        uint32_t* TXmsgBuffer = PA_TO_KVA1(CAN_REG(CANmodule->CANbaseAddress, C_FIFOUA+0x40));
+                        uint32_t* message = (uint32_t*) buffer;
+                        volatile uint32_t* TX_FIFOconSet = &CAN_REG(CANmodule->CANbaseAddress, C_FIFOCON+0x48);
+                        *(TXmsgBuffer++) = *(message++);
+                        *(TXmsgBuffer++) = *(message++);
+                        *(TXmsgBuffer++) = *(message++);
+                        *(TXmsgBuffer++) = *(message++);
+                        *TX_FIFOconSet = 0x2000;    /* set UINC */
+                        *TX_FIFOconSet = 0x0008;    /* set TXREQ */
+                        break;                      /* exit for loop */
+                    }
                 }
                 buffer++;
             }/* end of for loop */
+
+            /* Clear counter if no more messages */
+            if(i == 0) CANmodule->CANtxCount = 0;
         }
-        else{
-            /* if no more messages, disable 'Tx buffer empty' (TXEMPTYIE) interrupt */
+
+        /* if no more messages, disable 'Tx buffer empty' (TXEMPTYIE) interrupt */
+        if(CANmodule->CANtxCount == 0){
             CAN_REG(CANmodule->CANbaseAddress, C_FIFOINT+0x44) = 0x01000000;
         }
-        /* Clear interrupt flag */
-        /* (not needed) */
     }
 }

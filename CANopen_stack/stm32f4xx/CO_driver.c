@@ -468,14 +468,8 @@ int16_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer) {
 }
 /******************************************************************************/
 void CO_CANclearPendingSyncPDOs(CO_CANmodule_t *CANmodule) {
-    DISABLE_INTERRUPTS();
 
-    if (CANmodule->bufferInhibitFlag) {
-        CANmodule->CANbaseAddress->TSR |= CAN_TSR_ABRQ0 | CAN_TSR_ABRQ1 | CAN_TSR_ABRQ2;
-        ENABLE_INTERRUPTS();
-        CO_errorReport((CO_EM_t*) CANmodule->EM, ERROR_TPDO_OUTSIDE_WINDOW, 0);
-    } else
-        ENABLE_INTERRUPTS();
+    /* See generic driver for implemetation. */
 }
 
 /******************************************************************************/
@@ -609,13 +603,15 @@ void CO_CANinterrupt_Tx(CO_CANmodule_t *CANmodule) {
                 CANmodule->bufferInhibitFlag = 0;
                 if (CANmodule->curentSyncTimeIsInsideWindow && buffer->syncFlag) {
                     if (!(*CANmodule->curentSyncTimeIsInsideWindow)) {
-                        CO_errorReport((CO_EM_t*) CANmodule->EM, ERROR_TPDO_OUTSIDE_WINDOW, 0);
+                        CO_errorReport((CO_EM_t*) CANmodule->EM, ERROR_TPDO_OUTSIDE_WINDOW, 3);
                         //release buffer
                         buffer->bufferFull = 0;
                         CANmodule->CANtxCount--;
                         continue; // continue with next message
                     }
-                    CANmodule->bufferInhibitFlag = 1;
+                    else{
+                        CANmodule->bufferInhibitFlag = 1;
+                    }
                 }
                 //Copy message to CAN buffer
                 CO_CANsendToModule(CANmodule, buffer, txBuff);

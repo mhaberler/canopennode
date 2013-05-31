@@ -51,6 +51,12 @@
 #define ENABLE_INTERRUPTS()      asm volatile ("disi #0x0000")
 
 
+/* Null */
+#ifndef	NULL
+#define	NULL	(0)
+#endif
+
+
 /* Data types */
     typedef unsigned char           uint8_t;
     typedef unsigned short int      uint16_t;
@@ -378,7 +384,6 @@ typedef struct{
     volatile uint8_t   *curentSyncTimeIsInsideWindow;
     volatile uint8_t    useCANrxFilters;
     volatile uint8_t    bufferInhibitFlag;
-    volatile uint8_t    transmittingAborted; /* dsPIC30F specific: If true, CAN transmit buffer was just aborted. */
     volatile uint8_t    firstCANtxMessage;
     volatile uint16_t   CANtxCount;
     uint32_t            errOld;

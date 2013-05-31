@@ -51,6 +51,12 @@
 #define ENABLE_INTERRUPTS()      asm volatile ("disi #0x0000")
 
 
+/* Null */
+#ifndef	NULL
+#define	NULL	(0)
+#endif
+
+
 /* Data types */
     typedef unsigned char           uint8_t;
     typedef unsigned short int      uint16_t;

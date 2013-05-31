@@ -460,61 +460,84 @@ static void CO_CANsendToModule(uint16_t CANbaseAddress, CO_CANrxMsg_t *dest, CO_
 
 
 /******************************************************************************/
-int16_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t  *buffer){
-    volatile uint16_t C_CTRL1old, C_TR01CONcopy;
-    uint16_t addr = CANmodule->CANbaseAddress;
+int16_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer){
+    CO_ReturnError_t err = CO_ERROR_NO;
 
-    /* Was previous message sent or it is still waiting? */
+    /* Verify overflow */
     if(buffer->bufferFull){
         if(!CANmodule->firstCANtxMessage)/* don't set error, if bootup message is still on buffers */
             CO_errorReport((CO_EM_t*)CANmodule->EM, ERROR_CAN_TX_OVERFLOW, 0);
-        return CO_ERROR_TX_OVERFLOW;
+        err = CO_ERROR_TX_OVERFLOW;
     }
 
     /* messages with syncFlag set (synchronous PDOs) must be transmited inside preset time window */
     if(CANmodule->curentSyncTimeIsInsideWindow && buffer->syncFlag && !(*CANmodule->curentSyncTimeIsInsideWindow)){
         CO_errorReport((CO_EM_t*)CANmodule->EM, ERROR_TPDO_OUTSIDE_WINDOW, 0);
-        return CO_ERROR_TX_PDO_WINDOW;
+        err = CO_ERROR_TX_PDO_WINDOW;
     }
 
-    /* read C_TR01CON */
-    DISABLE_INTERRUPTS();
-    C_CTRL1old = CAN_REG(addr, C_CTRL1);
-    CAN_REG(addr, C_CTRL1) = C_CTRL1old & 0xFFFE;     /* WIN = 0 - use buffer registers */
-    C_TR01CONcopy = CAN_REG(addr, C_TR01CON);
-    CAN_REG(addr, C_CTRL1) = C_CTRL1old;
+    if(err != CO_ERROR_TX_PDO_WINDOW){
+        uint16_t addr = CANmodule->CANbaseAddress;
+        volatile uint16_t C_CTRL1old, C_TR01CONcopy;
 
-    /* if CAN TB buffer0 is free, copy message to it */
-    if((C_TR01CONcopy & 0x8) == 0 && CANmodule->CANtxCount == 0){
-        CANmodule->bufferInhibitFlag = buffer->syncFlag;
-        CO_CANsendToModule(addr, CANmodule->CANmsgBuff, buffer);
-    }
-    /* if no buffer is free, message will be sent by interrupt */
-    else{
-        buffer->bufferFull = 1;
-        CANmodule->CANtxCount++;
+        DISABLE_INTERRUPTS();
+        /* read C_TR01CON */
+        C_CTRL1old = CAN_REG(addr, C_CTRL1);
+        CAN_REG(addr, C_CTRL1) = C_CTRL1old & 0xFFFE;     /* WIN = 0 - use buffer registers */
+        C_TR01CONcopy = CAN_REG(addr, C_TR01CON);
+        CAN_REG(addr, C_CTRL1) = C_CTRL1old;
+
+        /* if CAN TX buffer is free, copy message to it */
+        if((C_TR01CONcopy & 0x8) == 0){
+            CANmodule->bufferInhibitFlag = buffer->syncFlag;
+            CO_CANsendToModule(addr, CANmodule->CANmsgBuff, buffer);
+        }
+        /* if no buffer is free, message will be sent by interrupt */
+        else{
+            buffer->bufferFull = 1;
+            CANmodule->CANtxCount++;
+        }
+        ENABLE_INTERRUPTS();
     }
 
-    ENABLE_INTERRUPTS();
-    return CO_ERROR_NO;
+    return err;
 }
 
 
 /******************************************************************************/
 void CO_CANclearPendingSyncPDOs(CO_CANmodule_t *CANmodule){
+    uint8_t tpdoDeleted = 0;
+    CO_CANtx_t *buffer = CANmodule->txArray;
 
     DISABLE_INTERRUPTS();
-
+    /* Abort message from CAN module, if there is synchronous TPDO.
+     * Take special care with this functionality. */
     if(CANmodule->bufferInhibitFlag){
         volatile uint16_t C_CTRL1old = CAN_REG(CANmodule->CANbaseAddress, C_CTRL1);
         CAN_REG(CANmodule->CANbaseAddress, C_CTRL1) = C_CTRL1old & 0xFFFE;     /* WIN = 0 - use buffer registers */
         CAN_REG(CANmodule->CANbaseAddress, C_TR01CON) &= 0xFFF7; /* clear TXREQ */
         CAN_REG(CANmodule->CANbaseAddress, C_CTRL1) = C_CTRL1old;
-        ENABLE_INTERRUPTS();
-        CO_errorReport((CO_EM_t*)CANmodule->EM, ERROR_TPDO_OUTSIDE_WINDOW, 0);
+        CANmodule->bufferInhibitFlag = 0;
+        tpdoDeleted = 1;
     }
-
+    /* delete also pending synchronous TPDOs in TX buffers */
+    if(CANmodule->CANtxCount){
+        uint16_t i;
+        for(i = CANmodule->txSize; i > 0; i--){
+            if(buffer->bufferFull && buffer->syncFlag){
+                buffer->bufferFull = 0;
+                CANmodule->CANtxCount--;
+                tpdoDeleted = 2;
+            }
+            buffer++;
+        }
+    }
     ENABLE_INTERRUPTS();
+
+
+    if(tpdoDeleted){
+        CO_errorReport((CO_EM_t*)CANmodule->EM, ERROR_TPDO_OUTSIDE_WINDOW, tpdoDeleted);
+    }
 }
 
 
@@ -560,7 +583,6 @@ void CO_CANverifyErrors(CO_CANmodule_t *CANmodule){
         else{
             CO_errorReset(EM, ERROR_CAN_BUS_WARNING, err);
         }
-
     }
 }
 
@@ -626,37 +648,42 @@ void CO_CANinterrupt(CO_CANmodule_t *CANmodule){
         CANmodule->firstCANtxMessage = 0;
         /* clear flag from previous message */
         CANmodule->bufferInhibitFlag = 0;
-        /* Are there any new messages waiting to be send and buffer is free */
+        /* Are there any new messages waiting to be send */
         if(CANmodule->CANtxCount > 0){
-            uint16_t index;          /* index of transmitting message */
-            CANmodule->CANtxCount--;
+            uint16_t i;             /* index of transmitting message */
+
+            /* first buffer */
+            CO_CANtx_t *buffer = CANmodule->txArray;
             /* search through whole array of pointers to transmit message buffers. */
-            for(index = 0; index < CANmodule->txSize; index++){
-                /* get specific buffer */
-                CO_CANtx_t *buffer = &CANmodule->txArray[index];
+            for(i = CANmodule->txSize; i > 0; i--){
                 /* if message buffer is full, send it. */
                 if(buffer->bufferFull){
+                    uint8_t skipMessage = 0;
+                    buffer->bufferFull = 0;
+                    CANmodule->CANtxCount--;
+
                     /* messages with syncFlag set (synchronous PDOs) must be transmited inside preset time window */
                     if(CANmodule->curentSyncTimeIsInsideWindow && buffer->syncFlag){
                         if(!(*CANmodule->curentSyncTimeIsInsideWindow)){
-                            CO_errorReport((CO_EM_t*)CANmodule->EM, ERROR_TPDO_OUTSIDE_WINDOW, 0);
-                            /* release buffer */
-                            buffer->bufferFull = 0;
-                            /* exit interrupt */
-                            break;
+                            CO_errorReport((CO_EM_t*)CANmodule->EM, ERROR_TPDO_OUTSIDE_WINDOW, 3);
+                            skipMessage = 1;
                         }
-                        CANmodule->bufferInhibitFlag = 1;
+                        else{
+                            CANmodule->bufferInhibitFlag = 1;
+                        }
                     }
 
                     /* Copy message to CAN buffer */
-                    CO_CANsendToModule(CANmodule->CANbaseAddress, CANmodule->CANmsgBuff, buffer);
-
-                    /* release buffer */
-                    buffer->bufferFull = 0;
-                    /* exit interrupt */
-                    break;
+                    if(skipMessage == 0){
+                        CO_CANsendToModule(CANmodule->CANbaseAddress, CANmodule->CANmsgBuff, buffer);
+                        break;                      /* exit for loop */
+                    }
                 }
+                buffer++;
             }/* end of for loop */
+
+            /* Clear counter if no more messages */
+            if(i == 0) CANmodule->CANtxCount = 0;
         }
     }
 }

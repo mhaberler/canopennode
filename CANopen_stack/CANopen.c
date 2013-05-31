@@ -44,7 +44,7 @@
     extern const CO_OD_entry_t CO_OD[CO_OD_NoOfElements];  /* Object Dictionary array */
     static CO_t COO;
     static uint32_t CO_memoryUsed = 0; /* informative */
-    CO_t *CO;
+    CO_t *CO = 0;
 
 #if defined(__dsPIC33F__) || defined(__PIC24H__)
     /* CAN message buffer for one TX and seven RX messages. */
@@ -209,17 +209,18 @@ int16_t CO_init(){
     }
     #endif
 
+
     /* Initialize CANopen object */
+#ifdef CO_USE_GLOBALS
     CO = &COO;
 
-#ifdef CO_USE_GLOBALS
     CO->CANmodule[0]                    = &COO_CANmodule[0];
     CO_CANmodule_rxArray0               = &COO_CANmodule_rxArray0[0];
     CO_CANmodule_txArray0               = &COO_CANmodule_txArray0[0];
   #if CO_NO_CAN_MODULES >= 2
     CO->CANmodule[1]                    = &COO_CANmodule[1];
-    CO_CANmodule_rxArray1               = &COO_CANmodule_rxArray1;
-    CO_CANmodule_txArray1               = &COO_CANmodule_txArray1;
+    CO_CANmodule_rxArray1               = &COO_CANmodule_rxArray1[0];
+    CO_CANmodule_txArray1               = &COO_CANmodule_txArray1[0];
   #endif
     CO->SDO                             = &COO_SDO;
     CO_SDO_ODExtensions                 = &COO_SDO_ODExtensions[0];
@@ -233,44 +234,48 @@ int16_t CO_init(){
         CO->TPDO[i]                     = &COO_TPDO[i];
     CO->HBcons                          = &COO_HBcons;
     CO_HBcons_monitoredNodes            = &COO_HBcons_monitoredNodes[0];
-    #if CO_NO_SDO_CLIENT == 1
+  #if CO_NO_SDO_CLIENT == 1
     CO->SDOclient                       = &COO_SDOclient;
-    #endif
-#else
-    CO->CANmodule[0]                    = (CO_CANmodule_t *)    malloc(sizeof(CO_CANmodule_t));
-    CO_CANmodule_rxArray0               = (CO_CANrx_t *)        malloc(sizeof(CO_CANrx_t) * CO_RXCAN_NO_MSGS);
-    CO_CANmodule_txArray0               = (CO_CANtx_t *)        malloc(sizeof(CO_CANtx_t) * CO_TXCAN_NO_MSGS);
-  #if CO_NO_CAN_MODULES >= 2
-    CO->CANmodule[1]                    = (CO_CANmodule_t *)    malloc(sizeof(CO_CANmodule_t));
-    CO_CANmodule_rxArray1               = (CO_CANrx_t *)        malloc(sizeof(CO_CANrx_t) * 2);
-    CO_CANmodule_txArray1               = (CO_CANtx_t *)        malloc(sizeof(CO_CANtx_t) * 2);
   #endif
-    CO->SDO                             = (CO_SDO_t *)          malloc(sizeof(CO_SDO_t));
-    CO_SDO_ODExtensions                 = (CO_OD_extension_t*)  malloc(sizeof(CO_OD_extension_t) * CO_OD_NoOfElements);
-    CO->EM                              = (CO_EM_t *)           malloc(sizeof(CO_EM_t));
-    CO->EMpr                            = (CO_EMpr_t *)         malloc(sizeof(CO_EMpr_t));
-    CO->NMT                             = (CO_NMT_t *)          malloc(sizeof(CO_NMT_t));
-    CO->SYNC                            = (CO_SYNC_t *)         malloc(sizeof(CO_SYNC_t));
-    for(i=0; i<CO_NO_RPDO; i++){
-        CO->RPDO[i]                     = (CO_RPDO_t *)         malloc(sizeof(CO_RPDO_t));
+
+#else
+    if(CO == 0){    /* Use malloc only once */
+        CO = &COO;
+        CO->CANmodule[0]                    = (CO_CANmodule_t *)    malloc(sizeof(CO_CANmodule_t));
+        CO_CANmodule_rxArray0               = (CO_CANrx_t *)        malloc(sizeof(CO_CANrx_t) * CO_RXCAN_NO_MSGS);
+        CO_CANmodule_txArray0               = (CO_CANtx_t *)        malloc(sizeof(CO_CANtx_t) * CO_TXCAN_NO_MSGS);
+      #if CO_NO_CAN_MODULES >= 2
+        CO->CANmodule[1]                    = (CO_CANmodule_t *)    malloc(sizeof(CO_CANmodule_t));
+        CO_CANmodule_rxArray1               = (CO_CANrx_t *)        malloc(sizeof(CO_CANrx_t) * 2);
+        CO_CANmodule_txArray1               = (CO_CANtx_t *)        malloc(sizeof(CO_CANtx_t) * 2);
+      #endif
+        CO->SDO                             = (CO_SDO_t *)          malloc(sizeof(CO_SDO_t));
+        CO_SDO_ODExtensions                 = (CO_OD_extension_t*)  malloc(sizeof(CO_OD_extension_t) * CO_OD_NoOfElements);
+        CO->EM                              = (CO_EM_t *)           malloc(sizeof(CO_EM_t));
+        CO->EMpr                            = (CO_EMpr_t *)         malloc(sizeof(CO_EMpr_t));
+        CO->NMT                             = (CO_NMT_t *)          malloc(sizeof(CO_NMT_t));
+        CO->SYNC                            = (CO_SYNC_t *)         malloc(sizeof(CO_SYNC_t));
+        for(i=0; i<CO_NO_RPDO; i++){
+            CO->RPDO[i]                     = (CO_RPDO_t *)         malloc(sizeof(CO_RPDO_t));
+        }
+        for(i=0; i<CO_NO_TPDO; i++){
+            CO->TPDO[i]                     = (CO_TPDO_t *)         malloc(sizeof(CO_TPDO_t));
+        }
+        CO->HBcons                          = (CO_HBconsumer_t *)   malloc(sizeof(CO_HBconsumer_t));
+        CO_HBcons_monitoredNodes            = (CO_HBconsNode_t *)   malloc(sizeof(CO_HBconsNode_t) * CO_NO_HB_CONS);
+      #if CO_NO_SDO_CLIENT == 1
+        CO->SDOclient                       = (CO_SDOclient_t *)    malloc(sizeof(CO_SDOclient_t));
+      #endif
     }
-    for(i=0; i<CO_NO_TPDO; i++){
-        CO->TPDO[i]                     = (CO_TPDO_t *)         malloc(sizeof(CO_TPDO_t));
-    }
-    CO->HBcons                          = (CO_HBconsumer_t *)   malloc(sizeof(CO_HBconsumer_t));
-    CO_HBcons_monitoredNodes            = (CO_HBconsNode_t *)   malloc(sizeof(CO_HBconsNode_t) * CO_NO_HB_CONS);
-    #if CO_NO_SDO_CLIENT == 1
-    CO->SDOclient                       = (CO_SDOclient_t *)    malloc(sizeof(CO_SDOclient_t));
-    #endif
 
     CO_memoryUsed = sizeof(CO_CANmodule_t)
                   + sizeof(CO_CANrx_t) * CO_RXCAN_NO_MSGS
                   + sizeof(CO_CANtx_t) * CO_TXCAN_NO_MSGS
-    #if CO_NO_CAN_MODULES >= 2
+  #if CO_NO_CAN_MODULES >= 2
                   + sizeof(CO_CANmodule_t)
                   + sizeof(CO_CANrx_t) * 2
                   + sizeof(CO_CANtx_t) * 2
-    #endif
+  #endif
                   + sizeof(CO_SDO_t)
                   + sizeof(CO_OD_extension_t) * CO_OD_NoOfElements
                   + sizeof(CO_EM_t)
@@ -281,9 +286,9 @@ int16_t CO_init(){
                   + sizeof(CO_TPDO_t) * CO_NO_TPDO
                   + sizeof(CO_HBconsumer_t)
                   + sizeof(CO_HBconsNode_t) * CO_NO_HB_CONS
-    #if CO_NO_SDO_CLIENT == 1
+  #if CO_NO_SDO_CLIENT == 1
                   + sizeof(CO_SDOclient_t)
-    #endif
+  #endif
                   + 0;
 
     errCnt = 0;

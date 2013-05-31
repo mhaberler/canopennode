@@ -203,52 +203,78 @@ CO_CANtx_t *CO_CANtxBufferInit(
 
 
 /******************************************************************************/
-int16_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t  *buffer){
+int16_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer){
+    CO_ReturnError_t err = CO_ERROR_NO;
 
-    /* Was previous message sent or it is still waiting? */
+    /* Verify overflow */
     if(buffer->bufferFull){
         if(!CANmodule->firstCANtxMessage)/* don't set error, if bootup message is still on buffers */
             CO_errorReport((CO_EM_t*)CANmodule->EM, ERROR_CAN_TX_OVERFLOW, 0);
-        return CO_ERROR_TX_OVERFLOW;
+        err = CO_ERROR_TX_OVERFLOW;
     }
 
     /* messages with syncFlag set (synchronous PDOs) must be transmited inside preset time window */
     if(CANmodule->curentSyncTimeIsInsideWindow && buffer->syncFlag && !(*CANmodule->curentSyncTimeIsInsideWindow)){
         CO_errorReport((CO_EM_t*)CANmodule->EM, ERROR_TPDO_OUTSIDE_WINDOW, 0);
-        return CO_ERROR_TX_PDO_WINDOW;
+        err = CO_ERROR_TX_PDO_WINDOW;
     }
 
-    /* send message */
-    CanError err;
-    DISABLE_INTERRUPTS();
-    err = canSend(CANmodule->CANbaseAddress, (const CanMsg*) buffer, FALSE);
-    /* if no buffer is free, message will be sent by interrupt */
-    if(err == CAN_ERROR_QUEUE_MAX){
-        buffer->bufferFull = 1;
-        CANmodule->CANtxCount++;
+    if(err != CO_ERROR_TX_PDO_WINDOW){
+        CanError canErr;
+
+        DISABLE_INTERRUPTS();
+        /* try to send message */
+        canErr = canSend(CANmodule->CANbaseAddress, (const CanMsg*) buffer, FALSE);
+        if(canErr != CAN_ERROR_QUEUE_MAX){
+            CANmodule->bufferInhibitFlag = buffer->syncFlag;
+        }
+        /* if no buffer is free, message will be sent by interrupt */
+        else{
+            buffer->bufferFull = 1;
+            CANmodule->CANtxCount++;
+        }
+        ENABLE_INTERRUPTS();
     }
-    ENABLE_INTERRUPTS();
 
 #ifdef CO_LOG_CAN_MESSAGES
     void CO_logMessage(const CanMsg *msg);
     CO_logMessage((const CanMsg*) buffer);
 #endif
 
-    return CO_ERROR_NO;
+    return err;
 }
 
 
 /******************************************************************************/
 void CO_CANclearPendingSyncPDOs(CO_CANmodule_t *CANmodule){
+    uint8_t tpdoDeleted = 0;
+    CO_CANtx_t *buffer = CANmodule->txArray;
 
     DISABLE_INTERRUPTS();
+    /* Abort message from CAN module, if there is synchronous TPDO.
+     * Take special care with this functionality. */
     if(CANmodule->bufferInhibitFlag){
         canPurgeTx(CANmodule->CANbaseAddress, FALSE);
-        ENABLE_INTERRUPTS();
-        CO_errorReport((CO_EM_t*)CANmodule->EM, ERROR_TPDO_OUTSIDE_WINDOW, 1);
+        CANmodule->bufferInhibitFlag = 0;
+        tpdoDeleted = 1;
     }
-    else{
-        ENABLE_INTERRUPTS();
+    /* delete also pending synchronous TPDOs in TX buffers */
+    if(CANmodule->CANtxCount){
+        uint16_t i;
+        for(i = CANmodule->txSize; i > 0; i--){
+            if(buffer->bufferFull && buffer->syncFlag){
+                buffer->bufferFull = 0;
+                CANmodule->CANtxCount--;
+                tpdoDeleted = 2;
+            }
+            buffer++;
+        }
+    }
+    ENABLE_INTERRUPTS();
+
+
+    if(tpdoDeleted){
+        CO_errorReport((CO_EM_t*)CANmodule->EM, ERROR_TPDO_OUTSIDE_WINDOW, tpdoDeleted);
     }
 }
 
@@ -305,7 +331,6 @@ void CO_CANverifyErrors(CO_CANmodule_t *CANmodule){
             CO_errorReport(EM, ERROR_CAN_RXB_OVERFLOW, err);
         }
     }
-
 }
 
 
@@ -348,37 +373,42 @@ int CO_CANinterrupt(CO_CANmodule_t *CANmodule, CanEvent event, const CanMsg *msg
         CANmodule->firstCANtxMessage = 0;
         /* clear flag from previous message */
         CANmodule->bufferInhibitFlag = 0;
-        /* Are there any new messages waiting to be send and buffer is free */
+        /* Are there any new messages waiting to be send */
         if(CANmodule->CANtxCount > 0){
-            uint16_t index;          /* index of transmitting message */
-            CANmodule->CANtxCount--;
+            uint16_t i;             /* index of transmitting message */
+
+            /* first buffer */
+            CO_CANtx_t *buffer = CANmodule->txArray;
             /* search through whole array of pointers to transmit message buffers. */
-            for(index = 0; index < CANmodule->txSize; index++){
-                /* get specific buffer */
-                CO_CANtx_t *buffer = &CANmodule->txArray[index];
+            for(i = CANmodule->txSize; i > 0; i--){
                 /* if message buffer is full, send it. */
                 if(buffer->bufferFull){
+                    uint8_t skipMessage = 0;
+                    buffer->bufferFull = 0;
+                    CANmodule->CANtxCount--;
+
                     /* messages with syncFlag set (synchronous PDOs) must be transmited inside preset time window */
                     if(CANmodule->curentSyncTimeIsInsideWindow && buffer->syncFlag){
                         if(!(*CANmodule->curentSyncTimeIsInsideWindow)){
-                            CO_errorReport((CO_EM_t*)CANmodule->EM, ERROR_TPDO_OUTSIDE_WINDOW, 2);
-                            /* release buffer */
-                            buffer->bufferFull = 0;
-                            /* exit for loop */
-                            break;
+                            CO_errorReport((CO_EM_t*)CANmodule->EM, ERROR_TPDO_OUTSIDE_WINDOW, 3);
+                            skipMessage = 1;
                         }
-                        CANmodule->bufferInhibitFlag = 1;
+                        else{
+                            CANmodule->bufferInhibitFlag = 1;
+                        }
                     }
 
                     /* Copy message to CAN buffer */
-                    canSend(CANmodule->CANbaseAddress, (const CanMsg*) buffer, FALSE);
-
-                    /* release buffer */
-                    buffer->bufferFull = 0;
-                    /* exit for loop */
-                    break;
+                    if(skipMessage == 0){
+                        canSend(CANmodule->CANbaseAddress, (const CanMsg*) buffer, FALSE);
+                        break;                      /* exit for loop */
+                    }
                 }
+                buffer++;
             }/* end of for loop */
+
+            /* Clear counter if no more messages */
+            if(i == 0) CANmodule->CANtxCount = 0;
         }
         return 0;
     }
