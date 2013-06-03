@@ -143,39 +143,39 @@
  * Send with Abort SDO transfer message.
  *
  * The abort codes not listed here are reserved.
- *
- *  - 0x05030000: Toggle bit not alternated.
- *  - 0x05040000: SDO protocol timed out.
- *  - 0x05040001: Client/server command specifier not valid or unknown.
- *  - 0x05040002: Invalid block size (block mode only).
- *  - 0x05040003: Invalid sequence number (block mode only).
- *  - 0x05040004: CRC error (block mode only).
- *  - 0x05040005: Out of memory.
- *  - 0x06010000: Unsupported access to an object.
- *  - 0x06010001: Attempt to read a write only object.
- *  - 0x06010002: Attempt to write a read only object.
- *  - 0x06020000: Object does not exist in the Object dictionary.
- *  - 0x06040041: Object cannot be mapped to the PDO.
- *  - 0x06040042: The number and length of the objects to be mapped would exceed PDO length.
- *  - 0x06040043: General parameter incompatibility reason.
- *  - 0x06040047: General internal incompatibility in the device.
- *  - 0x06060000: Access failed due to an hardware error.
- *  - 0x06070010: Data type does not match, length of service parameter does not match
- *  - 0x06070012: Data type does not match, length of service parameter too high
- *  - 0x06070013: Data type does not match, length of service parameter too low
- *  - 0x06090011: Sub-index does not exist.
- *  - 0x06090030: Invalid value for parameter (download only).
- *  - 0x06090031: Value of parameter written too high (download only).
- *  - 0x06090032: Value of parameter written too low (download only).
- *  - 0x06090036: Maximum value is less than minimum value.
- *  - 0x08000000: general error
- *  - 0x08000020: Data cannot be transferred or stored to the application.
- *  - 0x08000021: Data cannot be transferred or stored to the application because of local control.
- *  - 0x08000022: Data cannot be transferred or stored to the application because of the present device state.
- *  - 0x08000023: Object dictionary dynamic generation fails or no Object dictionary is present (e.g. object
- *                dictionary  is generated from file and generation fails because of an file error).
- *  - 0x08000024: No data available.
  */
+typedef enum
+{
+    SDO_ABORT_TOGGLE_BIT    = 0x05030000, /**< toggle bit not altered */
+    SDO_ABORT_TIMEOUT       = 0x05040000, /**< SDO protocol timed out */
+    SDO_ABORT_CMD           = 0x05040001, /**< command specifier not valid or unknown */
+    SDO_ABORT_BLOCK_SIZE    = 0x05040002, /**< invalid block size in block mode */
+    SDO_ABORT_SEQ_NUM       = 0x05040003, /**< invalid sequence number in block mode */
+    SDO_ABORT_CRC           = 0x05040004, /**< CRC error (block mode only) */
+    SDO_ABORT_OUT_OF_MEM    = 0x05040005, /**< Out of memory */
+    SDO_ABORT_UNSUPPORTED   = 0x06010000, /**< unsupported access to an object */
+    SDO_ABORT_WRITEONLY     = 0x06010001, /**< atempt to read a write only object */
+    SDO_ABORT_READONLY      = 0x06010002, /**< atempt to write a read only object */
+    SDO_ABORT_NOT_EXIST     = 0x06020000, /**< Object does not exist */
+    SDO_ABORT_NO_MAP        = 0x06040041, /**< object cannot be mapped to the PDO */
+    SDO_ABORT_MAP_LEN       = 0x06040042, /**< number and length of object to be mapped exceeds PDO length */
+    SDO_ABORT_PRAM_INCOMP   = 0x06040043, /**< general pparameter incompatibility reasons */
+    SDO_ABORT_DEV_INCOMP    = 0x06040047, /**< general internal incompatibility in device */
+    SDO_ABORT_HW            = 0x06060000, /**< access failed due to hardware error */
+    SDO_ABORT_TYPE_MISMATCH = 0x06070010, /**< data type does not match, length of service parameter does not match */
+    SDO_ABORT_DATA_LONG     = 0x06070012, /**< data type does not match, length of service parameter too high */
+    SDO_ABORT_DATA_SHORT    = 0x06070013, /**< data type does not match, length of service parameter too short */
+    SDO_ABORT_SUB_UNKNOWN   = 0x06090011, /**< sub index does not exist */
+    SDO_ABORT_VALUE_RANGE   = 0x06090030, /**< value range of parammeter exceeded */
+    SDO_ABORT_VALUE_HIGH    = 0x06090031, /**< value range of parammeter written too high */
+    SDO_ABORT_VALUE_LOW     = 0x06090032, /**< value range of parammeter written too low */
+    SDO_ABORT_GENERAL       = 0x08000000, /**< general error */
+    SDO_ABORT_DATA_TRANSF   = 0x08000020, /**< data cannot be transfered or stored to application */
+    SDO_ABORT_DATA_LOC_CTRL = 0x08000021, /**< data cannot be transfered or stored to application because of local control */
+    SDO_ABORT_DATA_DEV_STATE= 0x08000022, /**< data cannot be transfered or stored to application because of present device state */
+    SDO_ABORT_DATA_OD       = 0x08000023, /**< object dictionary not present or dynamic generation fails */
+	SDO_ABORT_NO_DATA       = 0x08000024, /**< No data available */
+} CO_SDO_abort_codes;  
 
 
 /**

@@ -33,8 +33,6 @@
 #include "CO_SYNC.h"
 #include "CO_PDO.h"
 
-#include <stdlib.h> /*  for malloc, free */
-
 /*
  * Read received message from CAN module.
  *

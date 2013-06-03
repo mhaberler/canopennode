@@ -42,7 +42,6 @@
 
 
 /* Global variables */
-    extern CO_t *CO;                    /* pointer to external CANopen object */
 
 
 /*

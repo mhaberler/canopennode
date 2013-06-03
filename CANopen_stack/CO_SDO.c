@@ -30,8 +30,6 @@
 #include "CO_SDO.h"
 #include "crc16-ccitt.h"
 
-#include <stdlib.h> /*  for malloc, free */
-
 
 /* State machine, values of the SDO->state variable */
 #define STATE_IDLE                     0x00
@@ -352,14 +350,17 @@ uint8_t* CO_OD_getFlagsPointer(CO_SDO_t *SDO, uint16_t entryNo, uint8_t subIndex
 /******************************************************************************/
 uint32_t CO_SDO_initTransfer(CO_SDO_t *SDO, uint16_t index, uint8_t subIndex){
 
+    SDO->ODF_arg.index = index;
+    SDO->ODF_arg.subIndex = subIndex;
+
     /* find object in Object Dictionary */
     SDO->entryNo = CO_OD_find(SDO, index);
     if(SDO->entryNo == 0xFFFF)
-        return 0x06020000L;     /* object does not exist in OD */
+        return SDO_ABORT_NOT_EXIST ;     /* object does not exist in OD */
 
     /* verify existance of subIndex */
     if(subIndex > SDO->OD[SDO->entryNo].maxSubIndex)
-        return 0x06090011L;     /* Sub-index does not exist. */
+        return SDO_ABORT_SUB_UNKNOWN;     /* Sub-index does not exist. */
 
     /* pointer to data in Object dictionary */
     SDO->ODF_arg.ODdataStorage = CO_OD_getDataPointer(SDO, SDO->entryNo, subIndex);
@@ -374,8 +375,6 @@ uint32_t CO_SDO_initTransfer(CO_SDO_t *SDO, uint16_t index, uint8_t subIndex){
     SDO->ODF_arg.dataLength = CO_OD_getLength(SDO, SDO->entryNo, subIndex);
     SDO->ODF_arg.attribute = CO_OD_getAttribute(SDO, SDO->entryNo, subIndex);
     SDO->ODF_arg.pFlags = CO_OD_getFlagsPointer(SDO, SDO->entryNo, subIndex);
-    SDO->ODF_arg.index = index;
-    SDO->ODF_arg.subIndex = subIndex;
 
     SDO->ODF_arg.firstSegment = 1;
     SDO->ODF_arg.lastSegment = 1;
@@ -385,7 +384,7 @@ uint32_t CO_SDO_initTransfer(CO_SDO_t *SDO, uint16_t index, uint8_t subIndex){
 
     /* verify length */
     if(SDO->ODF_arg.dataLength > CO_SDO_BUFFER_SIZE)
-        return 0x06040047L;     /* general internal incompatibility in the device */
+        return SDO_ABORT_DEV_INCOMP;     /* general internal incompatibility in the device */
 
     return 0;
 }
@@ -400,7 +399,7 @@ uint32_t CO_SDO_readOD(CO_SDO_t *SDO, uint16_t SDOBufferSize){
 
     /* is object readable? */
     if(!(SDO->ODF_arg.attribute & CO_ODA_READABLE))
-        return 0x06010001L;     /* attempt to read a write-only object */
+        return SDO_ABORT_WRITEONLY;     /* attempt to read a write-only object */
 
     /* find extension */
     if(SDO->ODExtensions){
@@ -415,7 +414,7 @@ uint32_t CO_SDO_readOD(CO_SDO_t *SDO, uint16_t SDOBufferSize){
     }
     /* if domain, Object dictionary function MUST exist */
     else{
-        if(ext->pODFunc == NULL) return 0x06040047L;     /* general internal incompatibility in the device */
+        if(ext->pODFunc == NULL) return SDO_ABORT_DEV_INCOMP;     /* general internal incompatibility in the device */
     }
 
     /* call Object dictionary function if registered */
@@ -426,7 +425,7 @@ uint32_t CO_SDO_readOD(CO_SDO_t *SDO, uint16_t SDOBufferSize){
 
         /* dataLength (upadted by pODFunc) must be inside limits */
         if(SDO->ODF_arg.dataLength == 0 || SDO->ODF_arg.dataLength > SDOBufferSize)
-            return 0x06040047L;     /* general internal incompatibility in the device */
+            return SDO_ABORT_DEV_INCOMP;     /* general internal incompatibility in the device */
     }
     SDO->ODF_arg.firstSegment = 0;
 
@@ -457,7 +456,7 @@ uint32_t CO_SDO_writeOD(CO_SDO_t *SDO, uint16_t length){
 
     /* is object writeable? */
     if(!(SDO->ODF_arg.attribute & CO_ODA_WRITEABLE))
-        return 0x06010002L;     /* attempt to write a read-only object */
+        return SDO_ABORT_READONLY;     /* attempt to write a read-only object */
 
     /* length of domain data is application specific and not verified */
     if(ODdata == 0)
@@ -465,7 +464,7 @@ uint32_t CO_SDO_writeOD(CO_SDO_t *SDO, uint16_t length){
 
     /* verify length except for domain data type */
     else if(SDO->ODF_arg.dataLength != length)
-        return 0x06070010L;     /* Length of service parameter does not match */
+        return SDO_ABORT_TYPE_MISMATCH;     /* Length of service parameter does not match */
 
     /* swap data if processor is not little endian (CANopen is) */
 #ifdef BIG_ENDIAN
@@ -570,7 +569,7 @@ int8_t CO_SDO_process(
             /* Is client command specifier valid */
             if(CCS != CCS_DOWNLOAD_INITIATE && CCS != CCS_UPLOAD_INITIATE &&
                 CCS != CCS_DOWNLOAD_BLOCK && CCS != CCS_UPLOAD_BLOCK){
-                CO_SDO_abort(SDO, 0x05040001L);/* Client command specifier not valid or unknown. */
+                CO_SDO_abort(SDO, SDO_ABORT_CMD);/* Client command specifier not valid or unknown. */
                 return -1;
             }
 
@@ -584,7 +583,7 @@ int8_t CO_SDO_process(
             /* download */
             if(CCS == CCS_DOWNLOAD_INITIATE || CCS == CCS_DOWNLOAD_BLOCK){
                 if(!(SDO->ODF_arg.attribute & CO_ODA_WRITEABLE)){
-                    CO_SDO_abort(SDO, 0x06010002L); /* attempt to write a read-only object */
+                    CO_SDO_abort(SDO, SDO_ABORT_READONLY); /* attempt to write a read-only object */
                     return -1;
                 }
 
@@ -620,7 +619,7 @@ int8_t CO_SDO_process(
             state = SDO->state;
         }
         else{
-            CO_SDO_abort(SDO, 0x05040000L); /* SDO protocol timed out */
+            CO_SDO_abort(SDO, SDO_ABORT_TIMEOUT); /* SDO protocol timed out */
             return -1;
         }
     }
@@ -676,7 +675,7 @@ int8_t CO_SDO_process(
 
                     /* verify length except for domain data type */
                     if(lenRx != SDO->ODF_arg.dataLength && SDO->ODF_arg.ODdataStorage != 0){
-                        CO_SDO_abort(SDO, 0x06070010L);  /* Length of service parameter does not match */
+                        CO_SDO_abort(SDO, SDO_ABORT_TYPE_MISMATCH);  /* Length of service parameter does not match */
                         return -1;
                     }
                 }
@@ -691,14 +690,14 @@ int8_t CO_SDO_process(
         case STATE_DOWNLOAD_SEGMENTED:{
             /* verify client command specifier */
             if((SDO->CANrxData[0]&0xE0) != 0x00){
-                CO_SDO_abort(SDO, 0x05040001L);/* Client command specifier not valid or unknown. */
+                CO_SDO_abort(SDO, SDO_ABORT_CMD);/* Client command specifier not valid or unknown. */
                 return -1;
             }
 
             /* verify toggle bit */
             i = (SDO->CANrxData[0]&0x10) ? 1 : 0;
             if(i != SDO->sequence){
-                CO_SDO_abort(SDO, 0x05030000L);/* toggle bit not alternated */
+                CO_SDO_abort(SDO, SDO_ABORT_TOGGLE_BIT);/* toggle bit not alternated */
                 return -1;
             }
 
@@ -708,7 +707,7 @@ int8_t CO_SDO_process(
             /* verify length. Domain data type enables length larger than SDO buffer size */
             if((SDO->bufferOffset + len) > SDO->ODF_arg.dataLength){
                 if(SDO->ODF_arg.ODdataStorage != 0){
-                    CO_SDO_abort(SDO, 0x06070012L);  /* Length of service parameter too high */
+                    CO_SDO_abort(SDO, SDO_ABORT_DATA_LONG);  /* Length of service parameter too high */
                     return -1;
                 }
                 else{
@@ -752,7 +751,7 @@ int8_t CO_SDO_process(
         case STATE_DOWNLOAD_BLOCK_INITIATE:{
             /* verify client command specifier and subcommand */
             if((SDO->CANrxData[0]&0xE1) != 0xC0){
-                CO_SDO_abort(SDO, 0x05040001L);/* Client command specifier not valid or unknown. */
+                CO_SDO_abort(SDO, SDO_ABORT_CMD);/* Client command specifier not valid or unknown. */
                 return -1;
             }
 
@@ -778,7 +777,7 @@ int8_t CO_SDO_process(
 
                 /* verify length except for domain data type */
                 if(lenRx != SDO->ODF_arg.dataLength && SDO->ODF_arg.ODdataStorage != 0){
-                    CO_SDO_abort(SDO, 0x06070010L);  /* Length of service parameter does not match */
+                    CO_SDO_abort(SDO, SDO_ABORT_TYPE_MISMATCH);  /* Length of service parameter does not match */
                     return -1;
                 }
             }
@@ -867,7 +866,7 @@ int8_t CO_SDO_process(
         case STATE_DOWNLOAD_BLOCK_END:{
             /* verify client command specifier and subcommand */
             if((SDO->CANrxData[0]&0xE1) != 0xC1){
-                CO_SDO_abort(SDO, 0x05040001L);/* Client command specifier not valid or unknown. */
+                CO_SDO_abort(SDO, SDO_ABORT_CMD);/* Client command specifier not valid or unknown. */
                 return -1;
             }
 
@@ -883,7 +882,7 @@ int8_t CO_SDO_process(
                 memcpySwap2((uint8_t*)&crc, &SDO->CANrxData[1]);
 
                 if(SDO->crc != crc){
-                    CO_SDO_abort(SDO, 0x05040004);   /* CRC error (block mode only). */
+                    CO_SDO_abort(SDO, SDO_ABORT_CRC);   /* CRC error (block mode only). */
                     return -1;
                 }
             }
@@ -946,14 +945,14 @@ int8_t CO_SDO_process(
         case STATE_UPLOAD_SEGMENTED:{
             /* verify client command specifier */
             if((SDO->CANrxData[0]&0xE0) != 0x60){
-                CO_SDO_abort(SDO, 0x05040001L);/* Client command specifier not valid or unknown. */
+                CO_SDO_abort(SDO, SDO_ABORT_CMD);/* Client command specifier not valid or unknown. */
                 return -1;
             }
 
             /* verify toggle bit */
             i = (SDO->CANrxData[0]&0x10) ? 1 : 0;
             if(i != SDO->sequence){
-                CO_SDO_abort(SDO, 0x05030000L);/* toggle bit not alternated */
+                CO_SDO_abort(SDO, SDO_ABORT_TOGGLE_BIT);/* toggle bit not alternated */
                 return -1;
             }
 
@@ -1028,13 +1027,13 @@ int8_t CO_SDO_process(
 
             /* verify client subcommand and blksize */
             if((SDO->CANrxData[0]&0x03) != 0x00 || SDO->blksize < 1 || SDO->blksize > 127){
-                CO_SDO_abort(SDO, 0x05040001L);/* Client command specifier not valid or unknown. */
+                CO_SDO_abort(SDO, SDO_ABORT_CMD);/* Client command specifier not valid or unknown. */
                 return -1;
             }
 
             /* verify if SDO data buffer is large enough */
             if((SDO->blksize*7) > SDO->ODF_arg.dataLength && !SDO->ODF_arg.lastSegment){
-                CO_SDO_abort(SDO, 0x05040002); /* Invalid block size (block mode only). */
+                CO_SDO_abort(SDO, SDO_ABORT_BLOCK_SIZE); /* Invalid block size (block mode only). */
                 return -1;
             }
 
@@ -1057,7 +1056,7 @@ int8_t CO_SDO_process(
         case STATE_UPLOAD_BLOCK_INITIATE_2:{
             /* verify client command specifier and subcommand */
             if((SDO->CANrxData[0]&0xE3) != 0xA3){
-                CO_SDO_abort(SDO, 0x05040001L);/* Client command specifier not valid or unknown. */
+                CO_SDO_abort(SDO, SDO_ABORT_CMD);/* Client command specifier not valid or unknown. */
                 return -1;
             }
 
@@ -1077,7 +1076,7 @@ int8_t CO_SDO_process(
 
                 /* verify client command specifier and subcommand */
                 if((SDO->CANrxData[0]&0xE3) != 0xA2){
-                    CO_SDO_abort(SDO, 0x05040001L);/* Client command specifier not valid or unknown. */
+                    CO_SDO_abort(SDO, SDO_ABORT_CMD);/* Client command specifier not valid or unknown. */
                     return -1;
                 }
 
@@ -1085,7 +1084,7 @@ int8_t CO_SDO_process(
 
                 /* verify if response is too early */
                 if(ackseq > SDO->sequence){
-                    CO_SDO_abort(SDO, 0x05040002); /* Invalid block size (block mode only). */
+                    CO_SDO_abort(SDO, SDO_ABORT_BLOCK_SIZE); /* Invalid block size (block mode only). */
                     return -1;
                 }
 
@@ -1140,7 +1139,7 @@ int8_t CO_SDO_process(
 
                 /* verify if SDO data buffer is large enough */
                 if((SDO->blksize*7) > SDO->ODF_arg.dataLength && !SDO->ODF_arg.lastSegment){
-                    CO_SDO_abort(SDO, 0x05040002); /* Invalid block size (block mode only). */
+                    CO_SDO_abort(SDO, SDO_ABORT_BLOCK_SIZE); /* Invalid block size (block mode only). */
                     return -1;
                 }
 
@@ -1188,7 +1187,7 @@ int8_t CO_SDO_process(
         case STATE_UPLOAD_BLOCK_END:{
             /* verify client command specifier */
             if((SDO->CANrxData[0]&0xE1) != 0xA1){
-                CO_SDO_abort(SDO, 0x05040001L);/* Client command specifier not valid or unknown. */
+                CO_SDO_abort(SDO, SDO_ABORT_CMD);/* Client command specifier not valid or unknown. */
                 return -1;
             }
 
@@ -1197,7 +1196,7 @@ int8_t CO_SDO_process(
         }
 
         default:{
-            CO_SDO_abort(SDO, 0x06040047L);/* general internal incompatibility in the device */
+            CO_SDO_abort(SDO, SDO_ABORT_DEV_INCOMP);/* general internal incompatibility in the device */
             return -1;
         }
     }

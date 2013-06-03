@@ -37,6 +37,12 @@ Supported controllers:
    
 ****************************************************************************************************
 Version next
+
+Style change:
+ - SVN version 31 has completely different style from previous. SVN history is broken. However, C code is the same. Files compile to THE SAME hex file in PIC32. See file Misc/convert text.html.
+ - Indentation changed from three to four spaces.
+ - Comments are now doxigen style.
+ - Replacement of typedefs UNSIGNED32 to uint32_t, etc.
 Updates:
  - Object dictionary editor: changed HTML output, no ODF functions.
  - SDO server rewritten. Better interface with Object dictionary function.
@@ -44,8 +50,11 @@ Updates:
 Additional features:
  - Added block transfer. It is possible to transfer large block of data (32bit length).
  - Added CRC function. Calculation of CRC in eeprom.c files updated to this function.
-Fixes in processor specific files:
- - !!Bugfix!! Added disable/enable interrupt calls in CO_CANsend() function. (dsPIC30, dsPIC33, PIC24, SC243)
+ - Added are files for generic driver, which allows compiling the stack without hardware. They should be used as a template for other microcontrollers.
+Fixes:
+ - Time drift in heartbeat fixed.
+FIXES IN PROCESSOR SPECIFIC FILES:
+ - !!IMPORTANT BUGFIX!! Problems with synchronous TPDOs. Microcontroller stopped transmitting on tx overflow. Code for CAN transmission is revised and fixed in all microcontrollers. Tested on PIC32 and dsPIC33F.
 Note:
  - Object dictionary editor does not work any more in Firefox 17 and above, because: https://developer.mozilla.org/en-US/docs/E4X. (It is possible to re-enable E4X in FF17: type about:config in addressbar and change javascript.options.xml.content to true.)
 

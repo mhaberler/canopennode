@@ -32,8 +32,6 @@
 #include "CO_NMT_Heartbeat.h"
 #include "CO_SYNC.h"
 
-#include <stdlib.h> /*  for malloc, free */
-
 
 /*
  * Read received message from CAN module.

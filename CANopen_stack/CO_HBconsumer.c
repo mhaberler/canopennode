@@ -32,8 +32,6 @@
 #include "CO_NMT_Heartbeat.h"
 #include "CO_HBconsumer.h"
 
-#include <stdlib.h> /*  for malloc, free */
-
 /*
  * Read received message from CAN module.
  *
@@ -65,13 +63,14 @@ static int16_t CO_HBcons_receive(void *object, CO_CANrxMsg_t *msg){
  */
 static void CO_HBconsumer_monitoredNodeConfig(
         CO_HBconsumer_t        *HBcons,
-        uint8_t                 idx)
+        uint8_t                 idx,
+        uint32_t                HBconsTime)
 {
     uint16_t COB_ID;
-    uint16_t NodeID = (uint16_t)((HBcons->HBconsTime[idx]>>16)&0xFF);
+    uint16_t NodeID = (uint16_t)((HBconsTime>>16)&0xFF);
     CO_HBconsNode_t *monitoredNode = &HBcons->monitoredNodes[idx];
 
-    monitoredNode->time = (uint16_t)HBcons->HBconsTime[idx];
+    monitoredNode->time = (uint16_t)HBconsTime;
     monitoredNode->NMTstate = 0;
     monitoredNode->monStarted = 0;
 
@@ -131,7 +130,7 @@ static uint32_t CO_ODF_1016(CO_ODF_arg_t *ODF_arg){
         }
 
         /* Configure */
-        CO_HBconsumer_monitoredNodeConfig(HBcons, ODF_arg->subIndex-1);
+        CO_HBconsumer_monitoredNodeConfig(HBcons, ODF_arg->subIndex-1, *value);
     }
 
     return 0;
@@ -161,7 +160,7 @@ int16_t CO_HBconsumer_init(
     HBcons->CANdevRxIdxStart = CANdevRxIdxStart;
 
     for(i=0; i<HBcons->numberOfMonitoredNodes; i++)
-        CO_HBconsumer_monitoredNodeConfig(HBcons, i);
+        CO_HBconsumer_monitoredNodeConfig(HBcons, i, HBcons->HBconsTime[i]);
 
     /* Configure Object dictionary entry at index 0x1016 */
     CO_OD_configure(SDO, 0x1016, CO_ODF_1016, (void*)HBcons, 0, 0);

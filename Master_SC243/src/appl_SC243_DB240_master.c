@@ -50,7 +50,6 @@
 
 
 /* Global variables */
-    extern CO_t *CO;                    /* pointer to external CANopen object */
     uint8_t errorRegisterPrev;
     unsigned char *gBaseAddr = NULL;    /* hardware base address */
 

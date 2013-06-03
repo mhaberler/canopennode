@@ -367,16 +367,20 @@ int16_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer){
         volatile uint32_t* TX_FIFOconSet = &CAN_REG(addr, C_FIFOCON+0x48);
         uint32_t* TXmsgBuffer = PA_TO_KVA1(CAN_REG(addr, C_FIFOUA+0x40));
         uint32_t* message = (uint32_t*) buffer;
+        uint32_t TX_FIFOconCopy;
 
         DISABLE_INTERRUPTS();
+        TX_FIFOconCopy = *TX_FIFOcon;
         /* if CAN TX buffer is free, copy message to it */
-        if((*TX_FIFOcon & 0x8) == 0){
+        if((TX_FIFOconCopy & 0x8) == 0){
             CANmodule->bufferInhibitFlag = buffer->syncFlag;
             *(TXmsgBuffer++) = *(message++);
             *(TXmsgBuffer++) = *(message++);
             *(TXmsgBuffer++) = *(message++);
             *(TXmsgBuffer++) = *(message++);
-            *TX_FIFOconSet = 0x2000;   /* set UINC */
+            /* if message was aborted, don't set UINC */
+            if((TX_FIFOconCopy & 0x40) == 0)
+                *TX_FIFOconSet = 0x2000;   /* set UINC */
             *TX_FIFOconSet = 0x0008;   /* set TXREQ */
         }
         /* if no buffer is free, message will be sent by interrupt */

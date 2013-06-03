@@ -31,8 +31,6 @@
 #include "CO_Emergency.h"
 #include "CO_NMT_Heartbeat.h"
 
-#include <stdlib.h> /*  for malloc, free */
-
 /*
  * Read received message from CAN module.
  *
@@ -171,12 +169,12 @@ uint8_t CO_NMT_process(
 {
     uint8_t CANpassive;
 
-    if(NMT->HBproducerTimer < HBtime) NMT->HBproducerTimer += timeDifference_ms;
+    NMT->HBproducerTimer += timeDifference_ms;
 
     /* Heartbeat producer message & Bootup message */
     if((HBtime && NMT->HBproducerTimer >= HBtime) || NMT->operatingState == CO_NMT_INITIALIZING){
 
-        NMT->HBproducerTimer = 0;
+        NMT->HBproducerTimer = NMT->HBproducerTimer - HBtime;
 
         NMT->HB_TXbuff->data[0] = NMT->operatingState;
         CO_CANsend(NMT->HB_CANdev, NMT->HB_TXbuff);

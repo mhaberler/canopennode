@@ -228,7 +228,7 @@
 /** @name Informative generic errors */
 /** @{ */
     #define ERROR_EMERGENCY_BUFFER_FULL                0x20, 0x1000 /**< Emergency buffer is full, Emergency message wasn't sent */
-    #define ERROR_ERROR_REPORT_BUSY                    0x21, 0x1000 /**< CO_errorReport() is busy, Emergency message wasn't sent */
+    #define ERROR_21_unused                            0x21, 0x1000 /**< (unused) */
     #define ERROR_MICROCONTROLLER_RESET                0x22, 0x1000 /**< Microcontroller has just started */
     #define ERROR_23_unused                            0x23, 0x1000 /**< (unused) */
     #define ERROR_24_unused                            0x24, 0x1000 /**< (unused) */
@@ -266,15 +266,12 @@ typedef struct{
     uint8_t            *errorStatusBits;/**< From CO_EM_init() */
     uint8_t             errorStatusBitsSize;/**< From CO_EM_init() */
     /** Internal buffer for storing unsent emergency messages.*/
-    uint8_t             buf[CO_EM_INTERNAL_BUFFER_SIZE * 8];
-    uint8_t            *bufEnd;         /**< End+1 address of the above buffer */
-    uint8_t            *bufWritePtr;    /**< Write pointer in the above buffer */
-    uint8_t            *bufReadPtr;     /**< Read pointer in the above buffer */
+    uint32_t            buf[CO_EM_INTERNAL_BUFFER_SIZE * 2];
+    uint32_t           *bufEnd;         /**< End+1 address of the above buffer */
+    uint32_t           *bufWritePtr;    /**< Write pointer in the above buffer */
+    uint32_t           *bufReadPtr;     /**< Read pointer in the above buffer */
     uint8_t             bufFull;        /**< True if above buffer is full */
     uint8_t             wrongErrorReport;/**< Error in arguments to CO_errorReport() */
-    uint8_t             errorReportBusy;/**< Lock mechanism for CO_errorReport() */
-    /** Error, higher priority task called CO_errorReport() while it was busy */
-    uint8_t             errorReportBusyError;
 }CO_EM_t;
 
 
