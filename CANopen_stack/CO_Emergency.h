@@ -266,10 +266,10 @@ typedef struct{
     uint8_t            *errorStatusBits;/**< From CO_EM_init() */
     uint8_t             errorStatusBitsSize;/**< From CO_EM_init() */
     /** Internal buffer for storing unsent emergency messages.*/
-    uint32_t            buf[CO_EM_INTERNAL_BUFFER_SIZE * 2];
-    uint32_t           *bufEnd;         /**< End+1 address of the above buffer */
-    uint32_t           *bufWritePtr;    /**< Write pointer in the above buffer */
-    uint32_t           *bufReadPtr;     /**< Read pointer in the above buffer */
+    uint8_t             buf[CO_EM_INTERNAL_BUFFER_SIZE * 8];
+    uint8_t            *bufEnd;         /**< End+1 address of the above buffer */
+    uint8_t            *bufWritePtr;    /**< Write pointer in the above buffer */
+    uint8_t            *bufReadPtr;     /**< Read pointer in the above buffer */
     uint8_t             bufFull;        /**< True if above buffer is full */
     uint8_t             wrongErrorReport;/**< Error in arguments to CO_errorReport() */
 }CO_EM_t;

@@ -26,6 +26,8 @@
  */
 
 
+#include <string.h> /* for memcpy */
+
 #include "CO_driver.h"
 #include "CO_SDO.h"
 #include "CO_Emergency.h"
@@ -107,7 +109,7 @@ int16_t CO_EM_init(
     /* Configure object variables */
     EM->errorStatusBits         = errorStatusBits;
     EM->errorStatusBitsSize     = errorStatusBitsSize; if(errorStatusBitsSize < 6) return CO_ERROR_ILLEGAL_ARGUMENT;
-    EM->bufEnd                  = EM->buf + CO_EM_INTERNAL_BUFFER_SIZE * 2;
+    EM->bufEnd                  = EM->buf + CO_EM_INTERNAL_BUFFER_SIZE * 8;
     EM->bufWritePtr             = EM->buf;
     EM->bufReadPtr              = EM->buf;
     EM->bufFull                 = 0;
@@ -179,15 +181,15 @@ void CO_EM_process(
             EMpr->inhibitEmTimer >= EMinhTime &&
             (EM->bufReadPtr != EM->bufWritePtr || EM->bufFull))
     {
-        uint32_t* CANtxData = (uint32_t *)EMpr->CANtxBuff->data;
         uint32_t preDEF;    /* preDefinedErrorField */
         
         /* add error register */
-        ((uint8_t *)EM->bufReadPtr)[2] = *EMpr->errorRegister;
+        EM->bufReadPtr[2] = *EMpr->errorRegister;
 
         /* copy data to CAN emergency message */
-        preDEF = *(CANtxData++) = *(EM->bufReadPtr++);
-        *(CANtxData++) = *(EM->bufReadPtr++);
+        memcpy((void*)EMpr->CANtxBuff->data, (void*)EM->bufReadPtr, 8);
+        memcpy((void*)&preDEF, (void*)EM->bufReadPtr, 4);
+        EM->bufReadPtr += 8;
 
         /* Update read buffer pointer and reset inhibit timer */
         if(EM->bufReadPtr == EM->bufEnd) EM->bufReadPtr = EM->buf;
@@ -256,8 +258,8 @@ int8_t CO_errorReport(CO_EM_t *EM, uint8_t errorBit, uint16_t errorCode, uint32_
 
     /* copy data to the buffer, increment writePtr and verify buffer full */
     DISABLE_INTERRUPTS();
-    *(EM->bufWritePtr++) = *((uint32_t *)&bufCopy[0]);
-    *(EM->bufWritePtr++) = *((uint32_t *)&bufCopy[4]);
+    memcpy((void*)EM->bufWritePtr, (void*)&bufCopy[0], 8);
+    EM->bufWritePtr += 8;
 
     if(EM->bufWritePtr == EM->bufEnd) EM->bufWritePtr = EM->buf;
     if(EM->bufWritePtr == EM->bufReadPtr) EM->bufFull = 1;
@@ -303,8 +305,8 @@ int8_t CO_errorReset(CO_EM_t *EM, uint8_t errorBit, uint16_t errorCode, uint32_t
 
     /* copy data to the buffer, increment writePtr and verify buffer full */
     DISABLE_INTERRUPTS();
-    *(EM->bufWritePtr++) = *((uint32_t *)&bufCopy[0]);
-    *(EM->bufWritePtr++) = *((uint32_t *)&bufCopy[4]);
+    memcpy((void*)EM->bufWritePtr, (void*)&bufCopy[0], 8);
+    EM->bufWritePtr += 8;
 
     if(EM->bufWritePtr == EM->bufEnd) EM->bufWritePtr = EM->buf;
     if(EM->bufWritePtr == EM->bufReadPtr) EM->bufFull = 1;
