@@ -228,9 +228,6 @@ typedef struct{
     uint16_t            rxSize;         /**< From CO_CANmodule_init() */
     CO_CANtx_t         *txArray;        /**< From CO_CANmodule_init() */
     uint16_t            txSize;         /**< From CO_CANmodule_init() */
-    /** Pointer to variable with same name inside CO_SYNC_t object. This pointer
-      * is configured inside CO_SYNC_init() function. */
-    volatile uint8_t   *curentSyncTimeIsInsideWindow;
     /** Value different than zero indicates, that CAN module hardware filters
       * are used for CAN reception. If there is not enough hardware filters,
       * they won't be used. In this case will be *all* received CAN messages

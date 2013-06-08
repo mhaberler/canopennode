@@ -189,9 +189,7 @@ int16_t CO_CANmodule_init(
     CANmodule->rxSize = rxSize;
     CANmodule->txArray = txArray;
     CANmodule->txSize = txSize;
-    CANmodule->curentSyncTimeIsInsideWindow = 0;
     CANmodule->bufferInhibitFlag = 0;
-    CANmodule->transmittingAborted = 0;
     CANmodule->firstCANtxMessage = 1;
     CANmodule->CANtxCount = 0;
     CANmodule->errOld = 0;
@@ -401,41 +399,35 @@ int8_t getFreeTxBuff(CO_CANmodule_t *CANmodule) {
 
 /******************************************************************************/
 int16_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer) {
-   //Code related to CO_CANclearPendingSyncPDOs() function:
-   if(CANmodule->transmittingAborted){
-    //if message was aborted on buffer, set interrupt flag
-    //TODO:  if(CAN_REG(addr, C_TXBUF0 + C_TXCON) & 0x40){CANmodule->transmittingAborted--; CAN_REG(addr, C_INTF) |= 0x04;}
-   }
+    CO_ReturnError_t err = CO_ERROR_NO;
 
-   //Was previous message sent or it is still waiting?
-   if(buffer->bufferFull){
-      if(!CANmodule->firstCANtxMessage)//don't set error, if bootup message is still on buffers
-         CO_errorReport((CO_EM_t*)CANmodule->EM, ERROR_CAN_TX_OVERFLOW, 0);
-      return CO_ERROR_TX_OVERFLOW;
-   }
+    /* Verify overflow */
+    if(buffer->bufferFull){
+        if(!CANmodule->firstCANtxMessage)/* don't set error, if bootup message is still on buffers */
+            CO_errorReport((CO_EM_t*)CANmodule->EM, ERROR_CAN_TX_OVERFLOW, 0);
+        err = CO_ERROR_TX_OVERFLOW;
+    }
 
-   //messages with syncFlag set (synchronous PDOs) must be transmited inside preset time window
-   if(CANmodule->curentSyncTimeIsInsideWindow && buffer->syncFlag && !(*CANmodule->curentSyncTimeIsInsideWindow)){
-      CO_errorReport((CO_EM_t*)CANmodule->EM, ERROR_TPDO_OUTSIDE_WINDOW, 0);
-      return CO_ERROR_TX_PDO_WINDOW;
-   }
+    DISABLE_INTERRUPTS();
+    //if CAN TB buffer0 is free, copy message to it
+    int8_t txBuff = getFreeTxBuff(CANmodule);
+    #error change this - use only one buffer for transmission - see generic driver
+    if(txBuff != -1){
+        CANmodule->bufferInhibitFlag = buffer->syncFlag;
+        CO_CANsendToModule(CANmodule, buffer, txBuff);
+    }
+    //if no buffer is free, message will be sent by interrupt
+    else{
+        buffer->bufferFull = 1;
+        CANmodule->CANtxCount++;
+        // vsechny buffery jsou plny, musime povolit preruseni od vysilace, odvysilat az v preruseni
+        CAN_ITConfig(CANmodule->CANbaseAddress, CAN_IT_TME, ENABLE);
+    }
+    ENABLE_INTERRUPTS();
 
-   //if CAN TB buffer0 is free, copy message to it
-   int8_t txBuff = getFreeTxBuff(CANmodule);
-   if( (txBuff!=-1)  && CANmodule->CANtxCount == 0){
-      CANmodule->bufferInhibitFlag = buffer->syncFlag;
-      CO_CANsendToModule(CANmodule, buffer, txBuff);
-   }
-   //if no buffer is free, message will be sent by interrupt
-   else{
-      buffer->bufferFull = 1;
-      CANmodule->CANtxCount++;
-      // vsechny buffery jsou plny, musime povolit preruseni od vysilace, odvysilat az v preruseni
-      CAN_ITConfig(CANmodule->CANbaseAddress, CAN_IT_TME, ENABLE);
-   }
-
-   return CO_ERROR_NO;
+    return err;
 }
+
 /******************************************************************************/
 void CO_CANclearPendingSyncPDOs(CO_CANmodule_t *CANmodule) {
 
@@ -549,47 +541,35 @@ void CO_CANinterrupt_Rx(CO_CANmodule_t *CANmodule) {
 /******************************************************************************/
 // Interrupt from Transeiver
 void CO_CANinterrupt_Tx(CO_CANmodule_t *CANmodule) {
-    //First CAN message (bootup) was sent successfully
-	CAN_ITConfig(CANmodule->CANbaseAddress, CAN_IT_TME, DISABLE); // Transmit mailbox empty interrupt
-
+    /* Clear interrupt flag */
+    CAN_ITConfig(CANmodule->CANbaseAddress, CAN_IT_TME, DISABLE); // Transmit mailbox empty interrupt
+    /* First CAN message (bootup) was sent successfully */
     CANmodule->firstCANtxMessage = 0;
-    //Are there any new messages waiting to be send and buffer is free
-    if (CANmodule->CANtxCount > 0) {
-        uint16_t index; //index of transmitting message
-        //search through whole array of pointers to transmit message buffers.
-        for (index = 0; index < CANmodule->txSize; index++) {
-            //get specific buffer
-            CO_CANtx_t *buffer = &CANmodule->txArray[index];
-            //if message buffer is full, send it.
-            if (buffer->bufferFull) {
-                // dokud je volny nejaky tx buffer
-                int8_t txBuff = getFreeTxBuff(CANmodule);
-                if (txBuff == -1) {
-                	// neni vse odvysilano a neni volny vysilac
-                	CAN_ITConfig(CANmodule->CANbaseAddress, CAN_IT_TME, ENABLE); // Transmit mailbox empty interrupt
-                	break;
-                }
-                //messages with syncFlag set (synchronous PDOs) must be transmited inside preset time window
-                CANmodule->bufferInhibitFlag = 0;
-                if (CANmodule->curentSyncTimeIsInsideWindow && buffer->syncFlag) {
-                    if (!(*CANmodule->curentSyncTimeIsInsideWindow)) {
-                        CO_errorReport((CO_EM_t*) CANmodule->EM, ERROR_TPDO_OUTSIDE_WINDOW, 3);
-                        //release buffer
-                        buffer->bufferFull = 0;
-                        CANmodule->CANtxCount--;
-                        continue; // continue with next message
-                    }
-                    else{
-                        CANmodule->bufferInhibitFlag = 1;
-                    }
-                }
-                //Copy message to CAN buffer
-                CO_CANsendToModule(CANmodule, buffer, txBuff);
-                //release buffer
+    /* clear flag from previous message */
+    CANmodule->bufferInhibitFlag = 0;
+    /* Are there any new messages waiting to be send */
+    if(CANmodule->CANtxCount > 0){
+        uint16_t i;             /* index of transmitting message */
+
+        /* first buffer */
+        CO_CANtx_t *buffer = CANmodule->txArray;
+        /* search through whole array of pointers to transmit message buffers. */
+        for(i = CANmodule->txSize; i > 0; i--){
+            /* if message buffer is full, send it. */
+            if(buffer->bufferFull){
                 buffer->bufferFull = 0;
                 CANmodule->CANtxCount--;
+
+                /* Copy message to CAN buffer */
+                CANmodule->bufferInhibitFlag = buffer->syncFlag;
+                CO_CANsendToModule(CANmodule, buffer, txBuff);
+                break;                      /* exit for loop */
             }
-        }//end of for loop
+            buffer++;
+        }/* end of for loop */
+
+        /* Clear counter if no more messages */
+        if(i == 0) CANmodule->CANtxCount = 0;
     }
 }
 

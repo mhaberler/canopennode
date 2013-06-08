@@ -35,14 +35,20 @@
 
 
 /******************************************************************************/
-static void CgiLogTimestamp(uint8_t *buf){
+static void CgiLogTimestamp(uint8_t *buf, uint8_t disi){
     uint32_t tickCount;
     TimeDateFineS timeDate;
 
-    DISABLE_INTERRUPTS();
-    tickCount = RTX_GetTickCount();
-    RTX_Get_TimeDate_us(&timeDate);
-    ENABLE_INTERRUPTS();
+    if(disi){
+        DISABLE_INTERRUPTS();
+        tickCount = RTX_GetTickCount();
+        RTX_Get_TimeDate_us(&timeDate);
+        ENABLE_INTERRUPTS();
+    }
+    else{
+        tickCount = RTX_GetTickCount();
+        RTX_Get_TimeDate_us(&timeDate);
+    }
 
     memcpySwap4(buf, (uint8_t*) &tickCount); buf += 4;
     *buf++ = 16;
@@ -102,7 +108,7 @@ static void huge _pascal CgiLogCANFunction(rpCgiPtr CgiRequest){
     ENABLE_INTERRUPTS();
 
     /* write timestamp in the new buffer */
-    CgiLogTimestamp(CgiLog->CANBuf[CgiLog->CANBufIdx]);
+    CgiLogTimestamp(CgiLog->CANBuf[CgiLog->CANBufIdx], 1);
 
     /* Give page to the web server */
     if(clearOnly){
@@ -179,7 +185,7 @@ int16_t CgiLog_init_1(
     CgiLog->CANBufOvf        = 0;
     CgiLog->CANBufOfs        = 16;
 
-    CgiLogTimestamp(CgiLog->CANBuf[0]);
+    CgiLogTimestamp(CgiLog->CANBuf[0], 1);
 
     /* if error in SRAM make new buffer */
     if(*CgiLog->emcyBufOfs < 4 || *CgiLog->emcyBufOfs >= CgiLog->emcyBufSize)
@@ -231,7 +237,6 @@ void CO_logMessage(const CanMsg *msg){
     uint16_t   emcyBufOffset=0;/* offset in emergency temporary buffer */
     uint32_t*  emcyBuf;        /* location in emergency temporary buffer for new message */
 
-    DISABLE_INTERRUPTS();
     CANbufOffset = CgiLog->CANBufOfs;
     if((CANbufOffset+32) > CgiLog->CANBufSize){
         CgiLog->CANBufOfs = 16;
@@ -245,11 +250,10 @@ void CO_logMessage(const CanMsg *msg){
         emcyBufOffset = CgiLog->emcyTempBufStop;
         CgiLog->emcyTempBufStop = emcyBufOffset + 16;
     }
-    ENABLE_INTERRUPTS();
 
     /* update timestamp. (Timestamp on the buffer must be older than the oldest message) */
     if(isOvfPrev) memcpy(CgiLog->CANBuf[CgiLog->CANBufIdx], CgiLog->CANBufTimestamp, 16);
-    if(CgiLog->CANBufOfs == 16) CgiLogTimestamp(CgiLog->CANBufTimestamp);
+    if(CgiLog->CANBufOfs == 16) CgiLogTimestamp(CgiLog->CANBufTimestamp, 0);
 
     /* copy contents */
     CANbuf = (uint32_t*)(CgiLog->CANBuf[CgiLog->CANBufIdx] + CANbufOffset);
@@ -302,7 +306,7 @@ void CgiLogSaveBuffer(CgiLog_t *CgiLog){
     ENABLE_INTERRUPTS();
 
     /* write timestamp in the new buffer */
-    CgiLogTimestamp(CgiLog->CANBuf[CgiLog->CANBufIdx]);
+    CgiLogTimestamp(CgiLog->CANBuf[CgiLog->CANBufIdx], 1);
 
 
     /* get filename and path of the saving buffer */

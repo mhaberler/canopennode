@@ -118,7 +118,7 @@ int16_t CO_NMT_init(
             0,                  /* rtr */
             1,                  /* number of data bytes */
             0);                 /* synchronous message flag bit */
-                                
+
     return CO_ERROR_NO;
 }
 

@@ -26,7 +26,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
- 
+
 #ifndef _CGI_LOG_H
 #define _CGI_LOG_H
 
@@ -135,7 +135,7 @@ typedef struct{
     uint32_t    maxDumpFiles;           /**< From CgiLog_init_1() */
     /** Pointer to location, which contains offset on the emcyBuf for new message */
     uint32_t   *emcyBufOfs;
-    /** Temporary FIFO buffer for emergencies. On this size uint16_t emcyTempBufStart/stop 
+    /** Temporary FIFO buffer for emergencies. On this size uint16_t emcyTempBufStart/stop
         will overflow, don't change this. Before this must be 32-bit variable.*/
     uint8_t     emcyTempBuf[0x10000];
     uint16_t    emcyTempBufStart;       /**< Start location in buffer */

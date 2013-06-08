@@ -150,7 +150,6 @@ int16_t CO_CANmodule_init(
     CANmodule->rxSize = rxSize;
     CANmodule->txArray = txArray;
     CANmodule->txSize = txSize;
-    CANmodule->curentSyncTimeIsInsideWindow = 0;
     CANmodule->useCANrxFilters = (rxSize <= 16) ? 1 : 0;
     CANmodule->bufferInhibitFlag = 0;
     CANmodule->firstCANtxMessage = 1;
@@ -462,6 +461,8 @@ static void CO_CANsendToModule(uint16_t CANbaseAddress, CO_CANrxMsg_t *dest, CO_
 /******************************************************************************/
 int16_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer){
     CO_ReturnError_t err = CO_ERROR_NO;
+    uint16_t addr = CANmodule->CANbaseAddress;
+    volatile uint16_t C_CTRL1old, C_TR01CONcopy;
 
     /* Verify overflow */
     if(buffer->bufferFull){
@@ -470,35 +471,24 @@ int16_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer){
         err = CO_ERROR_TX_OVERFLOW;
     }
 
-    /* messages with syncFlag set (synchronous PDOs) must be transmited inside preset time window */
-    if(CANmodule->curentSyncTimeIsInsideWindow && buffer->syncFlag && !(*CANmodule->curentSyncTimeIsInsideWindow)){
-        CO_errorReport((CO_EM_t*)CANmodule->EM, ERROR_TPDO_OUTSIDE_WINDOW, 0);
-        err = CO_ERROR_TX_PDO_WINDOW;
+    DISABLE_INTERRUPTS();
+    /* read C_TR01CON */
+    C_CTRL1old = CAN_REG(addr, C_CTRL1);
+    CAN_REG(addr, C_CTRL1) = C_CTRL1old & 0xFFFE;     /* WIN = 0 - use buffer registers */
+    C_TR01CONcopy = CAN_REG(addr, C_TR01CON);
+    CAN_REG(addr, C_CTRL1) = C_CTRL1old;
+
+    /* if CAN TX buffer is free, copy message to it */
+    if((C_TR01CONcopy & 0x8) == 0){
+        CANmodule->bufferInhibitFlag = buffer->syncFlag;
+        CO_CANsendToModule(addr, CANmodule->CANmsgBuff, buffer);
     }
-
-    if(err != CO_ERROR_TX_PDO_WINDOW){
-        uint16_t addr = CANmodule->CANbaseAddress;
-        volatile uint16_t C_CTRL1old, C_TR01CONcopy;
-
-        DISABLE_INTERRUPTS();
-        /* read C_TR01CON */
-        C_CTRL1old = CAN_REG(addr, C_CTRL1);
-        CAN_REG(addr, C_CTRL1) = C_CTRL1old & 0xFFFE;     /* WIN = 0 - use buffer registers */
-        C_TR01CONcopy = CAN_REG(addr, C_TR01CON);
-        CAN_REG(addr, C_CTRL1) = C_CTRL1old;
-
-        /* if CAN TX buffer is free, copy message to it */
-        if((C_TR01CONcopy & 0x8) == 0){
-            CANmodule->bufferInhibitFlag = buffer->syncFlag;
-            CO_CANsendToModule(addr, CANmodule->CANmsgBuff, buffer);
-        }
-        /* if no buffer is free, message will be sent by interrupt */
-        else{
-            buffer->bufferFull = 1;
-            CANmodule->CANtxCount++;
-        }
-        ENABLE_INTERRUPTS();
+    /* if no buffer is free, message will be sent by interrupt */
+    else{
+        buffer->bufferFull = 1;
+        CANmodule->CANtxCount++;
     }
+    ENABLE_INTERRUPTS();
 
     return err;
 }
@@ -658,26 +648,13 @@ void CO_CANinterrupt(CO_CANmodule_t *CANmodule){
             for(i = CANmodule->txSize; i > 0; i--){
                 /* if message buffer is full, send it. */
                 if(buffer->bufferFull){
-                    uint8_t skipMessage = 0;
                     buffer->bufferFull = 0;
                     CANmodule->CANtxCount--;
 
-                    /* messages with syncFlag set (synchronous PDOs) must be transmited inside preset time window */
-                    if(CANmodule->curentSyncTimeIsInsideWindow && buffer->syncFlag){
-                        if(!(*CANmodule->curentSyncTimeIsInsideWindow)){
-                            CO_errorReport((CO_EM_t*)CANmodule->EM, ERROR_TPDO_OUTSIDE_WINDOW, 3);
-                            skipMessage = 1;
-                        }
-                        else{
-                            CANmodule->bufferInhibitFlag = 1;
-                        }
-                    }
-
                     /* Copy message to CAN buffer */
-                    if(skipMessage == 0){
-                        CO_CANsendToModule(CANmodule->CANbaseAddress, CANmodule->CANmsgBuff, buffer);
-                        break;                      /* exit for loop */
-                    }
+                    CANmodule->bufferInhibitFlag = buffer->syncFlag;
+                    CO_CANsendToModule(CANmodule->CANbaseAddress, CANmodule->CANmsgBuff, buffer);
+                    break;                      /* exit for loop */
                 }
                 buffer++;
             }/* end of for loop */

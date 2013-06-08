@@ -89,7 +89,6 @@ int16_t CO_CANmodule_init(
     CANmodule->rxSize = rxSize;
     CANmodule->txArray = txArray;
     CANmodule->txSize = txSize;
-    CANmodule->curentSyncTimeIsInsideWindow = 0;
     CANmodule->useCANrxFilters = (rxSize <= 32) ? 1 : 0;/* microcontroller dependent */
     CANmodule->bufferInhibitFlag = 0;
     CANmodule->firstCANtxMessage = 1;
@@ -221,27 +220,18 @@ int16_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer){
         err = CO_ERROR_TX_OVERFLOW;
     }
 
-    /* messages with syncFlag set (synchronous PDOs) must be transmited inside preset time window */
-    if(CANmodule->curentSyncTimeIsInsideWindow && buffer->syncFlag && !(*CANmodule->curentSyncTimeIsInsideWindow)){
-        CO_errorReport((CO_EM_t*)CANmodule->EM, ERROR_TPDO_OUTSIDE_WINDOW, 0);
-        err = CO_ERROR_TX_PDO_WINDOW;
+    DISABLE_INTERRUPTS();
+    /* if CAN TX buffer is free, copy message to it */
+    if(1){
+        CANmodule->bufferInhibitFlag = buffer->syncFlag;
+        /* copy message and txRequest */
     }
-
-    if(err != CO_ERROR_TX_PDO_WINDOW){
-
-        DISABLE_INTERRUPTS();
-        /* if CAN TX buffer is free, copy message to it */
-        if(1){
-            CANmodule->bufferInhibitFlag = buffer->syncFlag;
-            /* copy message and txRequest */
-        }
-        /* if no buffer is free, message will be sent by interrupt */
-        else{
-            buffer->bufferFull = 1;
-            CANmodule->CANtxCount++;
-        }
-        ENABLE_INTERRUPTS();
+    /* if no buffer is free, message will be sent by interrupt */
+    else{
+        buffer->bufferFull = 1;
+        CANmodule->CANtxCount++;
     }
+    ENABLE_INTERRUPTS();
 
     return err;
 }
@@ -397,26 +387,13 @@ void CO_CANinterrupt(CO_CANmodule_t *CANmodule){
             for(i = CANmodule->txSize; i > 0; i--){
                 /* if message buffer is full, send it. */
                 if(buffer->bufferFull){
-                    uint8_t skipMessage = 0;
                     buffer->bufferFull = 0;
                     CANmodule->CANtxCount--;
 
-                    /* messages with syncFlag set (synchronous PDOs) must be transmited inside preset time window */
-                    if(CANmodule->curentSyncTimeIsInsideWindow && buffer->syncFlag){
-                        if(!(*CANmodule->curentSyncTimeIsInsideWindow)){
-                            CO_errorReport((CO_EM_t*)CANmodule->EM, ERROR_TPDO_OUTSIDE_WINDOW, 3);
-                            skipMessage = 1;
-                        }
-                        else{
-                            CANmodule->bufferInhibitFlag = 1;
-                        }
-                    }
-
                     /* Copy message to CAN buffer */
-                    if(skipMessage == 0){
-                        /* canSend... */
-                        break;                      /* exit for loop */
-                    }
+                    CANmodule->bufferInhibitFlag = buffer->syncFlag;
+                    /* canSend... */
+                    break;                      /* exit for loop */
                 }
                 buffer++;
             }/* end of for loop */

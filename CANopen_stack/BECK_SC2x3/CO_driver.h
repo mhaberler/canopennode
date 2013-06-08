@@ -116,11 +116,13 @@ typedef struct{
 /* CAN module object. */
 typedef struct{
     uint16_t            CANbaseAddress;
+#ifdef CO_LOG_CAN_MESSAGES
+    CO_CANtx_t          txRecord;
+#endif
     CO_CANrx_t         *rxArray;
     uint16_t            rxSize;
     CO_CANtx_t         *txArray;
     uint16_t            txSize;
-    volatile uint8_t   *curentSyncTimeIsInsideWindow;
     volatile uint8_t    bufferInhibitFlag;
     volatile uint8_t    firstCANtxMessage;
     volatile uint8_t    error;

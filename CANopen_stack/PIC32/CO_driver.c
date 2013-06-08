@@ -122,7 +122,6 @@ int16_t CO_CANmodule_init(
     CANmodule->rxSize = rxSize;
     CANmodule->txArray = txArray;
     CANmodule->txSize = txSize;
-    CANmodule->curentSyncTimeIsInsideWindow = 0;
     CANmodule->useCANrxFilters = (rxSize <= 32) ? 1 : 0;
     CANmodule->bufferInhibitFlag = 0;
     CANmodule->firstCANtxMessage = 1;
@@ -347,6 +346,12 @@ CO_CANtx_t *CO_CANtxBufferInit(
 /******************************************************************************/
 int16_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer){
     CO_ReturnError_t err = CO_ERROR_NO;
+    uint16_t addr = CANmodule->CANbaseAddress;
+    volatile uint32_t* TX_FIFOcon = &CAN_REG(addr, C_FIFOCON+0x40);
+    volatile uint32_t* TX_FIFOconSet = &CAN_REG(addr, C_FIFOCON+0x48);
+    uint32_t* TXmsgBuffer = PA_TO_KVA1(CAN_REG(addr, C_FIFOUA+0x40));
+    uint32_t* message = (uint32_t*) buffer;
+    uint32_t TX_FIFOconCopy;
 
     /* Verify overflow */
     if(buffer->bufferFull){
@@ -355,43 +360,28 @@ int16_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer){
         err = CO_ERROR_TX_OVERFLOW;
     }
 
-    /* messages with syncFlag set (synchronous PDOs) must be transmited inside preset time window */
-    if(CANmodule->curentSyncTimeIsInsideWindow && buffer->syncFlag && !(*CANmodule->curentSyncTimeIsInsideWindow)){
-        CO_errorReport((CO_EM_t*)CANmodule->EM, ERROR_TPDO_OUTSIDE_WINDOW, 0);
-        err = CO_ERROR_TX_PDO_WINDOW;
+    DISABLE_INTERRUPTS();
+    TX_FIFOconCopy = *TX_FIFOcon;
+    /* if CAN TX buffer is free, copy message to it */
+    if((TX_FIFOconCopy & 0x8) == 0){
+        CANmodule->bufferInhibitFlag = buffer->syncFlag;
+        *(TXmsgBuffer++) = *(message++);
+        *(TXmsgBuffer++) = *(message++);
+        *(TXmsgBuffer++) = *(message++);
+        *(TXmsgBuffer++) = *(message++);
+        /* if message was aborted, don't set UINC */
+        if((TX_FIFOconCopy & 0x40) == 0)
+            *TX_FIFOconSet = 0x2000;   /* set UINC */
+        *TX_FIFOconSet = 0x0008;   /* set TXREQ */
     }
-
-    if(err != CO_ERROR_TX_PDO_WINDOW){
-        uint16_t addr = CANmodule->CANbaseAddress;
-        volatile uint32_t* TX_FIFOcon = &CAN_REG(addr, C_FIFOCON+0x40);
-        volatile uint32_t* TX_FIFOconSet = &CAN_REG(addr, C_FIFOCON+0x48);
-        uint32_t* TXmsgBuffer = PA_TO_KVA1(CAN_REG(addr, C_FIFOUA+0x40));
-        uint32_t* message = (uint32_t*) buffer;
-        uint32_t TX_FIFOconCopy;
-
-        DISABLE_INTERRUPTS();
-        TX_FIFOconCopy = *TX_FIFOcon;
-        /* if CAN TX buffer is free, copy message to it */
-        if((TX_FIFOconCopy & 0x8) == 0){
-            CANmodule->bufferInhibitFlag = buffer->syncFlag;
-            *(TXmsgBuffer++) = *(message++);
-            *(TXmsgBuffer++) = *(message++);
-            *(TXmsgBuffer++) = *(message++);
-            *(TXmsgBuffer++) = *(message++);
-            /* if message was aborted, don't set UINC */
-            if((TX_FIFOconCopy & 0x40) == 0)
-                *TX_FIFOconSet = 0x2000;   /* set UINC */
-            *TX_FIFOconSet = 0x0008;   /* set TXREQ */
-        }
-        /* if no buffer is free, message will be sent by interrupt */
-        else{
-            buffer->bufferFull = 1;
-            CANmodule->CANtxCount++;
-        }
-        /* Enable 'Tx buffer empty' (TXEMPTYIE) interrupt in FIFO 1 (third layer interrupt) */
-        CAN_REG(addr, C_FIFOINT+0x48) = 0x01000000;
-        ENABLE_INTERRUPTS();
+    /* if no buffer is free, message will be sent by interrupt */
+    else{
+        buffer->bufferFull = 1;
+        CANmodule->CANtxCount++;
     }
+    /* Enable 'Tx buffer empty' (TXEMPTYIE) interrupt in FIFO 1 (third layer interrupt) */
+    CAN_REG(addr, C_FIFOINT+0x48) = 0x01000000;
+    ENABLE_INTERRUPTS();
 
     return err;
 }
@@ -552,34 +542,21 @@ void CO_CANinterrupt(CO_CANmodule_t *CANmodule){
             for(i = CANmodule->txSize; i > 0; i--){
                 /* if message buffer is full, send it. */
                 if(buffer->bufferFull){
-                    uint8_t skipMessage = 0;
                     buffer->bufferFull = 0;
                     CANmodule->CANtxCount--;
 
-                    /* messages with syncFlag set (synchronous PDOs) must be transmited inside preset time window */
-                    if(CANmodule->curentSyncTimeIsInsideWindow && buffer->syncFlag){
-                        if(!(*CANmodule->curentSyncTimeIsInsideWindow)){
-                            CO_errorReport((CO_EM_t*)CANmodule->EM, ERROR_TPDO_OUTSIDE_WINDOW, 3);
-                            skipMessage = 1;
-                        }
-                        else{
-                            CANmodule->bufferInhibitFlag = 1;
-                        }
-                    }
-
                     /* Copy message to CAN buffer */
-                    if(skipMessage == 0){
-                        uint32_t* TXmsgBuffer = PA_TO_KVA1(CAN_REG(CANmodule->CANbaseAddress, C_FIFOUA+0x40));
-                        uint32_t* message = (uint32_t*) buffer;
-                        volatile uint32_t* TX_FIFOconSet = &CAN_REG(CANmodule->CANbaseAddress, C_FIFOCON+0x48);
-                        *(TXmsgBuffer++) = *(message++);
-                        *(TXmsgBuffer++) = *(message++);
-                        *(TXmsgBuffer++) = *(message++);
-                        *(TXmsgBuffer++) = *(message++);
-                        *TX_FIFOconSet = 0x2000;    /* set UINC */
-                        *TX_FIFOconSet = 0x0008;    /* set TXREQ */
-                        break;                      /* exit for loop */
-                    }
+                    CANmodule->bufferInhibitFlag = buffer->syncFlag;
+                    uint32_t* TXmsgBuffer = PA_TO_KVA1(CAN_REG(CANmodule->CANbaseAddress, C_FIFOUA+0x40));
+                    uint32_t* message = (uint32_t*) buffer;
+                    volatile uint32_t* TX_FIFOconSet = &CAN_REG(CANmodule->CANbaseAddress, C_FIFOCON+0x48);
+                    *(TXmsgBuffer++) = *(message++);
+                    *(TXmsgBuffer++) = *(message++);
+                    *(TXmsgBuffer++) = *(message++);
+                    *(TXmsgBuffer++) = *(message++);
+                    *TX_FIFOconSet = 0x2000;    /* set UINC */
+                    *TX_FIFOconSet = 0x0008;    /* set TXREQ */
+                    break;                      /* exit for loop */
                 }
                 buffer++;
             }/* end of for loop */

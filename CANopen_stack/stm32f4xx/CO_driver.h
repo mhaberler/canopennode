@@ -121,14 +121,12 @@ typedef struct{
     uint16_t            rxSize;
     CO_CANtx_t         *txArray;
     uint16_t            txSize;
-    volatile uint8_t   *curentSyncTimeIsInsideWindow;
     volatile uint8_t    useCANrxFilters;
     volatile uint8_t    bufferInhibitFlag;
     volatile uint8_t    firstCANtxMessage;
     volatile uint16_t   CANtxCount;
     uint32_t            errOld;
     void               *EM;
-    uint8_t             transmittingAborted;    /* STM32F4xx specific */
 }CO_CANmodule_t;
 
 

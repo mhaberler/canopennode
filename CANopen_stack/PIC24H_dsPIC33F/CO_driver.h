@@ -336,7 +336,6 @@ typedef struct{
     uint16_t            rxSize;
     CO_CANtx_t         *txArray;
     uint16_t            txSize;
-    volatile uint8_t   *curentSyncTimeIsInsideWindow;
     volatile uint8_t    useCANrxFilters;
     volatile uint8_t    bufferInhibitFlag;
     volatile uint8_t    firstCANtxMessage;

@@ -220,7 +220,6 @@ int16_t CO_SYNC_init(
     if(synchronousCounterOverflowValue) len = 1;
 
     SYNC->curentSyncTimeIsInsideWindow = 1;
-    CANdevTx->curentSyncTimeIsInsideWindow = &SYNC->curentSyncTimeIsInsideWindow; /* parameter inside CAN module. */
 
     SYNC->running = 0;
     SYNC->timer = 0;
