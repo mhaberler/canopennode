@@ -77,11 +77,19 @@ extern const CO_CANbitRateData_t  CO_CANbitRateData[8];
 
     #define DMA_CON      0x0
     #define DMA_REQ      0x2
+#ifndef __HAS_EDS__
     #define DMA_STA      0x4
     #define DMA_STB      0x6
     #define DMA_PAD      0x8
     #define DMA_CNT      0xA
-
+#else
+    #define DMA_STAL     0x4
+    #define DMA_STAH     0x6
+    #define DMA_STBL     0x8
+    #define DMA_STBH     0xA
+    #define DMA_PAD      0xC
+    #define DMA_CNT      0xE
+#endif
 
 /******************************************************************************/
 void memcpySwap2(uint8_t* dest, uint8_t* src){
@@ -130,9 +138,12 @@ int16_t CO_CANmodule_init(
         uint16_t                CANbaseAddress,
         uint16_t                DMArxBaseAddress,
         uint16_t                DMAtxBaseAddress,
-        CO_CANrxMsg_t          *CANmsgBuff,
+        EDS_PTR CO_CANrxMsg_t  *CANmsgBuff,
         uint8_t                 CANmsgBuffSize,
         uint16_t                CANmsgBuffDMAoffset,
+#if defined(__HAS_EDS__)
+        uint16_t                CANmsgBuffDMApage,
+#endif
         CO_CANrx_t             *rxArray,
         uint16_t                rxSize,
         CO_CANtx_t             *txArray,
@@ -260,7 +271,14 @@ int16_t CO_CANmodule_init(
     DMA_REG(DMArxBaseAddress, DMA_PAD) = (volatile uint16_t) &CAN_REG(CANbaseAddress, C_RXD);
     DMA_REG(DMArxBaseAddress, DMA_CNT) = 7;
     DMA_REG(DMArxBaseAddress, DMA_REQ) = (CANbaseAddress==0x400) ? 34 : 55;
+
+#ifndef __HAS_EDS__
     DMA_REG(DMArxBaseAddress, DMA_STA) = CANmsgBuffDMAoffset;
+#else
+    DMA_REG(DMArxBaseAddress, DMA_STAL) = CANmsgBuffDMAoffset;
+    DMA_REG(DMArxBaseAddress, DMA_STAH) = CANmsgBuffDMApage;
+#endif
+
     DMA_REG(DMArxBaseAddress, DMA_CON) = 0x8020;
 
     /* DMA chanel initialization for ECAN transmission */
@@ -268,7 +286,14 @@ int16_t CO_CANmodule_init(
     DMA_REG(DMAtxBaseAddress, DMA_PAD) = (volatile uint16_t) &CAN_REG(CANbaseAddress, C_TXD);
     DMA_REG(DMAtxBaseAddress, DMA_CNT) = 7;
     DMA_REG(DMAtxBaseAddress, DMA_REQ) = (CANbaseAddress==0x400) ? 70 : 71;
+
+#ifndef __HAS_EDS__
     DMA_REG(DMAtxBaseAddress, DMA_STA) = CANmsgBuffDMAoffset;
+#else
+    DMA_REG(DMAtxBaseAddress, DMA_STAL) = CANmsgBuffDMAoffset;
+    DMA_REG(DMAtxBaseAddress, DMA_STAH) = CANmsgBuffDMApage;
+#endif
+
     DMA_REG(DMAtxBaseAddress, DMA_CON) = 0xA020;
 
 
@@ -431,9 +456,9 @@ CO_CANtx_t *CO_CANtxBufferInit(
  * @param dest Pointer to CAN module transmit buffer <CO_CANrxMsg_t>.
  * @param src Pointer to source message <CO_CANtx>.
  */
-static void CO_CANsendToModule(uint16_t CANbaseAddress, CO_CANrxMsg_t *dest, CO_CANtx_t *src){
+static void CO_CANsendToModule(uint16_t CANbaseAddress, EDS_PTR CO_CANrxMsg_t *dest, CO_CANtx_t *src){
     uint8_t DLC;
-    uint8_t *CANdataBuffer;
+    EDS_PTR uint8_t *CANdataBuffer;
     uint8_t *pData;
     volatile uint16_t C_CTRL1old;
 
@@ -584,7 +609,7 @@ void CO_CANinterrupt(CO_CANmodule_t *CANmodule){
 
     /* receive interrupt (New CAN messagge is available in RX FIFO buffer) */
     if(ICODE > 0){
-        CO_CANrxMsg_t *rcvMsg;     /* pointer to received message in CAN module */
+        EDS_PTR CO_CANrxMsg_t *rcvMsg;     /* pointer to received message in CAN module */
         uint16_t index;          /* index of received message */
         CO_CANrx_t *msgBuff;  /* receive message buffer from CO_CANmodule_t object. */
         uint8_t msgMatched = 0;
@@ -614,7 +639,10 @@ void CO_CANinterrupt(CO_CANmodule_t *CANmodule){
         }
 
         /* Call specific function, which will process the message */
-        if(msgMatched) msgBuff->pFunct(msgBuff->object, rcvMsg);
+        if(msgMatched) {
+            CO_CANrxMsg_t _rcvMsg = *rcvMsg;
+            msgBuff->pFunct(msgBuff->object, &_rcvMsg);
+        }
 
         /* Clear RXFUL flag */
         DISABLE_INTERRUPTS();

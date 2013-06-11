@@ -37,19 +37,24 @@
 
 #ifndef CO_USE_GLOBALS
     #include <stdlib.h> /*  for malloc, free */
+    static uint32_t CO_memoryUsed = 0; /* informative */
 #endif
 
 
 /* Global variables ***********************************************************/
     extern const CO_OD_entry_t CO_OD[CO_OD_NoOfElements];  /* Object Dictionary array */
     static CO_t COO;
-    static uint32_t CO_memoryUsed = 0; /* informative */
     CO_t *CO = 0;
 
-#if defined(__dsPIC33F__) || defined(__PIC24H__)
+#if defined(__dsPIC33F__) || defined(__PIC24H__) \
+	|| defined(__dsPIC33E__) || defined(__PIC24E__)
     /* CAN message buffer for one TX and seven RX messages. */
     #define CO_CANmsgBuffSize   8
+#ifdef __HAS_EDS__
+    __eds__ CO_CANrxMsg_t CO_CANmsg[CO_CANmsgBuffSize] __attribute__((eds,space(dma)));
+#else
     CO_CANrxMsg_t CO_CANmsg[CO_CANmsgBuffSize] __attribute__((space(dma)));
+#endif
 #endif
 
     static CO_CANrx_t          *CO_CANmodule_rxArray0;
@@ -192,7 +197,9 @@ int16_t CO_init(){
     uint8_t nodeId;
     uint16_t CANBitRate;
     CO_ReturnError_t err;
+#ifndef CO_USE_GLOBALS
     uint16_t errCnt;
+#endif
 
     /* Verify parameters from CO_OD */
     if(   sizeof(OD_TPDOCommunicationParameter_t) != sizeof(CO_TPDOCommPar_t)
@@ -332,12 +339,16 @@ int16_t CO_init(){
     err = CO_CANmodule_init(
             CO->CANmodule[0],
             ADDR_CAN1,
-#if defined(__dsPIC33F__) || defined(__PIC24H__)
+#if defined(__dsPIC33F__) || defined(__PIC24H__) \
+	|| defined(__dsPIC33E__) || defined(__PIC24E__)
             ADDR_DMA0,
             ADDR_DMA1,
            &CO_CANmsg[0],
             CO_CANmsgBuffSize,
             __builtin_dmaoffset(&CO_CANmsg[0]),
+#if defined(__HAS_EDS__)
+            __builtin_dmapage(&CO_CANmsg[0]),
+#endif
 #endif
             CO_CANmodule_rxArray0,
             CO_RXCAN_NO_MSGS,
@@ -526,7 +537,9 @@ int16_t CO_init(){
 
 /******************************************************************************/
 void CO_delete(){
+#ifndef CO_USE_GLOBALS
     int16_t i;
+#endif
 
     CO_CANsetConfigurationMode(ADDR_CAN1);
     CO_CANmodule_disable(CO->CANmodule[0]);

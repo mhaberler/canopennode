@@ -29,13 +29,23 @@
 #define _CO_DRIVER_H
 
 
+#if defined(__dsPIC33F__) || defined(__PIC24H__)
 #include <p33fxxxx.h>       /* processor header file */
+#elif defined(__dsPIC33E__) || defined(__PIC24E__)
+#include <p33exxxx.h>       /* processor header file */
+#endif
 
+#ifdef __HAS_EDS__
+#define EDS_PTR __eds__
+#else
+#define EDS_PTR
+#endif
 
 /* Peripheral addresses */
 #define ADDR_CAN1    0x400
 #define ADDR_CAN2    0x500
 
+#if defined(__dsPIC33F__) || defined(__PIC24H__)
 #define ADDR_DMA0    0x380
 #define ADDR_DMA1    0x38C
 #define ADDR_DMA2    0x398
@@ -44,7 +54,16 @@
 #define ADDR_DMA5    0x3BC
 #define ADDR_DMA6    0x3C8
 #define ADDR_DMA7    0x3D4
-
+#elif defined(__dsPIC33E__) || defined(__PIC24E__)
+#define ADDR_DMA0    0xB00
+#define ADDR_DMA1    0xB10
+#define ADDR_DMA2    0xB20
+#define ADDR_DMA3    0xB30
+#define ADDR_DMA4    0xB40
+#define ADDR_DMA5    0xB50
+#define ADDR_DMA6    0xB60
+#define ADDR_DMA7    0xB70
+#endif
 
 /* Disabling interrupts */
 #define DISABLE_INTERRUPTS()     asm volatile ("disi #0x3FFF")
@@ -330,7 +349,7 @@ typedef struct{
 /* CAN module object. */
 typedef struct{
     uint16_t            CANbaseAddress;
-    CO_CANrxMsg_t      *CANmsgBuff;     /* dsPIC33F specific: CAN message buffer for CAN module */
+    EDS_PTR CO_CANrxMsg_t *CANmsgBuff;  /* dsPIC33F specific: CAN message buffer for CAN module */
     uint8_t             CANmsgBuffSize; /* dsPIC33F specific: Size of the above buffer */
     CO_CANrx_t         *rxArray;
     uint16_t            rxSize;
@@ -371,9 +390,12 @@ int16_t CO_CANmodule_init(
         uint16_t                CANbaseAddress,
         uint16_t                DMArxBaseAddress,
         uint16_t                DMAtxBaseAddress,
-        CO_CANrxMsg_t          *CANmsgBuff,
+        EDS_PTR CO_CANrxMsg_t  *CANmsgBuff,
         uint8_t                 CANmsgBuffSize,
         uint16_t                CANmsgBuffDMAoffset,
+#ifdef __HAS_EDS__
+        uint16_t                CANmsgBuffDMApage,
+#endif
         CO_CANrx_t             *rxArray,
         uint16_t                rxSize,
         CO_CANtx_t             *txArray,
