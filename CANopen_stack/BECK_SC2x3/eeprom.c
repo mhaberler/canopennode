@@ -222,7 +222,7 @@ void EE_init_2(
 {
     CO_OD_configure(SDO, 0x1010, CO_ODF_1010, (void*)EE, 0, 0);
     CO_OD_configure(SDO, 0x1011, CO_ODF_1011, (void*)EE, 0, 0);
-    if(EEStatus) CO_errorReport(EM, ERROR_NON_VOLATILE_MEMORY, EEStatus);
+    if(EEStatus) CO_errorReport(EM, CO_EM_NON_VOLATILE_MEMORY, CO_EMC_HARDWARE, EEStatus);
 }
 
 

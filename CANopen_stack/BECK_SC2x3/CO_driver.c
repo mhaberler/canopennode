@@ -29,10 +29,10 @@
 #include "CO_Emergency.h"
 #include <string.h> /* for memcpy */
 
-
+#ifdef USE_CAN_CALLBACKS
 int CAN1callback(CanEvent event, const CanMsg *msg);
 int CAN2callback(CanEvent event, const CanMsg *msg);
-
+#endif
 
 /******************************************************************************/
 void memcpySwap2(uint8_t* dest, uint8_t* src){
@@ -121,10 +121,12 @@ int16_t CO_CANmodule_init(
     canPurgeTx(CANbaseAddress, FALSE);
 
     /* register callback function */
+#ifdef USE_CAN_CALLBACKS
     if(CANbaseAddress == CAN_PORT_CAN1)
         canRegisterCallback(CANbaseAddress, CAN1callback, (1 << CAN_EVENT_RX) | (1 << CAN_EVENT_TX) | (1 << CAN_EVENT_BUS_OFF) | (1 << CAN_EVENT_OVERRUN));
     else if(CANbaseAddress == CAN_PORT_CAN2)
         canRegisterCallback(CANbaseAddress, CAN2callback, (1 << CAN_EVENT_RX) | (1 << CAN_EVENT_TX) | (1 << CAN_EVENT_BUS_OFF) | (1 << CAN_EVENT_OVERRUN));
+#endif
 
     return CO_ERROR_NO;
 }
@@ -207,10 +209,11 @@ int16_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer){
     CO_ReturnError_t err = CO_ERROR_NO;
     CanError canErr = CAN_ERROR_NO;
 
+#ifdef USE_CAN_CALLBACKS
     /* Verify overflow */
     if(buffer->bufferFull){
         if(!CANmodule->firstCANtxMessage)/* don't set error, if bootup message is still on buffers */
-            CO_errorReport((CO_EM_t*)CANmodule->EM, ERROR_CAN_TX_OVERFLOW, 0);
+            CO_errorReport((CO_EM_t*)CANmodule->EM, ERROR_CAN_TX_OVERFLOW, CO_EMC_CAN_OVERRUN, canDecodeId(buffer->ident));
         err = CO_ERROR_TX_OVERFLOW;
     }
 
@@ -230,8 +233,20 @@ int16_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer){
     }
     ENABLE_INTERRUPTS();
 
-    if(canErr != CAN_ERROR_NO)
-        CO_errorReport((CO_EM_t*)CANmodule->EM, ERROR_GENERIC_ERROR, canErr);
+#else
+    DISABLE_INTERRUPTS();
+    canErr = canSend(CANmodule->CANbaseAddress, (const CanMsg*) buffer, FALSE);
+#ifdef CO_LOG_CAN_MESSAGES
+    void CO_logMessage(const CanMsg *msg);
+    CO_logMessage((const CanMsg*) buffer);
+#endif
+    ENABLE_INTERRUPTS();
+#endif
+
+    if(canErr != CAN_ERROR_NO){
+        CO_errorReport((CO_EM_t*)CANmodule->EM, CO_EM_GENERIC_ERROR, CO_EMC_GENERIC, canErr);
+        err = CO_ERROR_TX_OVERFLOW;
+    }
 
     return err;
 }
@@ -239,6 +254,7 @@ int16_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer){
 
 /******************************************************************************/
 void CO_CANclearPendingSyncPDOs(CO_CANmodule_t *CANmodule){
+#ifdef USE_CAN_CALLBACKS
     uint8_t tpdoDeleted = 0;
     CO_CANtx_t *buffer = CANmodule->txArray;
 
@@ -262,13 +278,15 @@ void CO_CANclearPendingSyncPDOs(CO_CANmodule_t *CANmodule){
 
 
     if(tpdoDeleted){
-        CO_errorReport((CO_EM_t*)CANmodule->EM, ERROR_TPDO_OUTSIDE_WINDOW, tpdoDeleted);
+        CO_errorReport((CO_EM_t*)CANmodule->EM, CO_EM_TPDO_OUTSIDE_WINDOW, CO_EMC_COMMUNICATION, tpdoDeleted);
     }
+#endif
 }
 
 
 /******************************************************************************/
 void CO_CANverifyErrors(CO_CANmodule_t *CANmodule){
+#if function_canGetErrorCounters_works_without_loosing_messages
     unsigned rxErrors, txErrors;
     CO_EM_t* EM = (CO_EM_t*)CANmodule->EM;
 
@@ -281,54 +299,56 @@ void CO_CANverifyErrors(CO_CANmodule_t *CANmodule){
         CANmodule->errOld = err;
 
         if(txErrors >= 256){                               /* bus off */
-            CO_errorReport(EM, ERROR_CAN_TX_BUS_OFF, err);
+            CO_errorReport(EM, CO_EM_CAN_TX_BUS_OFF, CO_EMC_BUS_OFF_RECOVERED, err);
         }
         else{                                              /* not bus off */
-            CO_errorReset(EM, ERROR_CAN_TX_BUS_OFF, err);
+            CO_errorReset(EM, CO_EM_CAN_TX_BUS_OFF, err);
 
             if(rxErrors >= 96 || txErrors >= 96){           /* bus warning */
-                CO_errorReport(EM, ERROR_CAN_BUS_WARNING, err);
+                CO_errorReport(EM, CO_EM_CAN_BUS_WARNING, CO_EMC_NO_ERROR, err);
             }
 
             if(rxErrors >= 128){                            /* RX bus passive */
-                CO_errorReport(EM, ERROR_CAN_RX_BUS_PASSIVE, err);
+                CO_errorReport(EM, CO_EM_CAN_RX_BUS_PASSIVE, CO_EMC_CAN_PASSIVE, err);
             }
             else{
-                CO_errorReset(EM, ERROR_CAN_RX_BUS_PASSIVE, err);
+                CO_errorReset(EM, CO_EM_CAN_RX_BUS_PASSIVE, err);
             }
 
             if(txErrors >= 128){                            /* TX bus passive */
                 if(!CANmodule->firstCANtxMessage){
-                    CO_errorReport(EM, ERROR_CAN_TX_BUS_PASSIVE, err);
+                    CO_errorReport(EM, CO_EM_CAN_TX_BUS_PASSIVE, CO_EMC_CAN_PASSIVE, err);
                 }
             }
             else{
                 int16_t wasCleared;
-                wasCleared =        CO_errorReset(EM, ERROR_CAN_TX_BUS_PASSIVE, err);
-                if(wasCleared == 1) CO_errorReset(EM, ERROR_CAN_TX_OVERFLOW, err);
+                wasCleared =        CO_errorReset(EM, CO_EM_CAN_TX_BUS_PASSIVE, err);
+                if(wasCleared == 1) CO_errorReset(EM, CO_EM_CAN_TX_OVERFLOW, err);
             }
 
             if(rxErrors < 96 && txErrors < 96){             /* no error */
                 int16_t wasCleared;
-                wasCleared =        CO_errorReset(EM, ERROR_CAN_BUS_WARNING, err);
-                if(wasCleared == 1) CO_errorReset(EM, ERROR_CAN_TX_OVERFLOW, err);
+                wasCleared =        CO_errorReset(EM, CO_EM_CAN_BUS_WARNING, err);
+                if(wasCleared == 1) CO_errorReset(EM, CO_EM_CAN_TX_OVERFLOW, err);
             }
         }
 
         if(CANmodule->error & 0x02){                       /* CAN RX bus overflow */
-            CO_errorReport(EM, ERROR_CAN_RXB_OVERFLOW, err);
+            CO_errorReport(EM, CO_EM_CAN_RXB_OVERFLOW, CO_EMC_CAN_OVERRUN, err);
         }
     }
+#endif
 }
 
 
+#ifdef USE_CAN_CALLBACKS
 /******************************************************************************/
 int CO_CANinterrupt(CO_CANmodule_t *CANmodule, CanEvent event, const CanMsg *msg){
 
     /* receive interrupt (New CAN messagge is available in RX FIFO buffer) */
     if(event == CAN_EVENT_RX){
         CO_CANrxMsg_t *rcvMsg;     /* pointer to received message in CAN module */
-        uint16_t index;          /* index of received message */
+        uint16_t i;          /* index of received message */
         CO_CANrx_t *msgBuff;  /* receive message buffer from CO_CANmodule_t object. */
         uint8_t msgMatched = 0;
 
@@ -336,7 +356,7 @@ int CO_CANinterrupt(CO_CANmodule_t *CANmodule, CanEvent event, const CanMsg *msg
         /* CAN module filters are not used, message with any standard 11-bit identifier */
         /* has been received. Search rxArray form CANmodule for the same CAN-ID. */
         msgBuff = CANmodule->rxArray;
-        for(index = 0; index < CANmodule->rxSize; index++){
+        for(i = CANmodule->rxSize; i > 0; i--){
             if(((rcvMsg->ident ^ msgBuff->ident) & msgBuff->mask) == 0){
                 msgMatched = 1;
                 break;
@@ -406,3 +426,32 @@ int CO_CANinterrupt(CO_CANmodule_t *CANmodule, CanEvent event, const CanMsg *msg
     }
     return 0;
 }
+#else
+void CO_CANreceive(CO_CANmodule_t *CANmodule){
+    /* pool the messages from receive buffer */
+    while(canPeek(CANmodule->CANbaseAddress, 0) == CAN_ERROR_NO){
+        CO_CANrxMsg_t rcvMsg;
+        uint16_t i;         /* index of received message */
+        CO_CANrx_t *msgBuff;/* receive message buffer from CO_CANmodule_t object. */
+        uint8_t msgMatched = 0;
+        canRecv(CANmodule->CANbaseAddress, (CanMsg*)&rcvMsg, 0);
+
+        msgBuff = CANmodule->rxArray;
+        for(i = CANmodule->rxSize; i > 0; i--){
+            if(((rcvMsg.ident ^ msgBuff->ident) & msgBuff->mask) == 0){
+                msgMatched = 1;
+                break;
+            }
+            msgBuff++;
+        }
+
+        /* Call specific function, which will process the message */
+        if(msgMatched) msgBuff->pFunct(msgBuff->object, &rcvMsg);
+
+#ifdef CO_LOG_CAN_MESSAGES
+        void CO_logMessage(const CanMsg *msg);
+        CO_logMessage((CanMsg*)&rcvMsg);
+#endif
+    }
+}
+#endif

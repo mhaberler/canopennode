@@ -1328,8 +1328,8 @@ function generateCO_OD_H(){
 		"\n"+
 		"*******************************************************************************/\n"+
 		"\n"+
-		"#ifndef _CO_OD"+ODfileNameReference+"_H\n"+
-		"#define _CO_OD"+ODfileNameReference+"_H\n"+
+		"#ifndef CO_OD"+ODfileNameReference+"_H\n"+
+		"#define CO_OD"+ODfileNameReference+"_H\n"+
 		"\n"+
 		"\n"+
 		"/*******************************************************************************\n"+

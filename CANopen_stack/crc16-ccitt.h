@@ -27,8 +27,8 @@
  */
 
 
-#ifndef _CRC16_CCITT_H
-#define _CRC16_CCITT_H
+#ifndef CRC16_CCITT_H
+#define CRC16_CCITT_H
 
 
 /**

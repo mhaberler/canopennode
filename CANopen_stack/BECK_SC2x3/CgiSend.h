@@ -27,8 +27,8 @@
  */
 
 
-#ifndef _CGI_SEND_H
-#define _CGI_SEND_H
+#ifndef CGI_SEND_H
+#define CGI_SEND_H
 
 #include "clib.h"
 #include "CO_driver.h"

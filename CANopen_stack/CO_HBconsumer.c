@@ -116,7 +116,7 @@ static uint32_t CO_ODF_1016(CO_ODF_arg_t *ODF_arg){
         HBconsTime = *value & 0xFFFF;
 
         if(*value & 0xFF800000)
-            return 0x06040043L;  /* General parameter incompatibility reason. */
+            return SDO_ABORT_PRAM_INCOMP;  /* General parameter incompatibility reason. */
 
         if(HBconsTime && NodeID){
             /* there must not be more entries with same index and time different than zero */
@@ -125,7 +125,7 @@ static uint32_t CO_ODF_1016(CO_ODF_arg_t *ODF_arg){
                 uint8_t NodeIDObj = (objectCopy >> 16) & 0xFF;
                 uint16_t HBconsTimeObj = objectCopy & 0xFFFF;
                 if((ODF_arg->subIndex-1)!=i && HBconsTimeObj && (NodeID == NodeIDObj))
-                    return 0x06040043L;  /* General parameter incompatibility reason. */
+                    return SDO_ABORT_PRAM_INCOMP;  /* General parameter incompatibility reason. */
             }
         }
 
@@ -163,7 +163,7 @@ int16_t CO_HBconsumer_init(
         CO_HBconsumer_monitoredNodeConfig(HBcons, i, HBcons->HBconsTime[i]);
 
     /* Configure Object dictionary entry at index 0x1016 */
-    CO_OD_configure(SDO, 0x1016, CO_ODF_1016, (void*)HBcons, 0, 0);
+    CO_OD_configure(SDO, OD_H1016_CONSUMER_HB_TIME, CO_ODF_1016, (void*)HBcons, 0, 0);
 
     return CO_ERROR_NO;
 }
@@ -200,12 +200,12 @@ void CO_HBconsumer_process(
 
                 if(monitoredNode->monStarted){
                     if(monitoredNode->timeoutTimer >= monitoredNode->time){
-                        CO_errorReport(HBcons->EM, ERROR_HEARTBEAT_CONSUMER, i);
+                        CO_errorReport(HBcons->EM, CO_EM_HEARTBEAT_CONSUMER, CO_EMC_HEARTBEAT, i);
                         monitoredNode->NMTstate = 0;
                     }
                     else if(monitoredNode->NMTstate == 0){
                         /* there was a bootup message */
-                        CO_errorReport(HBcons->EM, ERROR_HEARTBEAT_CONSUMER_REMOTE_RESET, i);
+                        CO_errorReport(HBcons->EM, CO_EM_HEARTBEAT_CONSUMER_REMOTE_RESET, CO_EMC_HEARTBEAT, i);
                     }
                 }
                 if(monitoredNode->NMTstate != CO_NMT_OPERATIONAL)

@@ -156,8 +156,8 @@ static uint32_t CO_ODF_nodeId(CO_ODF_arg_t *ODF_arg){
     value = (uint8_t*) ODF_arg->data;
 
     if(!ODF_arg->reading){
-        if(*value < 1)   return 0x06090032L;  /* Value of parameter written too low. */
-        if(*value > 127) return 0x06090031L;  /* Value of parameter written too high. */
+        if(*value < 1)   return SDO_ABORT_VALUE_LOW;  /* Value of parameter written too low. */
+        if(*value > 127) return SDO_ABORT_VALUE_HIGH;  /* Value of parameter written too high. */
     }
 
     return 0;
@@ -182,7 +182,7 @@ static uint32_t CO_ODF_bitRate(CO_ODF_arg_t *ODF_arg){
             case 1000:
                 break;
             default:
-                return 0x06090030L;  /* Invalid value for the parameter */
+                return SDO_ABORT_INVALID_VALUE;  /* Invalid value for the parameter */
         }
     }
 
@@ -376,9 +376,9 @@ int16_t CO_init(){
 
     err = CO_SDO_init(
             CO->SDO,
-            0x600 + nodeId,
-            0x580 + nodeId,
-            0x1200,
+            CO_CAN_ID_RSDO + nodeId,
+            CO_CAN_ID_TSDO + nodeId,
+            OD_H1200_SDO_SERVER_PARAM,
             0,
            &CO_OD[0],
             CO_OD_NoOfElements,
@@ -467,12 +467,12 @@ int16_t CO_init(){
                 CO->SDO,
                &CO->NMT->operatingState,
                 nodeId,
-                ((i<4) ? (CO_CAN_ID_RPDO0+i*0x100) : 0),
+                ((i<4) ? (CO_CAN_ID_RPDO_1+i*0x100) : 0),
                 0,
                 (CO_RPDOCommPar_t*) &OD_RPDOCommunicationParameter[i],
                 (CO_RPDOMapPar_t*) &OD_RPDOMappingParameter[i],
-                0x1400+i,
-                0x1600+i,
+                OD_H1400_RXPDO_1_PARAM+i,
+                OD_H1600_RXPDO_1_MAPPING+i,
                 CANdevRx,
                 CANdevRxIdx);
 
@@ -487,12 +487,12 @@ int16_t CO_init(){
                 CO->SDO,
                &CO->NMT->operatingState,
                 nodeId,
-                ((i<4) ? (CO_CAN_ID_TPDO0+i*0x100) : 0),
+                ((i<4) ? (CO_CAN_ID_TPDO_1+i*0x100) : 0),
                 0,
                 (CO_TPDOCommPar_t*) &OD_TPDOCommunicationParameter[i],
                 (CO_TPDOMapPar_t*) &OD_TPDOMappingParameter[i],
-                0x1800+i,
-                0x1A00+i,
+                OD_H1800_TXPDO_1_PARAM+i,
+                OD_H1A00_TXPDO_1_MAPPING+i,
                 CO->CANmodule[0],
                 CO_TXCAN_TPDO+i);
 
@@ -579,12 +579,12 @@ void CO_delete(){
 
 
 /******************************************************************************/
-uint8_t CO_process(
+CO_NMT_reset_cmd_t CO_process(
         CO_t                   *CO,
         uint16_t                timeDifference_ms)
 {
     uint8_t NMTisPreOrOperational = 0;
-    uint8_t reset = 0;
+    CO_NMT_reset_cmd_t reset = CO_RESET_NOT;
     static uint8_t ms50 = 0;
 
     if(CO->NMT->operatingState == CO_NMT_PRE_OPERATIONAL || CO->NMT->operatingState == CO_NMT_OPERATIONAL)

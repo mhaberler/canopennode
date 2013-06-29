@@ -27,8 +27,8 @@
  */
 
 
-#ifndef _CGI_OD_H
-#define _CGI_OD_H
+#ifndef CGI_OD_H
+#define CGI_OD_H
 
 #include "clib.h"
 #include "CO_driver.h"

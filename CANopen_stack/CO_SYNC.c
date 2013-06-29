@@ -48,14 +48,14 @@ static int16_t CO_SYNC_receive(void *object, CO_CANrxMsg_t *msg){
     if(*SYNC->operatingState == CO_NMT_OPERATIONAL || *SYNC->operatingState == CO_NMT_PRE_OPERATIONAL){
         if(SYNC->counterOverflowValue){
             if(msg->DLC != 1){
-                CO_errorReport(SYNC->EM, ERROR_SYNC_LENGTH, msg->DLC | 0x0100);
+                CO_errorReport(SYNC->EM, CO_EM_SYNC_LENGTH, CO_EMC_SYNC_DATA_LENGTH, msg->DLC | 0x0100);
                 return CO_ERROR_NO;
             }
             SYNC->counter = msg->data[0];
         }
         else{
             if(msg->DLC != 0){
-                CO_errorReport(SYNC->EM, ERROR_SYNC_LENGTH, msg->DLC);
+                CO_errorReport(SYNC->EM, CO_EM_SYNC_LENGTH, CO_EMC_SYNC_DATA_LENGTH, msg->DLC);
                 return CO_ERROR_NO;
             }
         }
@@ -84,12 +84,12 @@ static uint32_t CO_ODF_1005(CO_ODF_arg_t *ODF_arg){
         uint8_t configureSyncProducer = 0;
 
         /* only 11-bit CAN identifier is supported */
-        if(*value & 0x20000000L) return 0x06090030L; /* Invalid value for parameter (download only). */
+        if(*value & 0x20000000L) return SDO_ABORT_INVALID_VALUE; /* Invalid value for parameter (download only). */
 
         /* is 'generate Sync messge' bit set? */
         if(*value & 0x40000000L){
             /* if bit was set before, value can not be changed */
-            if(SYNC->isProducer) return 0x08000022L;   /* Data cannot be transferred or stored to the application because of the present device state. */
+            if(SYNC->isProducer) return SDO_ABORT_DATA_DEV_STATE;   /* Data cannot be transferred or stored to the application because of the present device state. */
             configureSyncProducer = 1;
         }
         SYNC->COB_ID = *value & 0x7FF;
@@ -174,7 +174,7 @@ static uint32_t CO_ODF_1019(CO_ODF_arg_t *ODF_arg){
     if(!ODF_arg->reading){
         uint8_t len = 0;
 
-        if(SYNC->periodTime) return 0x08000022L; /* Data cannot be transferred or stored to the application because of the present device state. */
+        if(SYNC->periodTime) return SDO_ABORT_DATA_DEV_STATE; /* Data cannot be transferred or stored to the application because of the present device state. */
         SYNC->counterOverflowValue = *value;
         if(SYNC->counterOverflowValue) len = 1;
 
@@ -231,9 +231,9 @@ int16_t CO_SYNC_init(
     SYNC->CANdevRxIdx = CANdevRxIdx;
 
     /* Configure Object dictionary entry at index 0x1005, 0x1006 and 0x1019 */
-    CO_OD_configure(SDO, 0x1005, CO_ODF_1005, (void*)SYNC, 0, 0);
-    CO_OD_configure(SDO, 0x1006, CO_ODF_1006, (void*)SYNC, 0, 0);
-    CO_OD_configure(SDO, 0x1019, CO_ODF_1019, (void*)SYNC, 0, 0);
+    CO_OD_configure(SDO, OD_H1005_COBID_SYNC,        CO_ODF_1005, (void*)SYNC, 0, 0);
+    CO_OD_configure(SDO, OD_H1006_COMM_CYCL_PERIOD,  CO_ODF_1006, (void*)SYNC, 0, 0);
+    CO_OD_configure(SDO, OD_H1019_SYNC_CNT_OVERFLOW, CO_ODF_1019, (void*)SYNC, 0, 0);
 
     /* configure SYNC CAN reception */
     CO_CANrxBufferInit(
@@ -310,7 +310,7 @@ uint8_t CO_SYNC_process(
 
         /* Verify timeout of SYNC */
         if(SYNC->periodTime && SYNC->timer > SYNC->periodTimeoutTime && *SYNC->operatingState == CO_NMT_OPERATIONAL)
-            CO_errorReport(SYNC->EM, ERROR_SYNC_TIME_OUT, SYNC->timer);
+            CO_errorReport(SYNC->EM, CO_EM_SYNC_TIME_OUT, CO_EMC_COMMUNICATION, SYNC->timer);
     }
 
     if(*SYNC->operatingState != CO_NMT_OPERATIONAL){

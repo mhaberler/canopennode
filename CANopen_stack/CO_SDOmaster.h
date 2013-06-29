@@ -27,8 +27,8 @@
  */
 
 
-#ifndef _CO_SDO_CLIENT_H
-#define _CO_SDO_CLIENT_H
+#ifndef CO_SDO_CLIENT_H
+#define CO_SDO_CLIENT_H
 
 
 /**

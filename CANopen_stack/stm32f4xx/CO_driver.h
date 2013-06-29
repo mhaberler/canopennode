@@ -26,8 +26,8 @@
  */
 
 
-#ifndef _CO_DRIVER_H
-#define _CO_DRIVER_H
+#ifndef CO_DRIVER_H
+#define CO_DRIVER_H
 
 #include "stm32f4xx_conf.h"
 

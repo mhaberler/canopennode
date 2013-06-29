@@ -59,7 +59,7 @@ uint32_t getTimer_us() {
 
 /* main ***********************************************************************/
 int main(void) {
-    uint8_t reset = 0;
+    CO_NMT_reset_cmd_t reset = CO_RESET_NOT;
 
     InitCanLeds();
     DBGU_Configure(115200);
@@ -90,7 +90,7 @@ int main(void) {
 
     TRACE_INFO("CO power-on (BTR=%dk Node=0x%x)\n\r", CO_OD_ROM.CANBitRate, CO_OD_ROM.CANNodeID);
     ttimer tprof;
-    while (reset != 2) {
+    while (reset != CO_RESET_APP) {
         /* CANopen communication reset - initialize CANopen objects *******************/
         static uint32_t timer1msPrevious;
         CO_ReturnError_t err;
@@ -103,17 +103,17 @@ int main(void) {
         err = CO_init();
         if (err) {
             TRACE_FATAL("CO_init\n\r");
-            /* CO_errorReport(CO->EM, ERROR_MEMORY_ALLOCATION_ERROR, err); */
+            /* CO_errorReport(CO->EM, CO_EM_MEMORY_ALLOCATION_ERROR, CO_EMC_SOFTWARE_INTERNAL, err); */
         }
 
         /* start Timer */
         canTimerOff = 0;
 
-        reset = 0;
+        reset = CO_RESET_NOT;
         timer1msPrevious = CO_timer1ms;
 
         TRACE_INFO("CO (re)start\n\r");
-        while (reset == 0) {
+        while (reset == CO_RESET_NOT) {
             saveTime(&tprof);
             /* loop for normal program execution ******************************************/
             uint32_t timer1msDiff;

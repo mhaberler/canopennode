@@ -52,7 +52,7 @@ static uint32_t CO_ODF_1003(CO_ODF_arg_t *ODF_arg){
         if(ODF_arg->subIndex == 0)
             *value = noOfErrors;
         else if(ODF_arg->subIndex > noOfErrors)
-            return 0x08000024L;  /* No data available. */
+            return SDO_ABORT_NO_DATA;  /* No data available. */
     }
     else{
         /* only '0' may be written to subIndex 0 */
@@ -60,10 +60,10 @@ static uint32_t CO_ODF_1003(CO_ODF_arg_t *ODF_arg){
             if(*value == 0)
                 EMpr->preDefErrNoOfErrors = 0;
             else
-                return 0x06090030L;  /* Invalid value for parameter */
+                return SDO_ABORT_INVALID_VALUE;  /* Invalid value for parameter */
         }
         else
-            return 0x06010002L;  /* Attempt to write a read only object. */
+            return SDO_ABORT_READONLY;  /* Attempt to write a read only object. */
     }
 
     return 0;
@@ -125,8 +125,8 @@ int16_t CO_EM_init(
     for(i=0; i<errorStatusBitsSize; i++) EM->errorStatusBits[i] = 0;
 
     /* Configure Object dictionary entry at index 0x1003 and 0x1014 */
-    CO_OD_configure(SDO, 0x1003, CO_ODF_1003, (void*)EMpr, 0, 0);
-    CO_OD_configure(SDO, 0x1014, CO_ODF_1014, (void*)&SDO->nodeId, 0, 0);
+    CO_OD_configure(SDO, OD_H1003_PREDEF_ERR_FIELD, CO_ODF_1003, (void*)EMpr, 0, 0);
+    CO_OD_configure(SDO, OD_H1014_COBID_EMERGENCY, CO_ODF_1014, (void*)&SDO->nodeId, 0, 0);
 
     /* configure emergency message CAN transmission */
     EMpr->CANdev = CANdev;
@@ -157,7 +157,7 @@ void CO_EM_process(
     /* verify errors from driver and other */
     CO_CANverifyErrors(EMpr->CANdev);
     if(EM->wrongErrorReport){
-        CO_errorReport(EM, ERROR_WRONG_ERROR_REPORT, EM->wrongErrorReport);
+        CO_errorReport(EM, CO_EM_WRONG_ERROR_REPORT, CO_EMC_SOFTWARE_INTERNAL, EM->wrongErrorReport);
         EM->wrongErrorReport = 0;
     }
 
@@ -166,10 +166,10 @@ void CO_EM_process(
     errorRegister = 0;
     /* generic error */
     if(EM->errorStatusBits[5])
-        errorRegister |= 0x01;
+        errorRegister |= CO_ERR_REG_GENERIC_ERR;
     /* communication error (overrun, error state) */
     if(EM->errorStatusBits[2] || EM->errorStatusBits[3])
-        errorRegister |= 0x10;
+        errorRegister |= CO_ERR_REG_COMM_ERR;
     *EMpr->errorRegister = (*EMpr->errorRegister & 0xEE) | errorRegister;
 
     /* inhibit time */
@@ -198,7 +198,7 @@ void CO_EM_process(
         /* verify message buffer overflow, then clear full flag */
         if(EM->bufFull == 2){
             EM->bufFull = 0;    /* will be updated below */
-            CO_errorReport(EM, ERROR_EMERGENCY_BUFFER_FULL, 0);
+            CO_errorReport(EM, CO_EM_EMERGENCY_BUFFER_FULL, CO_EMC_GENERIC, 0);
         }
         else{
             EM->bufFull = 0;
@@ -232,7 +232,7 @@ int8_t CO_errorReport(CO_EM_t *EM, uint8_t errorBit, uint16_t errorCode, uint32_
 
     if(!EM) return -1;
 
-    /* if errorBit value not supported, send emergency 'ERROR_WRONG_ERROR_REPORT' */
+    /* if errorBit value not supported, send emergency 'CO_EM_WRONG_ERROR_REPORT' */
     if(index >= EM->errorStatusBitsSize){
         EM->wrongErrorReport = errorBit;
         return -1;
@@ -270,7 +270,7 @@ int8_t CO_errorReport(CO_EM_t *EM, uint8_t errorBit, uint16_t errorCode, uint32_
 
 
 /******************************************************************************/
-int8_t CO_errorReset(CO_EM_t *EM, uint8_t errorBit, uint16_t errorCode, uint32_t infoCode){
+int8_t CO_errorReset(CO_EM_t *EM, uint8_t errorBit, uint32_t infoCode){
     uint8_t index = errorBit >> 3;
     uint8_t bitmask = 1 << (errorBit & 0x7);
     uint8_t *errorStatusBits = &EM->errorStatusBits[index];
@@ -278,7 +278,7 @@ int8_t CO_errorReset(CO_EM_t *EM, uint8_t errorBit, uint16_t errorCode, uint32_t
 
     if(!EM) return -1;
 
-    /* if errorBit value not supported, send emergency 'ERROR_WRONG_ERROR_REPORT' */
+    /* if errorBit value not supported, send emergency 'CO_EM_WRONG_ERROR_REPORT' */
     if(index >= EM->errorStatusBitsSize){
         EM->wrongErrorReport = errorBit;
         return -1;
@@ -317,7 +317,7 @@ int8_t CO_errorReset(CO_EM_t *EM, uint8_t errorBit, uint16_t errorCode, uint32_t
 
 
 /******************************************************************************/
-int8_t CO_isError(CO_EM_t *EM, uint8_t errorBit, uint16_t errorCode){
+int8_t CO_isError(CO_EM_t *EM, uint8_t errorBit){
     uint8_t index = errorBit >> 3;
     uint8_t bitmask = 1 << (errorBit & 0x7);
 

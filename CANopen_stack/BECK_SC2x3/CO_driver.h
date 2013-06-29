@@ -25,8 +25,8 @@
  */
 
 
-#ifndef _CO_DRIVER_H
-#define _CO_DRIVER_H
+#ifndef CO_DRIVER_H
+#define CO_DRIVER_H
 
 
 #include <clib.h>       /* processor header file */
@@ -46,7 +46,7 @@
 #define CO_LOG_CAN_MESSAGES                 /* Call external function for each received
                                                or transmitted CAN message. */
 #define CO_SDO_BUFFER_SIZE           889    /* Override default SDO buffer size. */
-
+//#define USE_CAN_CALLBACKS                   /* If defined, callbacks will be used for CAN RX and TX instead pooling.
 
 /* Data types */
     typedef unsigned char           uint8_t;

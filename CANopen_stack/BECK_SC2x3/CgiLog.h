@@ -27,8 +27,8 @@
  */
 
 
-#ifndef _CGI_LOG_H
-#define _CGI_LOG_H
+#ifndef CGI_LOG_H
+#define CGI_LOG_H
 
 #include "clib.h"
 #include "CO_driver.h"

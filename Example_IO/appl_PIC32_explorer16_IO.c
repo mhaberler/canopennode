@@ -52,12 +52,14 @@
  * Values 30 to 3F are used here as application informative errors.
  * Values 40 to 4F are used here as application critical errors.
  */
-    #if ODL_errorStatusBits_stringLength < 10
-        #error Error in Object Dictionary!
-    #endif
+#if ODL_errorStatusBits_stringLength < 10
+    #error Error in Object Dictionary!
+#endif
 
-    #define ERROR_TEST1_INFORMATIVE                    0x30, 0x1000
-    #define ERROR_TEST2_CRITICAL                       0x40, 0x5000
+typedef enum{
+    CO_EMA_TEST1_INFORMATIVE        = 0x30,
+    CO_EMA_TEST2_CRITICAL           = 0x40
+}CO_EM_ApplicationErrorStatusBits_t;
 
 
 /*
@@ -142,8 +144,8 @@ void program1ms(void){
     /* LATAbits.LATA3 = (CO->HBcons->allMonitoredOperational) ? 1 : 0; */
 
     /* Example error is simulated from buttons on Explorer16 */
-    if(!PORTDbits.RD6) CO_errorReport(CO->EM, ERROR_TEST1_INFORMATIVE, 0x12345678L);
-    if(!PORTDbits.RD7) CO_errorReset(CO->EM, ERROR_TEST1_INFORMATIVE, 0xAAAAAABBL);
+    if(!PORTDbits.RD6) CO_errorReport(CO->EM, CO_EMA_TEST1_INFORMATIVE, CO_EMC_GENERIC, 0x12345678L);
+    if(!PORTDbits.RD7) CO_errorReset(CO->EM, CO_EMA_TEST1_INFORMATIVE, 0xAAAAAABBL);
 
 
     /* Prepare TPDO from buttons on Explorer16. */

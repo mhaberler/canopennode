@@ -393,7 +393,7 @@ void CgiLogEmcyProcess(CgiLog_t *CgiLog){
         if((SramOfs + 50) > CgiLog->emcyBufSize) break;/* SRAM is full */
         if((SramOfs + 100) > CgiLog->emcyBufSize){
             /* write emergency about the buffer full */
-            CgiLogEmcyProcessOvf(&tBuf[start], ERROR_EMERGENCY_BUFFER_FULL);
+            CgiLogEmcyProcessOvf(&tBuf[start], CO_EM_EMERGENCY_BUFFER_FULL, CO_EMC_GENERIC);
         }
         uint8_t  nodeId         = tBuf[start+7]&0x7F;
         uint16_t errorCode      = (uint16_t) tBuf[start+9] << 8 | tBuf[start+8];

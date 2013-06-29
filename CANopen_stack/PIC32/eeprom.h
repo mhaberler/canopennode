@@ -25,8 +25,8 @@
  */
 
 
-#ifndef _EEPROM_H
-#define _EEPROM_H
+#ifndef EEPROM_H
+#define EEPROM_H
 
 
 /* For documentation see file genericDriver/eeprom.h */

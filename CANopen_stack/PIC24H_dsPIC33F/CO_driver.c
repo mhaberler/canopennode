@@ -492,7 +492,7 @@ int16_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer){
     /* Verify overflow */
     if(buffer->bufferFull){
         if(!CANmodule->firstCANtxMessage)/* don't set error, if bootup message is still on buffers */
-            CO_errorReport((CO_EM_t*)CANmodule->EM, ERROR_CAN_TX_OVERFLOW, 0);
+            CO_errorReport((CO_EM_t*)CANmodule->EM, CO_EM_CAN_TX_OVERFLOW, CO_EMC_CAN_OVERRUN, (buffer->ident >> 2) & 0x7FF);
         err = CO_ERROR_TX_OVERFLOW;
     }
 
@@ -551,7 +551,7 @@ void CO_CANclearPendingSyncPDOs(CO_CANmodule_t *CANmodule){
 
 
     if(tpdoDeleted){
-        CO_errorReport((CO_EM_t*)CANmodule->EM, ERROR_TPDO_OUTSIDE_WINDOW, tpdoDeleted);
+        CO_errorReport((CO_EM_t*)CANmodule->EM, CO_EM_TPDO_OUTSIDE_WINDOW, CO_EMC_COMMUNICATION, tpdoDeleted);
     }
 }
 
@@ -569,34 +569,34 @@ void CO_CANverifyErrors(CO_CANmodule_t *CANmodule){
 
         /* CAN RX bus overflow */
         if(err & 0xC0){
-            CO_errorReport(EM, ERROR_CAN_RXB_OVERFLOW, err);
+            CO_errorReport(EM, CO_EM_CAN_RXB_OVERFLOW, CO_EMC_CAN_OVERRUN, err);
             CAN_REG(CANmodule->CANbaseAddress, C_INTF) &= 0xFFFB;/* clear bits */
         }
 
         /* CAN TX bus off */
-        if(err & 0x20) CO_errorReport(EM, ERROR_CAN_TX_BUS_OFF, err);
-        else           CO_errorReset(EM, ERROR_CAN_TX_BUS_OFF, err);
+        if(err & 0x20) CO_errorReport(EM, CO_EM_CAN_TX_BUS_OFF, CO_EMC_BUS_OFF_RECOVERED, err);
+        else           CO_errorReset(EM, CO_EM_CAN_TX_BUS_OFF, err);
 
         /* CAN TX bus passive */
         if(err & 0x10){
-            if(!CANmodule->firstCANtxMessage) CO_errorReport(EM, ERROR_CAN_TX_BUS_PASSIVE, err);
+            if(!CANmodule->firstCANtxMessage) CO_errorReport(EM, CO_EM_CAN_TX_BUS_PASSIVE, CO_EMC_CAN_PASSIVE, err);
         }
         else{
             int16_t wasCleared;
-            wasCleared =        CO_errorReset(EM, ERROR_CAN_TX_BUS_PASSIVE, err);
-            if(wasCleared == 1) CO_errorReset(EM, ERROR_CAN_TX_OVERFLOW, err);
+            wasCleared =        CO_errorReset(EM, CO_EM_CAN_TX_BUS_PASSIVE, err);
+            if(wasCleared == 1) CO_errorReset(EM, CO_EM_CAN_TX_OVERFLOW, err);
         }
 
         /* CAN RX bus passive */
-        if(err & 0x08) CO_errorReport(EM, ERROR_CAN_RX_BUS_PASSIVE, err);
-        else           CO_errorReset(EM, ERROR_CAN_RX_BUS_PASSIVE, err);
+        if(err & 0x08) CO_errorReport(EM, CO_EM_CAN_RX_BUS_PASSIVE, CO_EMC_CAN_PASSIVE, err);
+        else           CO_errorReset(EM, CO_EM_CAN_RX_BUS_PASSIVE, err);
 
         /* CAN TX or RX bus warning */
         if(err & 0x19){
-            CO_errorReport(EM, ERROR_CAN_BUS_WARNING, err);
+            CO_errorReport(EM, CO_EM_CAN_BUS_WARNING, CO_EMC_NO_ERROR, err);
         }
         else{
-            CO_errorReset(EM, ERROR_CAN_BUS_WARNING, err);
+            CO_errorReset(EM, CO_EM_CAN_BUS_WARNING, err);
         }
     }
 }

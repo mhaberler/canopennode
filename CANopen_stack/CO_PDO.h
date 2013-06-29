@@ -26,8 +26,8 @@
  */
 
 
-#ifndef _CO_PDO_H
-#define _CO_PDO_H
+#ifndef CO_PDO_H
+#define CO_PDO_H
 
 
 /**
@@ -234,7 +234,7 @@ typedef struct{
  * @param operatingState Pointer to variable indicating CANopen device NMT internal state.
  * @param nodeId CANopen Node ID of this device. If default COB_ID is used, value will be added.
  * @param defaultCOB_ID Default COB ID for this PDO (without NodeId).
- * See @ref CO_CANopen_identifiers.
+ * See #CO_Default_CAN_ID_t
  * @param restrictionFlags Flag bits indicates, how PDO communication
  * and mapping parameters are handled:
  *  - Bit1: If true, communication parameters are writeable only in pre-operational NMT state.
@@ -279,7 +279,7 @@ int16_t CO_RPDO_init(
  * @param operatingState Pointer to variable indicating CANopen device NMT internal state.
  * @param nodeId CANopen Node ID of this device. If default COB_ID is used, value will be added.
  * @param defaultCOB_ID Default COB ID for this PDO (without NodeId).
- * See @ref CO_CANopen_identifiers.
+ * See #CO_Default_CAN_ID_t
  * @param restrictionFlags Flag bits indicates, how PDO communication
  * and mapping parameters are handled:
  *  - Bit1: If true, communication parameters are writeable only in pre-operational NMT state.
@@ -318,7 +318,7 @@ int16_t CO_TPDO_init(
  *
  * Function verifies if variable mapped to TPDO has changed its value. Verified
  * are only variables, which has set attribute _CO_ODA_TPDO_DETECT_COS_ in
- * #CO_SDO_OD_attributes.
+ * #CO_SDO_OD_attributes_t.
  *
  * Function may be called by application just before CO_TPDO_process() function,
  * for example: `TPDOx->sendRequest = CO_TPDOisCOS(TPDOx); CO_TPDO_process(TPDOx, ....`

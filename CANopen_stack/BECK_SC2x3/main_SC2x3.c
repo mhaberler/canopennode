@@ -55,6 +55,12 @@
     char_t CgiSendBuf[CgiSendBufSize];
 
 
+/* Receive pooling function from driver */
+#ifndef USE_CAN_CALLBACKS
+    void CO_CANreceive(CO_CANmodule_t *CANmodule);
+#endif
+
+
 /* Variables for timer task */
     static void TaskTimer(void);
     static RTX_ID TaskTimerID = 0;
@@ -77,7 +83,7 @@
 
 /* main ***********************************************************************/
 int main (void){
-    uint8_t reset = 0;
+    CO_NMT_reset_cmd_t reset = CO_RESET_NOT;
     uint8_t powerOn = 1;
 
     printf("\nCANopenNode - starting ...");
@@ -142,7 +148,7 @@ int main (void){
     OD_powerOnCounter++;
 
 
-    while(reset < 2){
+    while(reset != CO_RESET_APP && reset != CO_RESET_QUIT){
 /* CANopen communication reset - initialize CANopen objects *******************/
         CO_ReturnError_t err;
         uint16_t timer1msPrevious;
@@ -159,7 +165,7 @@ int main (void){
         if(err){
             printf("\nError: CANopen initialization failed.");
             return 0;
-            /* CO_errorReport(CO->EM, ERROR_MEMORY_ALLOCATION_ERROR, err); */
+            /* CO_errorReport(CO->EM, CO_EM_MEMORY_ALLOCATION_ERROR, CO_EMC_SOFTWARE_INTERNAL, err); */
         }
 
 
@@ -172,7 +178,7 @@ int main (void){
 
         /* just for info */
         if(powerOn){
-            CO_errorReport(CO->EM, ERROR_MICROCONTROLLER_RESET, OD_powerOnCounter);
+            CO_errorReport(CO->EM, CO_EM_MICROCONTROLLER_RESET, CO_EMC_NO_ERROR, OD_powerOnCounter);
             powerOn = 0;
         }
 
@@ -191,12 +197,12 @@ int main (void){
 
         OD_performance[ODA_performance_mainCycleMaxTime] = 0;
         OD_performance[ODA_performance_timerCycleMaxTime] = 0;
-        reset = 0;
+        reset = CO_RESET_NOT;
         timer1msPrevious = CO_timer1ms;
         printf("\nCANopenNode - running ...");
 
 
-        while(reset == 0){
+        while(reset == CO_RESET_NOT){
 /* loop for normal program execution ******************************************/
             uint16_t timer1msCopy, timer1msDiff;
 
@@ -215,7 +221,7 @@ int main (void){
             /* CANopen process */
             reset = CO_process(CO, timer1msDiff);
 
-            if(kbhit()) if(getch() == 'q') reset = 3; /* quit only, no reboot */
+            if(kbhit()) if(getch() == 'q') reset = CO_RESET_QUIT; /* quit only, no reboot */
 
             CgiLogEmcyProcess(CgiLog);
 
@@ -251,7 +257,7 @@ int main (void){
 
 
     printf("\nCANopenNode finished");
-    if(reset == 2) BIOS_Reboot(); /* CANopen reset node */
+    if(reset == CO_RESET_APP) BIOS_Reboot(); /* CANopen reset node */
     return 0;
 }
 
@@ -265,12 +271,20 @@ static void TaskTimer(void){
     /* verify overflow */
     if(catchUp++){
         OD_performance[ODA_performance_timerCycleMaxTime] = 100;
-        CO_errorReport(CO->EM, ERROR_ISR_TIMER_OVERFLOW, 0);
+        CO_errorReport(CO->EM, CO_EM_ISR_TIMER_OVERFLOW, CO_EMC_SOFTWARE_INTERNAL, 0);
         return;
     }
 
     /* read start time for performance measurement */
     uint32_t TB_prev = readTB();
+
+#ifndef USE_CAN_CALLBACKS
+    /* process received CAN messages */
+    CO_CANreceive(CO->CANmodule[0]);
+#if CO_NO_CAN_MODULES >= 2
+    CO_CANreceive(CO->CANmodule[1]);
+#endif
+#endif
 
     CO_process_RPDO(CO);
 
@@ -293,6 +307,7 @@ static void TaskTimer(void){
 }
 
 
+#ifdef USE_CAN_CALLBACKS
 /* CAN callback function ******************************************************/
 int CAN1callback(CanEvent event, const CanMsg *msg){
     return CO_CANinterrupt(CO->CANmodule[0], event, msg);
@@ -301,3 +316,4 @@ int CAN1callback(CanEvent event, const CanMsg *msg){
 int CAN2callback(CanEvent event, const CanMsg *msg){
     return CO_CANinterrupt(CO->CANmodule[1], event, msg);
 }
+#endif

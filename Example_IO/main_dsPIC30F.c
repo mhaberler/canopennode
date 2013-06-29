@@ -66,7 +66,7 @@
 
 /* main ***********************************************************************/
 int main (void){
-    uint8_t   reset = 0;
+    CO_NMT_reset_cmd_t reset = CO_RESET_NOT;
 
     /* Initialize two CAN led diodes */
     TRISFbits.TRISF4 = 0; LATFbits.LATF4 = 0;
@@ -90,7 +90,7 @@ int main (void){
     /* increase variable each startup. Variable is stored in eeprom. */
     OD_powerOnCounter++;
 
-    while(reset != 2){
+    while(reset != CO_RESET_APP){
 /* CANopen communication reset - initialize CANopen objects *******************/
         static uint16_t timer1msPrevious;
         CO_ReturnError_t err;
@@ -105,7 +105,7 @@ int main (void){
         err = CO_init();
         if(err){
             while(1) ClrWdt();
-            /* CO_errorReport(CO->EM, ERROR_MEMORY_ALLOCATION_ERROR, err); */
+            /* CO_errorReport(CO->EM, CO_EM_MEMORY_ALLOCATION_ERROR, CO_EMC_SOFTWARE_INTERNAL, err); */
         }
 
         /* start CAN */
@@ -126,10 +126,10 @@ int main (void){
         CO_CAN_ISR_PRIORITY = 5;   /* CAN1 Interrupt - Set higher priority than timer */
         CO_CAN_ISR_ENABLE = 1;     /* CAN1 Interrupt - Enable interrupt */
 
-        reset = 0;
+        reset = CO_RESET_NOT;
         timer1msPrevious = CO_timer1ms;
 
-        while(reset == 0){
+        while(reset == CO_RESET_NOT){
 /* loop for normal program execution ******************************************/
             uint16_t timer1msCopy, timer1msDiff;
             static uint16_t TMR_TMR_PREV = 0;
@@ -197,7 +197,7 @@ CO_TIMER_ISR(){
 
     /* verify timer overflow */
     if(CO_TMR_ISR_FLAG == 1){
-        CO_errorReport(CO->EM, ERROR_ISR_TIMER_OVERFLOW, 0);
+        CO_errorReport(CO->EM, CO_EM_ISR_TIMER_OVERFLOW, CO_EMC_SOFTWARE_INTERNAL, 0);
         CO_TMR_ISR_FLAG = 0;
     }
 

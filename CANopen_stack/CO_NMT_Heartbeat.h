@@ -26,8 +26,8 @@
  */
 
 
-#ifndef _CO_NMT_HEARTBEAT_H
-#define _CO_NMT_HEARTBEAT_H
+#ifndef CO_NMT_HEARTBEAT_H
+#define CO_NMT_HEARTBEAT_H
 
 
 /**
@@ -37,29 +37,29 @@
  *
  * CANopen Network management and Heartbeat producer protocol.
  * 
- * CANopen device can be in one of the #CO_NMT_internalState
+ * CANopen device can be in one of the #CO_NMT_internalState_t
  *  - Initializing. It is active before CANopen is initialized.
  *  - Pre-operational. All CANopen objects are active, except PDOs.
  *  - Operational. Process data objects (PDOs) are active too.
  *  - Stopped. Only Heartbeat producer and NMT consumer are active.
  *
  * NMT master can change the internal state of the devices by sending
- * #CO_NMT_commands.
+ * #CO_NMT_command_t.
  * 
  * ###NMT message contents:
  *   
  *   Byte | Description
  *   -----|-----------------------------------------------------------
- *     0  | #CO_NMT_commands
+ *     0  | #CO_NMT_command_t
  *     1  | Node ID. If zero, command addresses all nodes.
  *
  * ###Heartbeat message contents:
  *
  *   Byte | Description
  *   -----|-----------------------------------------------------------
- *     0  | #CO_NMT_internalState
+ *     0  | #CO_NMT_internalState_t
  *
- * @see @ref CO_CANopen_identifiers
+ * @see #CO_Default_CAN_ID_t
  *
  * ###Status LED diodes
  * Macros for @ref CO_NMT_statusLEDdiodes are also implemented in this object.
@@ -96,7 +96,7 @@ typedef enum{
     CO_NMT_PRE_OPERATIONAL          = 127,  /**< Device is in pre-operational state */
     CO_NMT_OPERATIONAL              = 5,    /**< Device is in operational state */
     CO_NMT_STOPPED                  = 4     /**< Device is stopped */
-}CO_NMT_internalState;
+}CO_NMT_internalState_t;
 
 
 /**
@@ -108,7 +108,19 @@ typedef enum{
     CO_NMT_ENTER_PRE_OPERATIONAL    = 128,  /**< Put device into pre-operational */
     CO_NMT_RESET_NODE               = 129,  /**< Reset device */
     CO_NMT_RESET_COMMUNICATION      = 130   /**< Reset CANopen communication on device */
-}CO_NMT_commands;
+}CO_NMT_command_t;
+
+
+/**
+ * Return code for CO_NMT_process() that tells application code what to
+ * reset.
+ */
+typedef enum{
+	CO_RESET_NOT  = 0,/**< Normal return, no action */
+	CO_RESET_COMM = 1,/**< Application must provide communication reset. */
+	CO_RESET_APP  = 2,/**< Application must provide complete device reset */
+	CO_RESET_QUIT = 3 /**< Application must quit, no reset of microcontroller (command is not requested by the stack.) */
+}CO_NMT_reset_cmd_t;
 
 
 /**
@@ -193,11 +205,9 @@ void CO_NMT_blinkingProcess50ms(CO_NMT_t *NMT);
  * Object controls, if device should leave NMT operational state.
  * Length of array must be 6. If pointer is NULL, no calculation is made.
  *
- * @return 0: Normal return.
- * @return 1: Application must make communication reset.
- * @return 2: Application must make complete device reset.
+ * @return #CO_NMT_reset_cmd_t
  */
-uint8_t CO_NMT_process(
+CO_NMT_reset_cmd_t CO_NMT_process(
         CO_NMT_t               *NMT,
         uint16_t                timeDifference_ms,
         uint16_t                HBtime,

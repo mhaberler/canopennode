@@ -26,8 +26,8 @@
  */
 
 
-#ifndef _CO_SYNC_H
-#define _CO_SYNC_H
+#ifndef CO_SYNC_H
+#define CO_SYNC_H
 
 
 /**
@@ -37,7 +37,7 @@
  *
  * CANopen SYNC object protocol.
  *
- * For CAN identifier see @ref CO_CANopen_identifiers.
+ * For CAN identifier see #CO_Default_CAN_ID_t
  *
  * SYNC message is used for synchronization of the nodes on network. There is
  * one SYNC producer and zero or more SYNC consumers.

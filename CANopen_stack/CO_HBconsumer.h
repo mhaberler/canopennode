@@ -26,8 +26,8 @@
  */
 
 
-#ifndef _CO_HB_CONS_H
-#define _CO_HB_CONS_H
+#ifndef CO_HB_CONS_H
+#define CO_HB_CONS_H
 
 
 /**

@@ -93,7 +93,7 @@
 
 /* main ***********************************************************************/
 int main (void){
-    uint8_t reset = 0;
+    CO_NMT_reset_cmd_t reset = CO_RESET_NOT;
 
     /* Configure system for maximum performance and enable multi vector interrupts. */
     SYSTEMConfig(CO_FSYS*1000, SYS_CFG_WAIT_STATES | SYS_CFG_PCACHE);
@@ -125,7 +125,7 @@ int main (void){
     OD_powerOnCounter++;
 
 
-    while(reset < 2){
+    while(reset != CO_RESET_APP){
 /* CANopen communication reset - initialize CANopen objects *******************/
         CO_ReturnError_t err;
         uint16_t timer1msPrevious;
@@ -141,7 +141,7 @@ int main (void){
         err = CO_init();
         if(err){
             while(1) ClearWDT();
-            /* CO_errorReport(CO->EM, ERROR_MEMORY_ALLOCATION_ERROR, err); */
+            /* CO_errorReport(CO->EM, CO_EM_MEMORY_ALLOCATION_ERROR, CO_EMC_SOFTWARE_INTERNAL, err); */
         }
 
 
@@ -155,7 +155,7 @@ int main (void){
         timer1msPrevious = CO_timer1ms;
         OD_performance[ODA_performance_mainCycleMaxTime] = 0;
         OD_performance[ODA_performance_timerCycleMaxTime] = 0;
-        reset = 0;
+        reset = CO_RESET_NOT;
 
 
 
@@ -191,7 +191,7 @@ int main (void){
 #endif
 
 
-        while(reset == 0){
+        while(reset == CO_RESET_NOT){
 /* loop for normal program execution ******************************************/
             uint16_t timer1msCopy, timer1msDiff;
 
@@ -266,7 +266,7 @@ void __ISR(_TIMER_2_VECTOR, ipl3SOFT) CO_TimerInterruptHandler(void){
 
     /* verify timer overflow */
     if(CO_TMR_ISR_FLAG == 1){
-        CO_errorReport(CO->EM, ERROR_ISR_TIMER_OVERFLOW, 0);
+        CO_errorReport(CO->EM, CO_EM_ISR_TIMER_OVERFLOW, CO_EMC_SOFTWARE_INTERNAL, 0);
         CO_TMR_ISR_FLAG = 0;
     }
 

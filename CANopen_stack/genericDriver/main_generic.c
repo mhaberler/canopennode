@@ -37,7 +37,7 @@
 
 /* main ***********************************************************************/
 int main (void){
-    uint8_t reset = 0;
+    CO_NMT_reset_cmd_t reset = CO_RESET_NOT;
 
     /* Configure microcontroller. */
 
@@ -53,7 +53,7 @@ int main (void){
     OD_powerOnCounter++;
 
 
-    while(reset < 2){
+    while(reset != CO_RESET_APP){
 /* CANopen communication reset - initialize CANopen objects *******************/
         CO_ReturnError_t err;
         uint16_t timer1msPrevious;
@@ -65,13 +65,13 @@ int main (void){
         err = CO_init();
         if(err){
             while(1);
-            /* CO_errorReport(CO->EM, ERROR_MEMORY_ALLOCATION_ERROR, err); */
+            /* CO_errorReport(CO->EM, CO_EM_MEMORY_ALLOCATION_ERROR, CO_EMC_SOFTWARE_INTERNAL, err); */
         }
 
 
         /* initialize variables */
         timer1msPrevious = CO_timer1ms;
-        reset = 0;
+        reset = CO_RESET_NOT;
 
 
         /* Configure Timer interrupt function for execution every 1 millisecond */
@@ -88,7 +88,7 @@ int main (void){
         CO_CANsetNormalMode(ADDR_CAN1);
 
 
-        while(reset == 0){
+        while(reset == CO_RESET_NOT){
 /* loop for normal program execution ******************************************/
             uint16_t timer1msDiff;
 
@@ -149,7 +149,7 @@ void /* interrupt */ CO_TimerInterruptHandler(void){
 
     /* verify timer overflow (is flag set again?) */
     if(0){
-        CO_errorReport(CO->EM, ERROR_ISR_TIMER_OVERFLOW, 0);
+        CO_errorReport(CO->EM, CO_EM_ISR_TIMER_OVERFLOW, CO_EMC_SOFTWARE_INTERNAL, 0);
     }
 }
 

@@ -10,6 +10,7 @@
  * @ingroup     CO_CANopen
  * @version     SVN: \$Id$
  * @author      Janez Paternoster
+ * @author      Uwe Kindler
  * @copyright   2010 - 2013 Janez Paternoster
  *
  * This file is part of CANopenNode, an opensource CANopen Stack.
@@ -31,8 +32,8 @@
  */
 
 
-#ifndef _CANopen_H
-#define _CANopen_H
+#ifndef CANopen_H
+#define CANopen_H
 
 
 /**
@@ -57,30 +58,30 @@
 
 
 /**
- * @defgroup CO_CANopen_identifiers Default CANopen identifiers
- * @{
+ * Default CANopen identifiers.
  *
  * Default CANopen identifiers for CANopen communication objects. Same as
  * 11-bit addresses of CAN messages. These are default identifiers and
  * can be changed in CANopen. Especially PDO identifiers are confgured
  * in PDO linking phase of the CANopen network configuration.
  */
-    #define CO_CAN_ID_NMT_SERVICE       0x000   /**< Network management */
-    #define CO_CAN_ID_SYNC              0x080   /**< Synchronous message */
-    #define CO_CAN_ID_EMERGENCY         0x080   /**< Emergency messages (+nodeID) */
-    #define CO_CAN_ID_TIME_STAMP        0x100   /**< Time stamp message */
-    #define CO_CAN_ID_TPDO0             0x180   /**< Default TPDO1 (+nodeID) */
-    #define CO_CAN_ID_RPDO0             0x200   /**< Default RPDO1 (+nodeID) */
-    #define CO_CAN_ID_TPDO1             0x280   /**< Default TPDO2 (+nodeID) */
-    #define CO_CAN_ID_RPDO1             0x300   /**< Default RPDO2 (+nodeID) */
-    #define CO_CAN_ID_TPDO2             0x380   /**< Default TPDO3 (+nodeID) */
-    #define CO_CAN_ID_RPDO2             0x400   /**< Default RPDO3 (+nodeID) */
-    #define CO_CAN_ID_TPDO3             0x480   /**< Default TPDO4 (+nodeID) */
-    #define CO_CAN_ID_RPDO3             0x500   /**< Default RPDO5 (+nodeID) */
-    #define CO_CAN_ID_TSDO              0x580   /**< SDO response from server (+nodeID) */
-    #define CO_CAN_ID_RSDO              0x600   /**< SDO request from client (+nodeID) */
-    #define CO_CAN_ID_HEARTBEAT         0x700   /**< Heartbeat message */
-/** @} */
+typedef enum{
+     CO_CAN_ID_NMT_SERVICE       = 0x000,   /**< 0x000, Network management */
+     CO_CAN_ID_SYNC              = 0x080,   /**< 0x080, Synchronous message */
+     CO_CAN_ID_EMERGENCY         = 0x080,   /**< 0x080, Emergency messages (+nodeID) */
+     CO_CAN_ID_TIME_STAMP        = 0x100,   /**< 0x100, Time stamp message */
+     CO_CAN_ID_TPDO_1            = 0x180,   /**< 0x180, Default TPDO1 (+nodeID) */
+     CO_CAN_ID_RPDO_1            = 0x200,   /**< 0x200, Default RPDO1 (+nodeID) */
+     CO_CAN_ID_TPDO_2            = 0x280,   /**< 0x280, Default TPDO2 (+nodeID) */
+     CO_CAN_ID_RPDO_2            = 0x300,   /**< 0x300, Default RPDO2 (+nodeID) */
+     CO_CAN_ID_TPDO_3            = 0x380,   /**< 0x380, Default TPDO3 (+nodeID) */
+     CO_CAN_ID_RPDO_3            = 0x400,   /**< 0x400, Default RPDO3 (+nodeID) */
+     CO_CAN_ID_TPDO_4            = 0x480,   /**< 0x480, Default TPDO4 (+nodeID) */
+     CO_CAN_ID_RPDO_4            = 0x500,   /**< 0x500, Default RPDO5 (+nodeID) */
+     CO_CAN_ID_TSDO              = 0x580,   /**< 0x580, SDO response from server (+nodeID) */
+     CO_CAN_ID_RSDO              = 0x600,   /**< 0x600, SDO request from client (+nodeID) */
+     CO_CAN_ID_HEARTBEAT         = 0x700    /**< 0x700, Heartbeat message */
+}CO_Default_CAN_ID_t;
 
 
 /**
@@ -143,13 +144,13 @@ typedef struct{
  * @return #CO_ReturnError_t: CO_ERROR_NO, CO_ERROR_ILLEGAL_ARGUMENT,
  * CO_ERROR_OUT_OF_MEMORY, CO_ERROR_ILLEGAL_BAUDRATE
  */
-int16_t CO_init();
+int16_t CO_init(void);
 
 
 /**
  * Delete CANopen object and free memory. Must be called at program exit.
  */
-void CO_delete();
+void CO_delete(void);
 
 
 /**
@@ -161,11 +162,9 @@ void CO_delete();
  * @param CO This object
  * @param timeDifference_ms Time difference from previous function call in [milliseconds].
  *
- * @return 0: Normal return, no action.
- * @return 1: Application must provide communication reset.
- * @return 2: Application must provide complete device reset.
+ * @return #CO_NMT_reset_cmd_t
  */
-uint8_t CO_process(
+CO_NMT_reset_cmd_t CO_process(
         CO_t                   *CO,
         uint16_t                timeDifference_ms);
 

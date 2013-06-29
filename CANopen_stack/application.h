@@ -26,8 +26,8 @@
  */
 
 
-#ifndef _CO_APPLICATION_H
-#define _CO_APPLICATION_H
+#ifndef CO_APPLICATION_H
+#define CO_APPLICATION_H
 
 
 /**

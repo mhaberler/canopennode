@@ -160,7 +160,7 @@ int16_t CO_SDO_init(
     SDO->CANrxNew = 0;
 
     /* Configure Object dictionary entry at index 0x1200 */
-    if(ObjDictIndex_SDOServerParameter == 0x1200)
+    if(ObjDictIndex_SDOServerParameter == OD_H1200_SDO_SERVER_PARAM)
         CO_OD_configure(SDO, ObjDictIndex_SDOServerParameter, CO_ODF_1200, (void*)&SDO->nodeId, 0, 0);
 
     /* configure SDO server CAN reception */

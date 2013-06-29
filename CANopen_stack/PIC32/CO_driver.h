@@ -25,8 +25,8 @@
  */
 
 
-#ifndef _CO_DRIVER_H
-#define _CO_DRIVER_H
+#ifndef CO_DRIVER_H
+#define CO_DRIVER_H
 
 
 #include <p32xxxx.h>       /* processor header file */

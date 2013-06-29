@@ -57,9 +57,9 @@ static int16_t CO_NMT_receive(void *object, CO_CANrxMsg_t *msg){
                                                     NMT->operatingState = CO_NMT_OPERATIONAL;   break;
             case CO_NMT_ENTER_STOPPED:          NMT->operatingState = CO_NMT_STOPPED;           break;
             case CO_NMT_ENTER_PRE_OPERATIONAL:  NMT->operatingState = CO_NMT_PRE_OPERATIONAL;   break;
-            case CO_NMT_RESET_NODE:             NMT->resetCommand = 2;                          break;
-            case CO_NMT_RESET_COMMUNICATION:    NMT->resetCommand = 1;                          break;
-            default: CO_errorReport(NMT->EMpr->EM, ERROR_NMT_WRONG_COMMAND, command);
+            case CO_NMT_RESET_NODE:             NMT->resetCommand = CO_RESET_APP;               break;
+            case CO_NMT_RESET_COMMUNICATION:    NMT->resetCommand = CO_RESET_COMM;              break;
+            default: CO_errorReport(NMT->EMpr->EM, CO_EM_NMT_WRONG_COMMAND, CO_EMC_PROTOCOL_ERROR, command);
         }
     }
 
@@ -159,7 +159,7 @@ void CO_NMT_blinkingProcess50ms(CO_NMT_t *NMT){
 
 
 /******************************************************************************/
-uint8_t CO_NMT_process(
+CO_NMT_reset_cmd_t CO_NMT_process(
         CO_NMT_t               *NMT,
         uint16_t                timeDifference_ms,
         uint16_t                HBtime,
@@ -190,7 +190,7 @@ uint8_t CO_NMT_process(
 
     /* CAN passive flag */
     CANpassive = 0;
-    if(CO_isError(NMT->EMpr->EM, ERROR_CAN_TX_BUS_PASSIVE) || CO_isError(NMT->EMpr->EM, ERROR_CAN_RX_BUS_PASSIVE))
+    if(CO_isError(NMT->EMpr->EM, CO_EM_CAN_TX_BUS_PASSIVE) || CO_isError(NMT->EMpr->EM, CO_EM_CAN_RX_BUS_PASSIVE))
         CANpassive = 1;
 
 
@@ -203,16 +203,16 @@ uint8_t CO_NMT_process(
 
 
     /* CANopen red ERROR LED (DR 303-3) */
-    if(CO_isError(NMT->EMpr->EM, ERROR_CAN_TX_BUS_OFF))
+    if(CO_isError(NMT->EMpr->EM, CO_EM_CAN_TX_BUS_OFF))
         NMT->LEDredError = 1;
 
-    else if(CO_isError(NMT->EMpr->EM, ERROR_SYNC_TIME_OUT))
+    else if(CO_isError(NMT->EMpr->EM, CO_EM_SYNC_TIME_OUT))
         NMT->LEDredError = NMT->LEDtripleFlash;
 
-    else if(CO_isError(NMT->EMpr->EM, ERROR_HEARTBEAT_CONSUMER) || CO_isError(NMT->EMpr->EM, ERROR_HEARTBEAT_CONSUMER_REMOTE_RESET))
+    else if(CO_isError(NMT->EMpr->EM, CO_EM_HEARTBEAT_CONSUMER) || CO_isError(NMT->EMpr->EM, CO_EM_HEARTBEAT_CONSUMER_REMOTE_RESET))
         NMT->LEDredError = NMT->LEDdoubleFlash;
 
-    else if(CANpassive || CO_isError(NMT->EMpr->EM, ERROR_CAN_BUS_WARNING))
+    else if(CANpassive || CO_isError(NMT->EMpr->EM, CO_EM_CAN_BUS_WARNING))
         NMT->LEDredError = NMT->LEDsingleFlash;
 
     else if(errorRegister)
@@ -228,16 +228,16 @@ uint8_t CO_NMT_process(
 
         if(errorRegister){
             /* Communication error */
-            if(errorRegister&0x10){
+            if(errorRegister & CO_ERR_REG_COMM_ERR){
                 if(errorBehavior[1] == 0){
                     NMT->operatingState = CO_NMT_PRE_OPERATIONAL;
                 }
                 else if(errorBehavior[1] == 2){
                     NMT->operatingState = CO_NMT_STOPPED;
                 }
-                else if(CO_isError(NMT->EMpr->EM, ERROR_CAN_TX_BUS_OFF)
-                     || CO_isError(NMT->EMpr->EM, ERROR_HEARTBEAT_CONSUMER)
-                     || CO_isError(NMT->EMpr->EM, ERROR_HEARTBEAT_CONSUMER_REMOTE_RESET))
+                else if(CO_isError(NMT->EMpr->EM, CO_EM_CAN_TX_BUS_OFF)
+                     || CO_isError(NMT->EMpr->EM, CO_EM_HEARTBEAT_CONSUMER)
+                     || CO_isError(NMT->EMpr->EM, CO_EM_HEARTBEAT_CONSUMER_REMOTE_RESET))
                 {
                     if(errorBehavior[0] == 0){
                         NMT->operatingState = CO_NMT_PRE_OPERATIONAL;
@@ -249,19 +249,19 @@ uint8_t CO_NMT_process(
             }
 
             /* Generic error */
-            if(errorRegister&0x01){
+            if(errorRegister & CO_ERR_REG_GENERIC_ERR){
                 if      (errorBehavior[3] == 0) NMT->operatingState = CO_NMT_PRE_OPERATIONAL;
                 else if (errorBehavior[3] == 2) NMT->operatingState = CO_NMT_STOPPED;
             }
 
             /* Device profile error */
-            if(errorRegister&0x20){
+            if(errorRegister & CO_ERR_REG_DEV_PROFILE){
                 if      (errorBehavior[4] == 0) NMT->operatingState = CO_NMT_PRE_OPERATIONAL;
                 else if (errorBehavior[4] == 2) NMT->operatingState = CO_NMT_STOPPED;
             }
 
             /* Manufacturer specific error */
-            if(errorRegister&0x80){
+            if(errorRegister & CO_ERR_REG_MANUFACTURER){
                 if      (errorBehavior[5] == 0) NMT->operatingState = CO_NMT_PRE_OPERATIONAL;
                 else if (errorBehavior[5] == 2) NMT->operatingState = CO_NMT_STOPPED;
             }
