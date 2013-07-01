@@ -45,19 +45,19 @@
  * Eeprom object.
  */
 typedef struct{
-    uint8_t     *OD_EEPROMAddress;      /**< From EE_init_1() */
-    uint32_t     OD_EEPROMSize;         /**< From EE_init_1() */
-    uint8_t     *OD_ROMAddress;         /**< From EE_init_1() */
-    uint32_t     OD_ROMSize;            /**< From EE_init_1() */
+    uint8_t     *OD_EEPROMAddress;      /**< From CO_EE_init_1() */
+    uint32_t     OD_EEPROMSize;         /**< From CO_EE_init_1() */
+    uint8_t     *OD_ROMAddress;         /**< From CO_EE_init_1() */
+    uint32_t     OD_ROMSize;            /**< From CO_EE_init_1() */
     uint32_t     OD_EEPROMCurrentIndex; /**< Internal variable controls the OD_EEPROM vrite */
     uint8_t      OD_EEPROMWriteEnable;  /**< Writing to EEPROM is enabled */
-}EE_t;
+}CO_EE_t;
 
 
 /**
  * First part of eeprom initialization. Called after microcontroller reset.
  *
- * @param EE This object will be initialized.
+ * @param ee This object will be initialized.
  * @param OD_EEPROMAddress Address of OD_EEPROM structure from object dictionary.
  * @param OD_EEPROMSize Size of OD_EEPROM structure from object dictionary.
  * @param OD_ROMAddress Address of OD_ROM structure from object dictionary.
@@ -66,8 +66,8 @@ typedef struct{
  * @return #CO_ReturnError_t: CO_ERROR_NO, CO_ERROR_DATA_CORRUPT (Data in eeprom corrupt) or
  * CO_ERROR_CRC (CRC from MBR does not match the CRC of OD_ROM block in eeprom).
  */
-int16_t EE_init_1(
-        EE_t                   *EE,
+int16_t CO_EE_init_1(
+        CO_EE_t                *ee,
         uint8_t                *OD_EEPROMAddress,
         uint32_t                OD_EEPROMSize,
         uint8_t                *OD_ROMAddress,
@@ -77,16 +77,16 @@ int16_t EE_init_1(
 /**
  * Second part of eeprom initialization. Called after CANopen communication reset.
  *
- * @param EE          - This object.
- * @param EEStatus    - Return value from EE_init_1().
+ * @param ee          - This object.
+ * @param eeStatus    - Return value from CO_EE_init_1().
  * @param SDO         - SDO object.
- * @param EM          - Emergency object.
+ * @param em          - Emergency object.
  */
-void EE_init_2(
-        EE_t                   *EE, 
-        int16_t                 EEStatus,
+void CO_EE_init_2(
+        CO_EE_t                *ee, 
+        int16_t                 eeStatus,
         CO_SDO_t               *SDO,
-        CO_EM_t                *EM);
+        CO_EM_t                *em);
 
 
 /**
@@ -95,9 +95,9 @@ void EE_init_2(
  * Function must be called cyclically. It strores variables from OD_EEPROM data
  * block into eeprom byte by byte (only if values are different).
  *
- * @param EE This object.
+ * @param ee This object.
  */
-void EE_process(EE_t *EE);
+void CO_EE_process(CO_EE_t *ee);
 
 
 /** @} */

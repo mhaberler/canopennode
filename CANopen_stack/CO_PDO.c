@@ -305,7 +305,7 @@ static uint32_t CO_RPDOconfigMap(CO_RPDO_t* RPDO, uint8_t noOfMappedObjects){
                 &MBvar);
         if(ret){
             length = 0;
-            CO_errorReport(RPDO->EM, CO_EM_PDO_WRONG_MAPPING, CO_EMC_PROTOCOL_ERROR, map);
+            CO_errorReport(RPDO->em, CO_EM_PDO_WRONG_MAPPING, CO_EMC_PROTOCOL_ERROR, map);
             break;
         }
 
@@ -372,7 +372,7 @@ static uint32_t CO_TPDOconfigMap(CO_TPDO_t* TPDO, uint8_t noOfMappedObjects){
                 &MBvar);
         if(ret){
             length = 0;
-            CO_errorReport(TPDO->EM, CO_EM_PDO_WRONG_MAPPING, CO_EMC_PROTOCOL_ERROR, map);
+            CO_errorReport(TPDO->em, CO_EM_PDO_WRONG_MAPPING, CO_EMC_PROTOCOL_ERROR, map);
             break;
         }
 
@@ -689,7 +689,7 @@ static uint32_t CO_ODF_TPDOmap(CO_ODF_arg_t *ODF_arg){
 /******************************************************************************/
 int16_t CO_RPDO_init(
         CO_RPDO_t              *RPDO,
-        CO_EM_t                *EM,
+        CO_EM_t                *em,
         CO_SDO_t               *SDO,
         uint8_t                *operatingState,
         uint8_t                 nodeId,
@@ -704,7 +704,7 @@ int16_t CO_RPDO_init(
 {
 
     /* Configure object variables */
-    RPDO->EM = EM;
+    RPDO->em = em;
     RPDO->SDO = SDO;
     RPDO->RPDOCommPar = RPDOCommPar;
     RPDO->RPDOMapPar = RPDOMapPar;
@@ -732,7 +732,7 @@ int16_t CO_RPDO_init(
 /******************************************************************************/
 int16_t CO_TPDO_init(
         CO_TPDO_t              *TPDO,
-        CO_EM_t                *EM,
+        CO_EM_t                *em,
         CO_SDO_t               *SDO,
         uint8_t                *operatingState,
         uint8_t                 nodeId,
@@ -747,7 +747,7 @@ int16_t CO_TPDO_init(
 {
 
     /* Configure object variables */
-    TPDO->EM = EM;
+    TPDO->em = em;
     TPDO->SDO = SDO;
     TPDO->TPDOCommPar = TPDOCommPar;
     TPDO->TPDOMapPar = TPDOMapPar;

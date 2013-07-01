@@ -65,7 +65,7 @@ int main (void){
         err = CO_init();
         if(err){
             while(1);
-            /* CO_errorReport(CO->EM, CO_EM_MEMORY_ALLOCATION_ERROR, CO_EMC_SOFTWARE_INTERNAL, err); */
+            /* CO_errorReport(CO->em, CO_EM_MEMORY_ALLOCATION_ERROR, CO_EMC_SOFTWARE_INTERNAL, err); */
         }
 
 
@@ -92,10 +92,10 @@ int main (void){
 /* loop for normal program execution ******************************************/
             uint16_t timer1msDiff;
 
-            DISABLE_INTERRUPTS();
+            CO_DISABLE_INTERRUPTS();
             timer1msDiff = CO_timer1ms - timer1msPrevious;
             timer1msPrevious = CO_timer1ms;
-            ENABLE_INTERRUPTS();
+            CO_ENABLE_INTERRUPTS();
 
 
             /* Application interface */
@@ -112,7 +112,7 @@ int main (void){
 
 
 /* program exit ***************************************************************/
-    DISABLE_INTERRUPTS();
+    CO_DISABLE_INTERRUPTS();
 
 
     /* Application interface */
@@ -149,7 +149,7 @@ void /* interrupt */ CO_TimerInterruptHandler(void){
 
     /* verify timer overflow (is flag set again?) */
     if(0){
-        CO_errorReport(CO->EM, CO_EM_ISR_TIMER_OVERFLOW, CO_EMC_SOFTWARE_INTERNAL, 0);
+        CO_errorReport(CO->em, CO_EM_ISR_TIMER_OVERFLOW, CO_EMC_SOFTWARE_INTERNAL, 0);
     }
 }
 

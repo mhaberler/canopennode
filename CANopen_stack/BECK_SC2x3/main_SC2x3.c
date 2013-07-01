@@ -35,7 +35,7 @@
 
 /* Global variables and objects */
     volatile uint16_t   CO_timer1ms=0;  /* variable increments each millisecond */
-    EE_t                EEO;            /* Eeprom object */
+    CO_EE_t             CO_EEO;         /* Eeprom object */
 
     CgiLog_t            CgiLogObj;
     CgiCli_t            CgiCliObj;
@@ -122,7 +122,7 @@ int main (void){
 
 
     /* initialize EEPROM - part 1 */
-    int16_t EEStatus = EE_init_1(&EEO, SRAM.EEPROMptr, (uint8_t*) &CO_OD_EEPROM, sizeof(CO_OD_EEPROM),
+    int16_t eeStatus = CO_EE_init_1(&CO_EEO, SRAM.EEPROMptr, (uint8_t*) &CO_OD_EEPROM, sizeof(CO_OD_EEPROM),
                             (uint8_t*) &CO_OD_ROM, sizeof(CO_OD_ROM));
 
 
@@ -165,12 +165,12 @@ int main (void){
         if(err){
             printf("\nError: CANopen initialization failed.");
             return 0;
-            /* CO_errorReport(CO->EM, CO_EM_MEMORY_ALLOCATION_ERROR, CO_EMC_SOFTWARE_INTERNAL, err); */
+            /* CO_errorReport(CO->em, CO_EM_MEMORY_ALLOCATION_ERROR, CO_EMC_SOFTWARE_INTERNAL, err); */
         }
 
 
         /* initialize eeprom - part 2 */
-        EE_init_2(&EEO, EEStatus, CO->SDO, CO->EM);
+        CO_EE_init_2(&CO_EEO, eeStatus, CO->SDO, CO->em);
 
 
         communicationReset();
@@ -178,7 +178,7 @@ int main (void){
 
         /* just for info */
         if(powerOn){
-            CO_errorReport(CO->EM, CO_EM_MICROCONTROLLER_RESET, CO_EMC_NO_ERROR, OD_powerOnCounter);
+            CO_errorReport(CO->em, CO_EM_MICROCONTROLLER_RESET, CO_EMC_NO_ERROR, OD_powerOnCounter);
             powerOn = 0;
         }
 
@@ -239,7 +239,7 @@ int main (void){
             RTX_Sleep_Time(50);
 
 
-            EE_process(&EEO);
+            CO_EE_process(&CO_EEO);
         }
     }
 
@@ -271,7 +271,7 @@ static void TaskTimer(void){
     /* verify overflow */
     if(catchUp++){
         OD_performance[ODA_performance_timerCycleMaxTime] = 100;
-        CO_errorReport(CO->EM, CO_EM_ISR_TIMER_OVERFLOW, CO_EMC_SOFTWARE_INTERNAL, 0);
+        CO_errorReport(CO->em, CO_EM_ISR_TIMER_OVERFLOW, CO_EMC_SOFTWARE_INTERNAL, 0);
         return;
     }
 

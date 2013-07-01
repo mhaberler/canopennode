@@ -66,7 +66,7 @@ typedef struct{
  * CO_HBconsNode_t objects.
  */
 typedef struct{
-    CO_EM_t            *EM;             /**< From CO_HBconsumer_init() */
+    CO_EM_t            *em;             /**< From CO_HBconsumer_init() */
     const uint32_t     *HBconsTime;     /**< From CO_HBconsumer_init() */
     CO_HBconsNode_t    *monitoredNodes; /**< From CO_HBconsumer_init() */
     uint8_t             numberOfMonitoredNodes; /**< From CO_HBconsumer_init() */
@@ -84,7 +84,7 @@ typedef struct{
  * Function must be called in the communication reset section.
  *
  * @param HBcons This object will be initialized.
- * @param EM Emergency object.
+ * @param em Emergency object.
  * @param SDO SDO server object.
  * @param HBconsTime Pointer to _Consumer Heartbeat Time_ array
  * from Object Dictionary (index 0x1016). Size of array is equal to numberOfMonitoredNodes.
@@ -99,7 +99,7 @@ typedef struct{
  */
 int16_t CO_HBconsumer_init(
         CO_HBconsumer_t        *HBcons,
-        CO_EM_t                *EM,
+        CO_EM_t                *em,
         CO_SDO_t               *SDO,
         const uint32_t         *HBconsTime,
         CO_HBconsNode_t        *monitoredNodes,

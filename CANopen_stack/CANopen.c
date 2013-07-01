@@ -231,8 +231,8 @@ int16_t CO_init(){
   #endif
     CO->SDO                             = &COO_SDO;
     CO_SDO_ODExtensions                 = &COO_SDO_ODExtensions[0];
-    CO->EM                              = &COO_EM;
-    CO->EMpr                            = &COO_EMpr;
+    CO->em                              = &COO_EM;
+    CO->emPr                            = &COO_EMpr;
     CO->NMT                             = &COO_NMT;
     CO->SYNC                            = &COO_SYNC;
     for(i=0; i<CO_NO_RPDO; i++)
@@ -258,8 +258,8 @@ int16_t CO_init(){
       #endif
         CO->SDO                             = (CO_SDO_t *)          malloc(sizeof(CO_SDO_t));
         CO_SDO_ODExtensions                 = (CO_OD_extension_t*)  malloc(sizeof(CO_OD_extension_t) * CO_OD_NoOfElements);
-        CO->EM                              = (CO_EM_t *)           malloc(sizeof(CO_EM_t));
-        CO->EMpr                            = (CO_EMpr_t *)         malloc(sizeof(CO_EMpr_t));
+        CO->em                              = (CO_EM_t *)           malloc(sizeof(CO_EM_t));
+        CO->emPr                            = (CO_EMpr_t *)         malloc(sizeof(CO_EMpr_t));
         CO->NMT                             = (CO_NMT_t *)          malloc(sizeof(CO_NMT_t));
         CO->SYNC                            = (CO_SYNC_t *)         malloc(sizeof(CO_SYNC_t));
         for(i=0; i<CO_NO_RPDO; i++){
@@ -299,30 +299,30 @@ int16_t CO_init(){
                   + 0;
 
     errCnt = 0;
-    if(CO->CANmodule[0]                 == NULL) errCnt++;
-    if(CO_CANmodule_rxArray0            == NULL) errCnt++;
-    if(CO_CANmodule_txArray0            == NULL) errCnt++;
+    if(CO->CANmodule[0]                 == 0) errCnt++;
+    if(CO_CANmodule_rxArray0            == 0) errCnt++;
+    if(CO_CANmodule_txArray0            == 0) errCnt++;
   #if CO_NO_CAN_MODULES >= 2
-    if(CO->CANmodule[1]                 == NULL) errCnt++;
-    if(CO_CANmodule_rxArray1            == NULL) errCnt++;
-    if(CO_CANmodule_txArray1            == NULL) errCnt++;
+    if(CO->CANmodule[1]                 == 0) errCnt++;
+    if(CO_CANmodule_rxArray1            == 0) errCnt++;
+    if(CO_CANmodule_txArray1            == 0) errCnt++;
   #endif
-    if(CO->SDO                          == NULL) errCnt++;
-    if(CO_SDO_ODExtensions              == NULL) errCnt++;
-    if(CO->EM                           == NULL) errCnt++;
-    if(CO->EMpr                         == NULL) errCnt++;
-    if(CO->NMT                          == NULL) errCnt++;
-    if(CO->SYNC                         == NULL) errCnt++;
+    if(CO->SDO                          == 0) errCnt++;
+    if(CO_SDO_ODExtensions              == 0) errCnt++;
+    if(CO->em                           == 0) errCnt++;
+    if(CO->emPr                         == 0) errCnt++;
+    if(CO->NMT                          == 0) errCnt++;
+    if(CO->SYNC                         == 0) errCnt++;
     for(i=0; i<CO_NO_RPDO; i++){
-        if(CO->RPDO[i]                  == NULL) errCnt++;
+        if(CO->RPDO[i]                  == 0) errCnt++;
     }
     for(i=0; i<CO_NO_TPDO; i++){
-        if(CO->TPDO[i]                  == NULL) errCnt++;
+        if(CO->TPDO[i]                  == 0) errCnt++;
     }
-    if(CO->HBcons                       == NULL) errCnt++;
-    if(CO_HBcons_monitoredNodes         == NULL) errCnt++;
+    if(CO->HBcons                       == 0) errCnt++;
+    if(CO_HBcons_monitoredNodes         == 0) errCnt++;
   #if CO_NO_SDO_CLIENT == 1
-    if(CO->SDOclient                    == NULL) errCnt++;
+    if(CO->SDOclient                    == 0) errCnt++;
   #endif
 
     if(errCnt != 0) return CO_ERROR_OUT_OF_MEMORY;
@@ -393,8 +393,8 @@ int16_t CO_init(){
 
 
     err = CO_EM_init(
-            CO->EM,
-            CO->EMpr,
+            CO->em,
+            CO->emPr,
             CO->SDO,
            &OD_errorStatusBits[0],
             ODL_errorStatusBits_stringLength,
@@ -410,7 +410,7 @@ int16_t CO_init(){
 
     err = CO_NMT_init(
             CO->NMT,
-            CO->EMpr,
+            CO->emPr,
             nodeId,
             500,
             CO->CANmodule[0],
@@ -436,7 +436,7 @@ int16_t CO_init(){
 
     err = CO_SYNC_init(
             CO->SYNC,
-            CO->EM,
+            CO->em,
             CO->SDO,
            &CO->NMT->operatingState,
             OD_COB_ID_SYNCMessage,
@@ -463,7 +463,7 @@ int16_t CO_init(){
 
         err = CO_RPDO_init(
                 CO->RPDO[i],
-                CO->EM,
+                CO->em,
                 CO->SDO,
                &CO->NMT->operatingState,
                 nodeId,
@@ -483,7 +483,7 @@ int16_t CO_init(){
     for(i=0; i<CO_NO_TPDO; i++){
         err = CO_TPDO_init(
                 CO->TPDO[i],
-                CO->EM,
+                CO->em,
                 CO->SDO,
                &CO->NMT->operatingState,
                 nodeId,
@@ -502,7 +502,7 @@ int16_t CO_init(){
 
     err = CO_HBconsumer_init(
             CO->HBcons,
-            CO->EM,
+            CO->em,
             CO->SDO,
            &OD_consumerHeartbeatTime[0],
             CO_HBcons_monitoredNodes,
@@ -562,8 +562,8 @@ void CO_delete(){
     }
     free(CO->SYNC);
     free(CO->NMT);
-    free(CO->EMpr);
-    free(CO->EM);
+    free(CO->emPr);
+    free(CO->em);
     free(CO_SDO_ODExtensions);
     free(CO->SDO);
     free(CO_CANmodule_txArray0);
@@ -605,7 +605,7 @@ CO_NMT_reset_cmd_t CO_process(
 
 
     CO_EM_process(
-            CO->EMpr,
+            CO->emPr,
             NMTisPreOrOperational,
             timeDifference_ms * 10,
             OD_inhibitTimeEMCY);

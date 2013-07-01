@@ -39,15 +39,15 @@
  * For more information see file CO_SDO.h.
  */
 static uint32_t CO_ODF_1003(CO_ODF_arg_t *ODF_arg){
-    CO_EMpr_t *EMpr;
+    CO_EMpr_t *emPr;
     uint8_t *value;
 
-    EMpr = (CO_EMpr_t*) ODF_arg->object;
+    emPr = (CO_EMpr_t*) ODF_arg->object;
     value = (uint8_t*) ODF_arg->data;
 
     if(ODF_arg->reading){
         uint8_t noOfErrors;
-        noOfErrors = EMpr->preDefErrNoOfErrors;
+        noOfErrors = emPr->preDefErrNoOfErrors;
 
         if(ODF_arg->subIndex == 0)
             *value = noOfErrors;
@@ -58,7 +58,7 @@ static uint32_t CO_ODF_1003(CO_ODF_arg_t *ODF_arg){
         /* only '0' may be written to subIndex 0 */
         if(ODF_arg->subIndex == 0){
             if(*value == 0)
-                EMpr->preDefErrNoOfErrors = 0;
+                emPr->preDefErrNoOfErrors = 0;
             else
                 return SDO_ABORT_INVALID_VALUE;  /* Invalid value for parameter */
         }
@@ -92,8 +92,8 @@ static uint32_t CO_ODF_1014(CO_ODF_arg_t *ODF_arg){
 
 /******************************************************************************/
 int16_t CO_EM_init(
-        CO_EM_t                *EM,
-        CO_EMpr_t              *EMpr,
+        CO_EM_t                *em,
+        CO_EMpr_t              *emPr,
         CO_SDO_t               *SDO,
         uint8_t                *errorStatusBits,
         uint8_t                 errorStatusBitsSize,
@@ -107,31 +107,31 @@ int16_t CO_EM_init(
     uint8_t i;
 
     /* Configure object variables */
-    EM->errorStatusBits         = errorStatusBits;
-    EM->errorStatusBitsSize     = errorStatusBitsSize; if(errorStatusBitsSize < 6) return CO_ERROR_ILLEGAL_ARGUMENT;
-    EM->bufEnd                  = EM->buf + CO_EM_INTERNAL_BUFFER_SIZE * 8;
-    EM->bufWritePtr             = EM->buf;
-    EM->bufReadPtr              = EM->buf;
-    EM->bufFull                 = 0;
-    EM->wrongErrorReport        = 0;
-    EMpr->EM                    = EM;
-    EMpr->errorRegister         = errorRegister;
-    EMpr->preDefErr             = preDefErr;
-    EMpr->preDefErrSize         = preDefErrSize;
-    EMpr->preDefErrNoOfErrors   = 0;
-    EMpr->inhibitEmTimer        = 0;
+    em->errorStatusBits         = errorStatusBits;
+    em->errorStatusBitsSize     = errorStatusBitsSize; if(errorStatusBitsSize < 6) return CO_ERROR_ILLEGAL_ARGUMENT;
+    em->bufEnd                  = em->buf + CO_EM_INTERNAL_BUFFER_SIZE * 8;
+    em->bufWritePtr             = em->buf;
+    em->bufReadPtr              = em->buf;
+    em->bufFull                 = 0;
+    em->wrongErrorReport        = 0;
+    emPr->em                    = em;
+    emPr->errorRegister         = errorRegister;
+    emPr->preDefErr             = preDefErr;
+    emPr->preDefErrSize         = preDefErrSize;
+    emPr->preDefErrNoOfErrors   = 0;
+    emPr->inhibitEmTimer        = 0;
 
     /* clear error status bits */
-    for(i=0; i<errorStatusBitsSize; i++) EM->errorStatusBits[i] = 0;
+    for(i=0; i<errorStatusBitsSize; i++) em->errorStatusBits[i] = 0;
 
     /* Configure Object dictionary entry at index 0x1003 and 0x1014 */
-    CO_OD_configure(SDO, OD_H1003_PREDEF_ERR_FIELD, CO_ODF_1003, (void*)EMpr, 0, 0);
+    CO_OD_configure(SDO, OD_H1003_PREDEF_ERR_FIELD, CO_ODF_1003, (void*)emPr, 0, 0);
     CO_OD_configure(SDO, OD_H1014_COBID_EMERGENCY, CO_ODF_1014, (void*)&SDO->nodeId, 0, 0);
 
     /* configure emergency message CAN transmission */
-    EMpr->CANdev = CANdev;
-    EMpr->CANdev->EM = (void*)EM; /* update pointer inside CAN device. */
-    EMpr->CANtxBuff = CO_CANtxBufferInit(
+    emPr->CANdev = CANdev;
+    emPr->CANdev->em = (void*)em; /* update pointer inside CAN device. */
+    emPr->CANtxBuff = CO_CANtxBufferInit(
             CANdev,             /* CAN device */
             CANdevTxIdx,        /* index of specific buffer inside CAN module */
             CANidTxEM,          /* CAN identifier */
@@ -145,78 +145,78 @@ int16_t CO_EM_init(
 
 /******************************************************************************/
 void CO_EM_process(
-        CO_EMpr_t              *EMpr,
+        CO_EMpr_t              *emPr,
         uint8_t                 NMTisPreOrOperational,
         uint16_t                timeDifference_100us,
         uint16_t                EMinhTime)
 {
 
-    CO_EM_t *EM = EMpr->EM;
+    CO_EM_t *em = emPr->em;
     uint8_t errorRegister;
 
     /* verify errors from driver and other */
-    CO_CANverifyErrors(EMpr->CANdev);
-    if(EM->wrongErrorReport){
-        CO_errorReport(EM, CO_EM_WRONG_ERROR_REPORT, CO_EMC_SOFTWARE_INTERNAL, EM->wrongErrorReport);
-        EM->wrongErrorReport = 0;
+    CO_CANverifyErrors(emPr->CANdev);
+    if(em->wrongErrorReport){
+        CO_errorReport(em, CO_EM_WRONG_ERROR_REPORT, CO_EMC_SOFTWARE_INTERNAL, em->wrongErrorReport);
+        em->wrongErrorReport = 0;
     }
 
 
     /* calculate Error register */
     errorRegister = 0;
     /* generic error */
-    if(EM->errorStatusBits[5])
+    if(em->errorStatusBits[5])
         errorRegister |= CO_ERR_REG_GENERIC_ERR;
     /* communication error (overrun, error state) */
-    if(EM->errorStatusBits[2] || EM->errorStatusBits[3])
+    if(em->errorStatusBits[2] || em->errorStatusBits[3])
         errorRegister |= CO_ERR_REG_COMM_ERR;
-    *EMpr->errorRegister = (*EMpr->errorRegister & 0xEE) | errorRegister;
+    *emPr->errorRegister = (*emPr->errorRegister & 0xEE) | errorRegister;
 
     /* inhibit time */
-    if(EMpr->inhibitEmTimer < EMinhTime) EMpr->inhibitEmTimer += timeDifference_100us;
+    if(emPr->inhibitEmTimer < EMinhTime) emPr->inhibitEmTimer += timeDifference_100us;
 
     /* send Emergency message. */
     if(     NMTisPreOrOperational &&
-            !EMpr->CANtxBuff->bufferFull &&
-            EMpr->inhibitEmTimer >= EMinhTime &&
-            (EM->bufReadPtr != EM->bufWritePtr || EM->bufFull))
+            !emPr->CANtxBuff->bufferFull &&
+            emPr->inhibitEmTimer >= EMinhTime &&
+            (em->bufReadPtr != em->bufWritePtr || em->bufFull))
     {
         uint32_t preDEF;    /* preDefinedErrorField */
         
         /* add error register */
-        EM->bufReadPtr[2] = *EMpr->errorRegister;
+        em->bufReadPtr[2] = *emPr->errorRegister;
 
         /* copy data to CAN emergency message */
-        memcpy((void*)EMpr->CANtxBuff->data, (void*)EM->bufReadPtr, 8);
-        memcpy((void*)&preDEF, (void*)EM->bufReadPtr, 4);
-        EM->bufReadPtr += 8;
+        memcpy((void*)emPr->CANtxBuff->data, (void*)em->bufReadPtr, 8);
+        memcpy((void*)&preDEF, (void*)em->bufReadPtr, 4);
+        em->bufReadPtr += 8;
 
         /* Update read buffer pointer and reset inhibit timer */
-        if(EM->bufReadPtr == EM->bufEnd) EM->bufReadPtr = EM->buf;
-        EMpr->inhibitEmTimer = 0;
+        if(em->bufReadPtr == em->bufEnd) em->bufReadPtr = em->buf;
+        emPr->inhibitEmTimer = 0;
 
         /* verify message buffer overflow, then clear full flag */
-        if(EM->bufFull == 2){
-            EM->bufFull = 0;    /* will be updated below */
-            CO_errorReport(EM, CO_EM_EMERGENCY_BUFFER_FULL, CO_EMC_GENERIC, 0);
+        if(em->bufFull == 2){
+            em->bufFull = 0;    /* will be updated below */
+            CO_errorReport(em, CO_EM_EMERGENCY_BUFFER_FULL, CO_EMC_GENERIC, 0);
         }
         else{
-            EM->bufFull = 0;
+            em->bufFull = 0;
         }
 
         /* write to 'pre-defined error field' (object dictionary, index 0x1003) */
-        if(EMpr->preDefErr){
+        if(emPr->preDefErr){
             uint8_t i;
 
-            if(EMpr->preDefErrNoOfErrors < EMpr->preDefErrSize)
-                EMpr->preDefErrNoOfErrors++;
-            for(i=EMpr->preDefErrNoOfErrors-1; i>0; i--)
-                EMpr->preDefErr[i] = EMpr->preDefErr[i-1];
-            EMpr->preDefErr[0] = preDEF;
+            if(emPr->preDefErrNoOfErrors < emPr->preDefErrSize)
+                emPr->preDefErrNoOfErrors++;
+            for(i=emPr->preDefErrNoOfErrors-1; i>0; i--)
+                emPr->preDefErr[i] = emPr->preDefErr[i-1];
+            emPr->preDefErr[0] = preDEF;
         }
 
         /* send CAN message */
-        CO_CANsend(EMpr->CANdev, EMpr->CANtxBuff);
+        CO_CANsend(emPr->CANdev, emPr->CANtxBuff);
     }
 
     return;
@@ -224,17 +224,17 @@ void CO_EM_process(
 
 
 /******************************************************************************/
-int8_t CO_errorReport(CO_EM_t *EM, uint8_t errorBit, uint16_t errorCode, uint32_t infoCode){
+int8_t CO_errorReport(CO_EM_t *em, uint8_t errorBit, uint16_t errorCode, uint32_t infoCode){
     uint8_t index = errorBit >> 3;
     uint8_t bitmask = 1 << (errorBit & 0x7);
-    uint8_t *errorStatusBits = &EM->errorStatusBits[index];
+    uint8_t *errorStatusBits = &em->errorStatusBits[index];
     uint8_t bufCopy[8];
 
-    if(!EM) return -1;
+    if(!em) return -1;
 
     /* if errorBit value not supported, send emergency 'CO_EM_WRONG_ERROR_REPORT' */
-    if(index >= EM->errorStatusBitsSize){
-        EM->wrongErrorReport = errorBit;
+    if(index >= em->errorStatusBitsSize){
+        em->wrongErrorReport = errorBit;
         return -1;
     }
 
@@ -245,42 +245,42 @@ int8_t CO_errorReport(CO_EM_t *EM, uint8_t errorBit, uint16_t errorCode, uint32_
     if(errorBit) *errorStatusBits |= bitmask; /* any error except NO_ERROR */
 
     /* verify buffer full, set overflow */
-    if(EM->bufFull){
-        EM->bufFull = 2;
+    if(em->bufFull){
+        em->bufFull = 2;
         return -2;
     }
 
     /* prepare data for emergency message */
-    memcpySwap2(&bufCopy[0], (uint8_t*)&errorCode);
+    CO_memcpySwap2(&bufCopy[0], (uint8_t*)&errorCode);
     bufCopy[2] = 0; /* error register will be set later */
     bufCopy[3] = errorBit;
-    memcpySwap4(&bufCopy[4], (uint8_t*)&infoCode);
+    CO_memcpySwap4(&bufCopy[4], (uint8_t*)&infoCode);
 
     /* copy data to the buffer, increment writePtr and verify buffer full */
-    DISABLE_INTERRUPTS();
-    memcpy((void*)EM->bufWritePtr, (void*)&bufCopy[0], 8);
-    EM->bufWritePtr += 8;
+    CO_DISABLE_INTERRUPTS();
+    memcpy((void*)em->bufWritePtr, (void*)&bufCopy[0], 8);
+    em->bufWritePtr += 8;
 
-    if(EM->bufWritePtr == EM->bufEnd) EM->bufWritePtr = EM->buf;
-    if(EM->bufWritePtr == EM->bufReadPtr) EM->bufFull = 1;
-    ENABLE_INTERRUPTS();
+    if(em->bufWritePtr == em->bufEnd) em->bufWritePtr = em->buf;
+    if(em->bufWritePtr == em->bufReadPtr) em->bufFull = 1;
+    CO_ENABLE_INTERRUPTS();
 
     return 1;
 }
 
 
 /******************************************************************************/
-int8_t CO_errorReset(CO_EM_t *EM, uint8_t errorBit, uint32_t infoCode){
+int8_t CO_errorReset(CO_EM_t *em, uint8_t errorBit, uint32_t infoCode){
     uint8_t index = errorBit >> 3;
     uint8_t bitmask = 1 << (errorBit & 0x7);
-    uint8_t *errorStatusBits = &EM->errorStatusBits[index];
+    uint8_t *errorStatusBits = &em->errorStatusBits[index];
     uint8_t bufCopy[8];
 
-    if(!EM) return -1;
+    if(!em) return -1;
 
     /* if errorBit value not supported, send emergency 'CO_EM_WRONG_ERROR_REPORT' */
-    if(index >= EM->errorStatusBitsSize){
-        EM->wrongErrorReport = errorBit;
+    if(index >= em->errorStatusBitsSize){
+        em->wrongErrorReport = errorBit;
         return -1;
     }
 
@@ -291,8 +291,8 @@ int8_t CO_errorReset(CO_EM_t *EM, uint8_t errorBit, uint32_t infoCode){
     *errorStatusBits &= ~bitmask;
 
     /* verify buffer full */
-    if(EM->bufFull){
-        EM->bufFull = 2;
+    if(em->bufFull){
+        em->bufFull = 2;
         return -2;
     }
 
@@ -301,27 +301,27 @@ int8_t CO_errorReset(CO_EM_t *EM, uint8_t errorBit, uint32_t infoCode){
     bufCopy[1] = 0;
     bufCopy[2] = 0; /* error register will be set later */
     bufCopy[3] = errorBit;
-    memcpySwap4(&bufCopy[4], (uint8_t*)&infoCode);
+    CO_memcpySwap4(&bufCopy[4], (uint8_t*)&infoCode);
 
     /* copy data to the buffer, increment writePtr and verify buffer full */
-    DISABLE_INTERRUPTS();
-    memcpy((void*)EM->bufWritePtr, (void*)&bufCopy[0], 8);
-    EM->bufWritePtr += 8;
+    CO_DISABLE_INTERRUPTS();
+    memcpy((void*)em->bufWritePtr, (void*)&bufCopy[0], 8);
+    em->bufWritePtr += 8;
 
-    if(EM->bufWritePtr == EM->bufEnd) EM->bufWritePtr = EM->buf;
-    if(EM->bufWritePtr == EM->bufReadPtr) EM->bufFull = 1;
-    ENABLE_INTERRUPTS();
+    if(em->bufWritePtr == em->bufEnd) em->bufWritePtr = em->buf;
+    if(em->bufWritePtr == em->bufReadPtr) em->bufFull = 1;
+    CO_ENABLE_INTERRUPTS();
 
     return 1;
 }
 
 
 /******************************************************************************/
-int8_t CO_isError(CO_EM_t *EM, uint8_t errorBit){
+int8_t CO_isError(CO_EM_t *em, uint8_t errorBit){
     uint8_t index = errorBit >> 3;
     uint8_t bitmask = 1 << (errorBit & 0x7);
 
-    if((EM->errorStatusBits[index] & bitmask)) return 1;
+    if((em->errorStatusBits[index] & bitmask)) return 1;
 
     return 0;
 }

@@ -161,7 +161,7 @@ typedef struct{
  * RPDO object.
  */
 typedef struct{
-    CO_EM_t            *EM;             /**< From CO_RPDO_init() */
+    CO_EM_t            *em;             /**< From CO_RPDO_init() */
     CO_SDO_t           *SDO;            /**< From CO_RPDO_init() */
     const CO_RPDOCommPar_t *RPDOCommPar;/**< From CO_RPDO_init() */
     const CO_RPDOMapPar_t  *RPDOMapPar; /**< From CO_RPDO_init() */
@@ -189,7 +189,7 @@ typedef struct{
  * TPDO object.
  */
 typedef struct{
-    CO_EM_t            *EM;             /**< From CO_TPDO_init() */
+    CO_EM_t            *em;             /**< From CO_TPDO_init() */
     CO_SDO_t           *SDO;            /**< From CO_TPDO_init() */
     const CO_TPDOCommPar_t *TPDOCommPar;/**< From CO_TPDO_init() */
     const CO_TPDOMapPar_t  *TPDOMapPar; /**< From CO_TPDO_init() */
@@ -229,7 +229,7 @@ typedef struct{
  * Function must be called in the communication reset section.
  *
  * @param RPDO This object will be initialized.
- * @param EM Emergency object.
+ * @param em Emergency object.
  * @param SDO SDO server object.
  * @param operatingState Pointer to variable indicating CANopen device NMT internal state.
  * @param nodeId CANopen Node ID of this device. If default COB_ID is used, value will be added.
@@ -254,7 +254,7 @@ typedef struct{
  */
 int16_t CO_RPDO_init(
         CO_RPDO_t              *RPDO,
-        CO_EM_t                *EM,
+        CO_EM_t                *em,
         CO_SDO_t               *SDO,
         uint8_t                *operatingState,
         uint8_t                 nodeId,
@@ -274,7 +274,7 @@ int16_t CO_RPDO_init(
  * Function must be called in the communication reset section.
  *
  * @param TPDO This object will be initialized.
- * @param EM Emergency object.
+ * @param em Emergency object.
  * @param SDO SDO object.
  * @param operatingState Pointer to variable indicating CANopen device NMT internal state.
  * @param nodeId CANopen Node ID of this device. If default COB_ID is used, value will be added.
@@ -299,7 +299,7 @@ int16_t CO_RPDO_init(
  */
 int16_t CO_TPDO_init(
         CO_TPDO_t              *TPDO,
-        CO_EM_t                *EM,
+        CO_EM_t                *em,
         CO_SDO_t               *SDO,
         uint8_t                *operatingState,
         uint8_t                 nodeId,

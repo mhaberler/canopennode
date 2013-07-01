@@ -244,7 +244,7 @@ static void CO_SDOclient_abort(CO_SDOclient_t *SDO_C, uint32_t code){
     SDO_C->CANtxBuff->data[1] = SDO_C->index & 0xFF;
     SDO_C->CANtxBuff->data[2] = (SDO_C->index>>8) & 0xFF;
     SDO_C->CANtxBuff->data[3] = SDO_C->subIndex;
-    memcpySwap4(&SDO_C->CANtxBuff->data[4], (uint8_t*)&code);
+    CO_memcpySwap4(&SDO_C->CANtxBuff->data[4], (uint8_t*)&code);
     CO_CANsend(SDO_C->CANdevTx, SDO_C->CANtxBuff);
     SDO_C->state = 0;
     SDO_C->CANrxNew = 0;
@@ -335,7 +335,7 @@ int8_t CO_SDOclientDownloadInitiate(
         /* segmented transfer */
         SDO_C->CANtxBuff->data[0] = 0x21;
         len = dataSize;
-        memcpySwap4(&SDO_C->CANtxBuff->data[4], (uint8_t*)&len);
+        CO_memcpySwap4(&SDO_C->CANtxBuff->data[4], (uint8_t*)&len);
     }
 
     /* empty receive buffer, reset timeout timer and send message */
@@ -393,7 +393,7 @@ int8_t CO_SDOclientDownload(
         if (SDO_C->CANrxData[0] == (SCS_ABORT<<5)){
             SDO_C->state = SDO_STATE_IDLE;
             SDO_C->CANrxNew    =0;
-            memcpySwap4((uint8_t*)pSDOabortCode , &SDO_C->CANrxData[4]);
+            CO_memcpySwap4((uint8_t*)pSDOabortCode , &SDO_C->CANrxData[4]);
             SDO_C->CANrxNew = 0;
             return SDO_RETURN_END_SERVERABORT;
         }
@@ -791,7 +791,7 @@ int8_t CO_SDOclientUpload(
         if (SDO_C->CANrxData[0] == (SCS_ABORT<<5)){
             SDO_C->state = SDO_STATE_IDLE;
             SDO_C->CANrxNew =0;
-            memcpySwap4((uint8_t*)pSDOabortCode , &SDO_C->CANrxData[4]);
+            CO_memcpySwap4((uint8_t*)pSDOabortCode , &SDO_C->CANrxData[4]);
             return SDO_RETURN_END_SERVERABORT;
         }
         switch (SDO_C->state){
@@ -896,7 +896,7 @@ int8_t CO_SDOclientUpload(
                     /*  set length */
                     if(SDO_C->CANrxData[0]&0x02){
                         uint32_t len;
-                        memcpySwap4((uint8_t*)&len, &SDO_C->CANrxData[4]);
+                        CO_memcpySwap4((uint8_t*)&len, &SDO_C->CANrxData[4]);
                         SDO_C->dataSize = len;
                     }
                     else{
@@ -1007,7 +1007,7 @@ int8_t CO_SDOclientUpload(
                     SDO_C->state = SDO_STATE_BLOCKUPLOAD_BLOCK_END;
                     if (SDO_C->crcEnabled){
                         uint16_t tmp16;
-                        memcpySwap2((uint8_t*)&tmp16, &SDO_C->CANrxData[1]);
+                        CO_memcpySwap2((uint8_t*)&tmp16, &SDO_C->CANrxData[1]);
 
                         if (tmp16 != crc16_ccitt((unsigned char *)SDO_C->buffer, (unsigned int)SDO_C->dataSizeTransfered, 0)){
                             *pSDOabortCode = 0x05040004L;

@@ -38,8 +38,8 @@
 
 
 /* Disabling interrupts */
-#define DISABLE_INTERRUPTS()     MaskInterrupts()
-#define ENABLE_INTERRUPTS()      EnableInterrupts()
+#define CO_DISABLE_INTERRUPTS()     MaskInterrupts()
+#define CO_ENABLE_INTERRUPTS()      EnableInterrupts()
 
 
 /* Other configuration */
@@ -128,14 +128,14 @@ typedef struct{
     volatile uint8_t    error;
     volatile uint16_t   CANtxCount;
     uint32_t            errOld;
-    void               *EM;
+    void               *em;
 }CO_CANmodule_t;
 
 
 /* Endianes */
 #define BIG_ENDIAN
-void memcpySwap2(uint8_t* dest, uint8_t* src);
-void memcpySwap4(uint8_t* dest, uint8_t* src);
+void CO_memcpySwap2(uint8_t* dest, uint8_t* src);
+void CO_memcpySwap4(uint8_t* dest, uint8_t* src);
 
 
 /* Request CAN configuration or normal mode */

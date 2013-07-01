@@ -98,12 +98,12 @@ void CanLedsOff(eCoLeds led) {
 
 /******************************************************************************/
 #ifdef BIG_ENDIAN
-void memcpySwap2(uint8_t* dest, uint8_t* src){
+void CO_memcpySwap2(uint8_t* dest, uint8_t* src){
     *(dest++) = *(src+1);
     *(dest) = *(src);
 }
 
-void memcpySwap4(uint8_t* dest, uint8_t* src){
+void CO_memcpySwap4(uint8_t* dest, uint8_t* src){
     src += 3;
     *(dest++) = *(src--);
     *(dest++) = *(src--);
@@ -111,12 +111,12 @@ void memcpySwap4(uint8_t* dest, uint8_t* src){
     *(dest) = *(src);
 }
 #else
-void memcpySwap2(uint8_t* dest, uint8_t* src){
+void CO_memcpySwap2(uint8_t* dest, uint8_t* src){
     *(dest++) = *(src++);
     *(dest) = *(src);
 }
 
-void memcpySwap4(uint8_t* dest, uint8_t* src){
+void CO_memcpySwap4(uint8_t* dest, uint8_t* src){
     *(dest++) = *(src++);
     *(dest++) = *(src++);
     *(dest++) = *(src++);
@@ -200,7 +200,7 @@ int16_t CO_CANmodule_init(
     CANmodule->firstCANtxMessage = 1;
     CANmodule->CANtxCount = 0;
     CANmodule->errOld = 0;
-    CANmodule->EM = 0;
+    CANmodule->em = 0;
 
     CO_CanInterruptEnDis(CANbaseAddress, DISABLE);
 
@@ -434,11 +434,11 @@ int16_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer) {
     /* Verify overflow */
     if(buffer->bufferFull){
         if(!CANmodule->firstCANtxMessage)/* don't set error, if bootup message is still on buffers */
-            CO_errorReport((CO_EM_t*)CANmodule->EM, CO_EM_CAN_TX_OVERFLOW, CO_EMC_CAN_OVERRUN, 0);
+            CO_errorReport((CO_EM_t*)CANmodule->em, CO_EM_CAN_TX_OVERFLOW, CO_EMC_CAN_OVERRUN, 0);
         err = CO_ERROR_TX_OVERFLOW;
     }
 
-    DISABLE_INTERRUPTS();
+    CO_DISABLE_INTERRUPTS();
     //if CAN TB buffer0 is free, copy message to it
     int8_t txBuff = getFreeTxBuff(CANmodule);
     #error change this - use only one buffer for transmission - see also transmit interrupt
@@ -453,7 +453,7 @@ int16_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer) {
         // vsechny buffery jsou plny, musime povolit preruseni od vysilace, odvysilat az v preruseni
         CAN_ITConfig(CANmodule->CANbaseAddress, CAN_IT_TME, ENABLE);
     }
-    ENABLE_INTERRUPTS();
+    CO_ENABLE_INTERRUPTS();
 
     return err;
 }
@@ -467,7 +467,7 @@ void CO_CANclearPendingSyncPDOs(CO_CANmodule_t *CANmodule) {
 /******************************************************************************/
 void CO_CANverifyErrors(CO_CANmodule_t *CANmodule) {
    uint32_t err;
-   CO_EM_t* EM = (CO_EM_t*)CANmodule->EM;
+   CO_EM_t* em = (CO_EM_t*)CANmodule->em;
 
    err = CANmodule->CANbaseAddress->ESR;
    // if(CAN_REG(CANmodule->CANbaseAddress, C_INTF) & 4) err |= 0x80;
@@ -477,31 +477,31 @@ void CO_CANverifyErrors(CO_CANmodule_t *CANmodule) {
 
       //CAN RX bus overflow
       if(CANmodule->CANbaseAddress->RF0R & 0x08){
-         CO_errorReport(EM, CO_EM_CAN_RXB_OVERFLOW, CO_EMC_CAN_OVERRUN, err);
+         CO_errorReport(em, CO_EM_CAN_RXB_OVERFLOW, CO_EMC_CAN_OVERRUN, err);
          CANmodule->CANbaseAddress->RF0R &=~0x08;//clear bits
       }
 
       //CAN TX bus off
-      if(err & 0x04) CO_errorReport(EM, CO_EM_CAN_TX_BUS_OFF, CO_EMC_BUS_OFF_RECOVERED, err);
-      else           CO_errorReset(EM, CO_EM_CAN_TX_BUS_OFF, err);
+      if(err & 0x04) CO_errorReport(em, CO_EM_CAN_TX_BUS_OFF, CO_EMC_BUS_OFF_RECOVERED, err);
+      else           CO_errorReset(em, CO_EM_CAN_TX_BUS_OFF, err);
 
       //CAN TX or RX bus passive
       if(err & 0x02){
-         if(!CANmodule->firstCANtxMessage) CO_errorReport(EM, CO_EM_CAN_TX_BUS_PASSIVE, CO_EMC_CAN_PASSIVE, err);
+         if(!CANmodule->firstCANtxMessage) CO_errorReport(em, CO_EM_CAN_TX_BUS_PASSIVE, CO_EMC_CAN_PASSIVE, err);
       }
       else{
          int16_t wasCleared;
-         wasCleared =        CO_errorReset(EM, CO_EM_CAN_TX_BUS_PASSIVE, err);
-         if(wasCleared == 1) CO_errorReset(EM, CO_EM_CAN_TX_OVERFLOW, err);
+         wasCleared =        CO_errorReset(em, CO_EM_CAN_TX_BUS_PASSIVE, err);
+         if(wasCleared == 1) CO_errorReset(em, CO_EM_CAN_TX_OVERFLOW, err);
       }
 
 
       //CAN TX or RX bus warning
       if(err & 0x01){
-         CO_errorReport(EM, CO_EM_CAN_BUS_WARNING, CO_EMC_NO_ERROR, err);
+         CO_errorReport(em, CO_EM_CAN_BUS_WARNING, CO_EMC_NO_ERROR, err);
       }
       else{
-         CO_errorReset(EM, CO_EM_CAN_BUS_WARNING, err);
+         CO_errorReset(em, CO_EM_CAN_BUS_WARNING, err);
       }
    }
 }

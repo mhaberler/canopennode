@@ -66,8 +66,8 @@
 #endif
 
 /* Disabling interrupts */
-#define DISABLE_INTERRUPTS()     asm volatile ("disi #0x3FFF")
-#define ENABLE_INTERRUPTS()      asm volatile ("disi #0x0000")
+#define CO_DISABLE_INTERRUPTS()  asm volatile ("disi #0x3FFF")
+#define CO_ENABLE_INTERRUPTS()   asm volatile ("disi #0x0000")
 
 
 /* Null */
@@ -360,14 +360,14 @@ typedef struct{
     volatile uint8_t    firstCANtxMessage;
     volatile uint16_t   CANtxCount;
     uint32_t            errOld;
-    void               *EM;
+    void               *em;
 }CO_CANmodule_t;
 
 
 /* Endianes */
 /* #define BIG_ENDIAN */
-void memcpySwap2(uint8_t* dest, uint8_t* src);
-void memcpySwap4(uint8_t* dest, uint8_t* src);
+void CO_memcpySwap2(uint8_t* dest, uint8_t* src);
+void CO_memcpySwap4(uint8_t* dest, uint8_t* src);
 
 
 /* Request CAN configuration or normal mode */

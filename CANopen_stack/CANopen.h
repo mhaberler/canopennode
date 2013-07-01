@@ -40,7 +40,14 @@
  * @defgroup CO_CANopen CANopen stack
  * @{
  *
+ * CANopenNode is an opensource CANopen Stack.
  *
+ * CANopen is the internationally standardized (EN 50325-4) (CiA DS-301)
+ * CAN-based higher-layer protocol for embedded control system. For more
+ * information on CANopen see http://www.can-cia.org/
+ *
+ * Stack is written in ANSI C in object-oriented way. License is LGPL.
+ * For more information see http://canopennode.sourceforge.net/
  */
 
 
@@ -101,8 +108,8 @@ typedef enum{
 typedef struct{
     CO_CANmodule_t     *CANmodule[CO_NO_CAN_MODULES];/**< CAN module objects */
     CO_SDO_t           *SDO;            /**< SDO object */
-    CO_EM_t            *EM;             /**< Emergency report object */
-    CO_EMpr_t          *EMpr;           /**< Emergency process object */
+    CO_EM_t            *em;             /**< Emergency report object */
+    CO_EMpr_t          *emPr;           /**< Emergency process object */
     CO_NMT_t           *NMT;            /**< NMT object */
     CO_SYNC_t          *SYNC;           /**< SYNC object */
     CO_RPDO_t          *RPDO[CO_NO_RPDO];/**< RPDO objects */

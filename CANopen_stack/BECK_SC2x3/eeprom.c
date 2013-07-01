@@ -36,10 +36,10 @@
 
 /******************************************************************************/
 static uint32_t CO_ODF_1010(CO_ODF_arg_t *ODF_arg){
-    EE_t *EE;
+    CO_EE_t *ee;
     uint32_t *value;
 
-    EE = (EE_t*) ODF_arg->object;
+    ee = (CO_EE_t*) ODF_arg->object;
     value = (uint32_t*) ODF_arg->data;
 
     if(!ODF_arg->reading){
@@ -62,27 +62,27 @@ static uint32_t CO_ODF_1010(CO_ODF_arg_t *ODF_arg){
                 }
 
                 /* write data to the file */
-                fwrite((const void *)EE->OD_ROMAddress, 1, EE->OD_ROMSize, fp);
+                fwrite((const void *)ee->OD_ROMAddress, 1, ee->OD_ROMSize, fp);
                 /* write CRC to the end of the file */
-                uint16_t CRC = crc16_ccitt((unsigned char*)EE->OD_ROMAddress, EE->OD_ROMSize, 0);
+                uint16_t CRC = crc16_ccitt((unsigned char*)ee->OD_ROMAddress, ee->OD_ROMSize, 0);
                 fwrite((const void *)&CRC, 1, 2, fp);
                 fclose(fp);
 
                 /* verify data */
-                void *buf = malloc(EE->OD_ROMSize + 4);
+                void *buf = malloc(ee->OD_ROMSize + 4);
                 if(buf){
                     fp = fopen(EE_ROM_FILENAME, "rb");
                     uint32_t cnt = 0;
                     uint16_t CRC2 = 0;
                     if(fp){
-                        cnt = fread(buf, 1, EE->OD_ROMSize, fp);
-                        CRC2 = crc16_ccitt((unsigned char*)buf, EE->OD_ROMSize, 0);
+                        cnt = fread(buf, 1, ee->OD_ROMSize, fp);
+                        CRC2 = crc16_ccitt((unsigned char*)buf, ee->OD_ROMSize, 0);
                         /* read also two bytes of CRC */
                         cnt += fread(buf, 1, 4, fp);
                         fclose(fp);
                     }
                     free(buf);
-                    if(cnt == (EE->OD_ROMSize + 2) && CRC == CRC2){
+                    if(cnt == (ee->OD_ROMSize + 2) && CRC == CRC2){
                         /* write successful */
                         return 0;
                     }
@@ -104,10 +104,10 @@ static uint32_t CO_ODF_1010(CO_ODF_arg_t *ODF_arg){
 
 /******************************************************************************/
 static uint32_t CO_ODF_1011(CO_ODF_arg_t *ODF_arg){
-    EE_t *EE;
+    CO_EE_t *ee;
     uint32_t *value;
 
-    EE = (EE_t*) ODF_arg->object;
+    ee = (CO_EE_t*) ODF_arg->object;
     value = (uint32_t*) ODF_arg->data;
 
     if(!ODF_arg->reading){
@@ -145,8 +145,8 @@ static uint32_t CO_ODF_1011(CO_ODF_arg_t *ODF_arg){
 
 
 /******************************************************************************/
-int16_t EE_init_1(
-        EE_t                   *EE,
+int16_t CO_EE_init_1(
+        CO_EE_t                *ee,
         uint8_t                *SRAMAddress,
         uint8_t                *OD_EEPROMAddress,
         uint32_t                OD_EEPROMSize,
@@ -155,45 +155,45 @@ int16_t EE_init_1(
 {
 
     /* configure object variables */
-    EE->pSRAM = (uint32_t*)SRAMAddress;
-    EE->OD_EEPROMAddress = (uint32_t*) OD_EEPROMAddress;
-    EE->OD_EEPROMSize = OD_EEPROMSize / 4;
-    EE->OD_ROMAddress = OD_ROMAddress;
-    EE->OD_ROMSize = OD_ROMSize;
-    EE->OD_EEPROMCurrentIndex = 0;
-    EE->OD_EEPROMWriteEnable = 0;
+    ee->pSRAM = (uint32_t*)SRAMAddress;
+    ee->OD_EEPROMAddress = (uint32_t*) OD_EEPROMAddress;
+    ee->OD_EEPROMSize = OD_EEPROMSize / 4;
+    ee->OD_ROMAddress = OD_ROMAddress;
+    ee->OD_ROMSize = OD_ROMSize;
+    ee->OD_EEPROMCurrentIndex = 0;
+    ee->OD_EEPROMWriteEnable = 0;
 
     /* read the CO_OD_EEPROM from SRAM, first verify, if data are OK */
-    if(EE->pSRAM == 0) return CO_ERROR_OUT_OF_MEMORY;
-    uint32_t firstWordRAM = *(EE->OD_EEPROMAddress);
-    uint32_t firstWordEE = *(EE->pSRAM);
-    uint32_t lastWordEE = *(EE->pSRAM + EE->OD_EEPROMSize - 1);
+    if(ee->pSRAM == 0) return CO_ERROR_OUT_OF_MEMORY;
+    uint32_t firstWordRAM = *(ee->OD_EEPROMAddress);
+    uint32_t firstWordEE = *(ee->pSRAM);
+    uint32_t lastWordEE = *(ee->pSRAM + ee->OD_EEPROMSize - 1);
     if(firstWordRAM == firstWordEE && firstWordRAM == lastWordEE){
         unsigned int i;
-        for(i=0; i<EE->OD_EEPROMSize; i++)
-            (EE->OD_EEPROMAddress)[i] = (EE->pSRAM)[i];
+        for(i=0; i<ee->OD_EEPROMSize; i++)
+            (ee->OD_EEPROMAddress)[i] = (ee->pSRAM)[i];
     }
-    EE->OD_EEPROMWriteEnable = 1;
+    ee->OD_EEPROMWriteEnable = 1;
 
     /* read the CO_OD_ROM from file and verify CRC */
-    void *buf = malloc(EE->OD_ROMSize);
+    void *buf = malloc(ee->OD_ROMSize);
     if(buf){
         int16_t ret = CO_ERROR_NO;
         FILE *fp = fopen(EE_ROM_FILENAME, "rb");
         uint32_t cnt = 0;
         uint16_t CRC[2];
         if(fp){
-            cnt = fread(buf, 1, EE->OD_ROMSize, fp);
+            cnt = fread(buf, 1, ee->OD_ROMSize, fp);
             /* read also two bytes of CRC from file */
             cnt += fread(&CRC[0], 1, 4, fp);
-            CRC[1] = crc16_ccitt((unsigned char*)buf, EE->OD_ROMSize, 0);
+            CRC[1] = crc16_ccitt((unsigned char*)buf, ee->OD_ROMSize, 0);
             fclose(fp);
         }
 
         if(cnt == 1 && *((char*)buf) == '-'){
             ret = CO_ERROR_NO; /* file is empty, default values will be used, no error */
         }
-        else if(cnt != (EE->OD_ROMSize + 2)){
+        else if(cnt != (ee->OD_ROMSize + 2)){
             ret = CO_ERROR_DATA_CORRUPT; /* file length does not match */
         }
         else if(CRC[0] != CRC[1]){
@@ -201,7 +201,7 @@ int16_t EE_init_1(
         }
         else{
             /* no errors, copy data into object dictionary */
-            memcpy(EE->OD_ROMAddress, buf, EE->OD_ROMSize);
+            memcpy(ee->OD_ROMAddress, buf, ee->OD_ROMSize);
         }
 
         free(buf);
@@ -214,27 +214,27 @@ int16_t EE_init_1(
 
 
 /******************************************************************************/
-void EE_init_2(
-        EE_t                   *EE,
-        int16_t                 EEStatus,
+void CO_EE_init_2(
+        CO_EE_t                *ee,
+        int16_t                 eeStatus,
         CO_SDO_t               *SDO,
-        CO_EM_t                *EM)
+        CO_EM_t                *em)
 {
-    CO_OD_configure(SDO, 0x1010, CO_ODF_1010, (void*)EE, 0, 0);
-    CO_OD_configure(SDO, 0x1011, CO_ODF_1011, (void*)EE, 0, 0);
-    if(EEStatus) CO_errorReport(EM, CO_EM_NON_VOLATILE_MEMORY, CO_EMC_HARDWARE, EEStatus);
+    CO_OD_configure(SDO, 0x1010, CO_ODF_1010, (void*)ee, 0, 0);
+    CO_OD_configure(SDO, 0x1011, CO_ODF_1011, (void*)ee, 0, 0);
+    if(eeStatus) CO_errorReport(em, CO_EM_NON_VOLATILE_MEMORY, CO_EMC_HARDWARE, eeStatus);
 }
 
 
 /******************************************************************************/
-void EE_process(EE_t *EE){
-    if(EE && EE->OD_EEPROMWriteEnable){
+void CO_EE_process(CO_EE_t *ee){
+    if(ee && ee->OD_EEPROMWriteEnable){
         /* verify next word */
-        unsigned int i = EE->OD_EEPROMCurrentIndex;
-        if(++i == EE->OD_EEPROMSize) i = 0;
-        EE->OD_EEPROMCurrentIndex = i;
+        unsigned int i = ee->OD_EEPROMCurrentIndex;
+        if(++i == ee->OD_EEPROMSize) i = 0;
+        ee->OD_EEPROMCurrentIndex = i;
 
         /* update SRAM */
-        (EE->pSRAM)[i] = (EE->OD_EEPROMAddress)[i];
+        (ee->pSRAM)[i] = (ee->OD_EEPROMAddress)[i];
   }
 }

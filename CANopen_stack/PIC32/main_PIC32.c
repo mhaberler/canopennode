@@ -87,7 +87,7 @@
     const CO_CANbitRateData_t   CO_CANbitRateData[8] = {CO_CANbitRateDataInitializers};
     volatile uint16_t           CO_timer1ms=0;  /* variable increments each millisecond */
 #ifdef USE_EEPROM
-    EE_t                        EEO;            /* Eeprom object */
+    CO_EE_t                     CO_EEO;         /* Eeprom object */
 #endif
 
 
@@ -113,7 +113,7 @@ int main (void){
 
     /* initialize EEPROM - part 1 */
 #ifdef USE_EEPROM
-    int16_t EEStatus = EE_init_1(&EEO, (uint8_t*) &CO_OD_EEPROM, sizeof(CO_OD_EEPROM),
+    int16_t eeStatus = CO_EE_init_1(&CO_EEO, (uint8_t*) &CO_OD_EEPROM, sizeof(CO_OD_EEPROM),
                             (uint8_t*) &CO_OD_ROM, sizeof(CO_OD_ROM));
 #endif
 
@@ -141,13 +141,13 @@ int main (void){
         err = CO_init();
         if(err){
             while(1) ClearWDT();
-            /* CO_errorReport(CO->EM, CO_EM_MEMORY_ALLOCATION_ERROR, CO_EMC_SOFTWARE_INTERNAL, err); */
+            /* CO_errorReport(CO->em, CO_EM_MEMORY_ALLOCATION_ERROR, CO_EMC_SOFTWARE_INTERNAL, err); */
         }
 
 
         /* initialize eeprom - part 2 */
 #ifdef USE_EEPROM
-        EE_init_2(&EEO, EEStatus, CO->SDO, CO->EM);
+        CO_EE_init_2(&CO_EEO, eeStatus, CO->SDO, CO->em);
 #endif
 
 
@@ -232,14 +232,14 @@ int main (void){
 
 
 #ifdef USE_EEPROM
-            EE_process(&EEO);
+            CO_EE_process(&CO_EEO);
 #endif
         }
     }
 
 
 /* program exit ***************************************************************/
-    DISABLE_INTERRUPTS();
+    CO_DISABLE_INTERRUPTS();
 
     /* delete objects from memory */
     programEnd();
@@ -266,7 +266,7 @@ void __ISR(_TIMER_2_VECTOR, ipl3SOFT) CO_TimerInterruptHandler(void){
 
     /* verify timer overflow */
     if(CO_TMR_ISR_FLAG == 1){
-        CO_errorReport(CO->EM, CO_EM_ISR_TIMER_OVERFLOW, CO_EMC_SOFTWARE_INTERNAL, 0);
+        CO_errorReport(CO->em, CO_EM_ISR_TIMER_OVERFLOW, CO_EMC_SOFTWARE_INTERNAL, 0);
         CO_TMR_ISR_FLAG = 0;
     }
 

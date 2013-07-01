@@ -61,7 +61,7 @@ static int16_t CO_HBcons_receive(void *object, CO_CANrxMsg_t *msg){
 /*
  * Configure one monitored node.
  */
-static void CO_HBconsumer_monitoredNodeConfig(
+static void CO_HBcons_monitoredNodeConfig(
         CO_HBconsumer_t        *HBcons,
         uint8_t                 idx,
         uint32_t                HBconsTime)
@@ -130,7 +130,7 @@ static uint32_t CO_ODF_1016(CO_ODF_arg_t *ODF_arg){
         }
 
         /* Configure */
-        CO_HBconsumer_monitoredNodeConfig(HBcons, ODF_arg->subIndex-1, *value);
+        CO_HBcons_monitoredNodeConfig(HBcons, ODF_arg->subIndex-1, *value);
     }
 
     return 0;
@@ -140,7 +140,7 @@ static uint32_t CO_ODF_1016(CO_ODF_arg_t *ODF_arg){
 /******************************************************************************/
 int16_t CO_HBconsumer_init(
         CO_HBconsumer_t        *HBcons,
-        CO_EM_t                *EM,
+        CO_EM_t                *em,
         CO_SDO_t               *SDO,
         const uint32_t         *HBconsTime,
         CO_HBconsNode_t        *monitoredNodes,
@@ -151,7 +151,7 @@ int16_t CO_HBconsumer_init(
     uint8_t i;
 
     /* Configure object variables */
-    HBcons->EM = EM;
+    HBcons->em = em;
     HBcons->HBconsTime = HBconsTime;
     HBcons->monitoredNodes = monitoredNodes;
     HBcons->numberOfMonitoredNodes = numberOfMonitoredNodes;
@@ -160,7 +160,7 @@ int16_t CO_HBconsumer_init(
     HBcons->CANdevRxIdxStart = CANdevRxIdxStart;
 
     for(i=0; i<HBcons->numberOfMonitoredNodes; i++)
-        CO_HBconsumer_monitoredNodeConfig(HBcons, i, HBcons->HBconsTime[i]);
+        CO_HBcons_monitoredNodeConfig(HBcons, i, HBcons->HBconsTime[i]);
 
     /* Configure Object dictionary entry at index 0x1016 */
     CO_OD_configure(SDO, OD_H1016_CONSUMER_HB_TIME, CO_ODF_1016, (void*)HBcons, 0, 0);
@@ -200,12 +200,12 @@ void CO_HBconsumer_process(
 
                 if(monitoredNode->monStarted){
                     if(monitoredNode->timeoutTimer >= monitoredNode->time){
-                        CO_errorReport(HBcons->EM, CO_EM_HEARTBEAT_CONSUMER, CO_EMC_HEARTBEAT, i);
+                        CO_errorReport(HBcons->em, CO_EM_HEARTBEAT_CONSUMER, CO_EMC_HEARTBEAT, i);
                         monitoredNode->NMTstate = 0;
                     }
                     else if(monitoredNode->NMTstate == 0){
                         /* there was a bootup message */
-                        CO_errorReport(HBcons->EM, CO_EM_HEARTBEAT_CONSUMER_REMOTE_RESET, CO_EMC_HEARTBEAT, i);
+                        CO_errorReport(HBcons->em, CO_EM_HB_CONSUMER_REMOTE_RESET, CO_EMC_HEARTBEAT, i);
                     }
                 }
                 if(monitoredNode->NMTstate != CO_NMT_OPERATIONAL)

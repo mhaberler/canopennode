@@ -53,13 +53,13 @@ static int16_t CO_NMT_receive(void *object, CO_CANrxMsg_t *msg){
         command = msg->data[0];
 
         switch(command){
-            case CO_NMT_ENTER_OPERATIONAL:      if(!(*NMT->EMpr->errorRegister))
+            case CO_NMT_ENTER_OPERATIONAL:      if(!(*NMT->emPr->errorRegister))
                                                     NMT->operatingState = CO_NMT_OPERATIONAL;   break;
             case CO_NMT_ENTER_STOPPED:          NMT->operatingState = CO_NMT_STOPPED;           break;
             case CO_NMT_ENTER_PRE_OPERATIONAL:  NMT->operatingState = CO_NMT_PRE_OPERATIONAL;   break;
             case CO_NMT_RESET_NODE:             NMT->resetCommand = CO_RESET_APP;               break;
             case CO_NMT_RESET_COMMUNICATION:    NMT->resetCommand = CO_RESET_COMM;              break;
-            default: CO_errorReport(NMT->EMpr->EM, CO_EM_NMT_WRONG_COMMAND, CO_EMC_PROTOCOL_ERROR, command);
+            default: CO_errorReport(NMT->emPr->em, CO_EM_NMT_WRONG_COMMAND, CO_EMC_PROTOCOL_ERROR, command);
         }
     }
 
@@ -70,7 +70,7 @@ static int16_t CO_NMT_receive(void *object, CO_CANrxMsg_t *msg){
 /******************************************************************************/
 int16_t CO_NMT_init(
         CO_NMT_t               *NMT,
-        CO_EMpr_t              *EMpr,
+        CO_EMpr_t              *emPr,
         uint8_t                 nodeId,
         uint16_t                firstHBTime,
         CO_CANmodule_t         *NMT_CANdev,
@@ -97,7 +97,7 @@ int16_t CO_NMT_init(
     NMT->firstHBTime            = firstHBTime;
     NMT->resetCommand           = 0;
     NMT->HBproducerTimer        = 0xFFFF;
-    NMT->EMpr                   = EMpr;
+    NMT->emPr                   = emPr;
 
     /* configure NMT CAN reception */
     CO_CANrxBufferInit(
@@ -190,7 +190,7 @@ CO_NMT_reset_cmd_t CO_NMT_process(
 
     /* CAN passive flag */
     CANpassive = 0;
-    if(CO_isError(NMT->EMpr->EM, CO_EM_CAN_TX_BUS_PASSIVE) || CO_isError(NMT->EMpr->EM, CO_EM_CAN_RX_BUS_PASSIVE))
+    if(CO_isError(NMT->emPr->em, CO_EM_CAN_TX_BUS_PASSIVE) || CO_isError(NMT->emPr->em, CO_EM_CAN_RX_BUS_PASSIVE))
         CANpassive = 1;
 
 
@@ -203,16 +203,16 @@ CO_NMT_reset_cmd_t CO_NMT_process(
 
 
     /* CANopen red ERROR LED (DR 303-3) */
-    if(CO_isError(NMT->EMpr->EM, CO_EM_CAN_TX_BUS_OFF))
+    if(CO_isError(NMT->emPr->em, CO_EM_CAN_TX_BUS_OFF))
         NMT->LEDredError = 1;
 
-    else if(CO_isError(NMT->EMpr->EM, CO_EM_SYNC_TIME_OUT))
+    else if(CO_isError(NMT->emPr->em, CO_EM_SYNC_TIME_OUT))
         NMT->LEDredError = NMT->LEDtripleFlash;
 
-    else if(CO_isError(NMT->EMpr->EM, CO_EM_HEARTBEAT_CONSUMER) || CO_isError(NMT->EMpr->EM, CO_EM_HEARTBEAT_CONSUMER_REMOTE_RESET))
+    else if(CO_isError(NMT->emPr->em, CO_EM_HEARTBEAT_CONSUMER) || CO_isError(NMT->emPr->em, CO_EM_HB_CONSUMER_REMOTE_RESET))
         NMT->LEDredError = NMT->LEDdoubleFlash;
 
-    else if(CANpassive || CO_isError(NMT->EMpr->EM, CO_EM_CAN_BUS_WARNING))
+    else if(CANpassive || CO_isError(NMT->emPr->em, CO_EM_CAN_BUS_WARNING))
         NMT->LEDredError = NMT->LEDsingleFlash;
 
     else if(errorRegister)
@@ -235,9 +235,9 @@ CO_NMT_reset_cmd_t CO_NMT_process(
                 else if(errorBehavior[1] == 2){
                     NMT->operatingState = CO_NMT_STOPPED;
                 }
-                else if(CO_isError(NMT->EMpr->EM, CO_EM_CAN_TX_BUS_OFF)
-                     || CO_isError(NMT->EMpr->EM, CO_EM_HEARTBEAT_CONSUMER)
-                     || CO_isError(NMT->EMpr->EM, CO_EM_HEARTBEAT_CONSUMER_REMOTE_RESET))
+                else if(CO_isError(NMT->emPr->em, CO_EM_CAN_TX_BUS_OFF)
+                     || CO_isError(NMT->emPr->em, CO_EM_HEARTBEAT_CONSUMER)
+                     || CO_isError(NMT->emPr->em, CO_EM_HB_CONSUMER_REMOTE_RESET))
                 {
                     if(errorBehavior[0] == 0){
                         NMT->operatingState = CO_NMT_PRE_OPERATIONAL;

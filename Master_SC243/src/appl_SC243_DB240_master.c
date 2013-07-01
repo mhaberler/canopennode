@@ -151,14 +151,14 @@ void programAsync(uint16_t timer1msDiff){
 
     /* Is any application critical error set? */
     /* If error register is set, device will leave operational state. */
-    if(CO->EM->errorStatusBits[8] || CO->EM->errorStatusBits[9])
-        *CO->EMpr->errorRegister |= 0x20;
+    if(CO->ee->errorStatusBits[8] || CO->ee->errorStatusBits[9])
+        *CO->emPr->errorRegister |= 0x20;
 
     /* if error register is set, make dump of CAN message log */
-    if(!errorRegisterPrev && *CO->EMpr->errorRegister){
+    if(!errorRegisterPrev && *CO->emPr->errorRegister){
         extern CgiLog_t *CgiLog;
         CgiLogSaveBuffer(CgiLog);
-        errorRegisterPrev = *CO->EMpr->errorRegister;
+        errorRegisterPrev = *CO->emPr->errorRegister;
     }
 }
 
@@ -177,8 +177,8 @@ void program1ms(void){
     /* LATAbits.LATA3 = (CO->HBcons->allMonitoredOperational) ? 1 : 0; */
 
     /* Example error */
-    /* if(errorCondition) CO_errorReport(CO->EM, CO_EMA_TEST1_INFORMATIVE, CO_EMC_GENERIC, 0x12345678L); */
-    /* if(errorSolved) CO_errorReset(CO->EM, CO_EMA_TEST1_INFORMATIVE, 0xAAAAAABBL); */
+    /* if(errorCondition) CO_errorReport(CO->ee, CO_EMA_TEST1_INFORMATIVE, CO_EMC_GENERIC, 0x12345678L); */
+    /* if(errorSolved) CO_errorReset(CO->ee, CO_EMA_TEST1_INFORMATIVE, 0xAAAAAABBL); */
 
 
     /* Prepare TPDO from buttons on Explorer16. */

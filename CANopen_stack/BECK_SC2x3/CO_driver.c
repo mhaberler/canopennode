@@ -35,12 +35,12 @@ int CAN2callback(CanEvent event, const CanMsg *msg);
 #endif
 
 /******************************************************************************/
-void memcpySwap2(uint8_t* dest, uint8_t* src){
+void CO_memcpySwap2(uint8_t* dest, uint8_t* src){
     *(dest++) = *(src+1);
     *(dest) = *(src);
 }
 
-void memcpySwap4(uint8_t* dest, uint8_t* src){
+void CO_memcpySwap4(uint8_t* dest, uint8_t* src){
     src += 3;
     *(dest++) = *(src--);
     *(dest++) = *(src--);
@@ -84,7 +84,7 @@ int16_t CO_CANmodule_init(
     CANmodule->error = 0;
     CANmodule->CANtxCount = 0;
     CANmodule->errOld = 0;
-    CANmodule->EM = 0;
+    CANmodule->em = 0;
     for(i=0; i<rxSize; i++){
         CANmodule->rxArray[i].ident = 0;
         CANmodule->rxArray[i].pFunct = 0;
@@ -213,11 +213,11 @@ int16_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer){
     /* Verify overflow */
     if(buffer->bufferFull){
         if(!CANmodule->firstCANtxMessage)/* don't set error, if bootup message is still on buffers */
-            CO_errorReport((CO_EM_t*)CANmodule->EM, ERROR_CAN_TX_OVERFLOW, CO_EMC_CAN_OVERRUN, canDecodeId(buffer->ident));
+            CO_errorReport((CO_EM_t*)CANmodule->em, ERROR_CAN_TX_OVERFLOW, CO_EMC_CAN_OVERRUN, canDecodeId(buffer->ident));
         err = CO_ERROR_TX_OVERFLOW;
     }
 
-    DISABLE_INTERRUPTS();
+    CO_DISABLE_INTERRUPTS();
     /* if CAN TX buffer is free, copy message to it */
     if(CANmodule->bufferInhibitFlag == 0){
         canErr = canSend(CANmodule->CANbaseAddress, (const CanMsg*) buffer, FALSE);
@@ -231,20 +231,20 @@ int16_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer){
         buffer->bufferFull = 1;
         CANmodule->CANtxCount++;
     }
-    ENABLE_INTERRUPTS();
+    CO_ENABLE_INTERRUPTS();
 
 #else
-    DISABLE_INTERRUPTS();
+    CO_DISABLE_INTERRUPTS();
     canErr = canSend(CANmodule->CANbaseAddress, (const CanMsg*) buffer, FALSE);
 #ifdef CO_LOG_CAN_MESSAGES
     void CO_logMessage(const CanMsg *msg);
     CO_logMessage((const CanMsg*) buffer);
 #endif
-    ENABLE_INTERRUPTS();
+    CO_ENABLE_INTERRUPTS();
 #endif
 
     if(canErr != CAN_ERROR_NO){
-        CO_errorReport((CO_EM_t*)CANmodule->EM, CO_EM_GENERIC_ERROR, CO_EMC_GENERIC, canErr);
+        CO_errorReport((CO_EM_t*)CANmodule->em, CO_EM_GENERIC_ERROR, CO_EMC_GENERIC, canErr);
         err = CO_ERROR_TX_OVERFLOW;
     }
 
@@ -258,7 +258,7 @@ void CO_CANclearPendingSyncPDOs(CO_CANmodule_t *CANmodule){
     uint8_t tpdoDeleted = 0;
     CO_CANtx_t *buffer = CANmodule->txArray;
 
-    DISABLE_INTERRUPTS();
+    CO_DISABLE_INTERRUPTS();
     /* Abort message from CAN module, if there is synchronous TPDO.
      * Functionality is not used. */
 
@@ -274,11 +274,11 @@ void CO_CANclearPendingSyncPDOs(CO_CANmodule_t *CANmodule){
             buffer++;
         }
     }
-    ENABLE_INTERRUPTS();
+    CO_ENABLE_INTERRUPTS();
 
 
     if(tpdoDeleted){
-        CO_errorReport((CO_EM_t*)CANmodule->EM, CO_EM_TPDO_OUTSIDE_WINDOW, CO_EMC_COMMUNICATION, tpdoDeleted);
+        CO_errorReport((CO_EM_t*)CANmodule->em, CO_EM_TPDO_OUTSIDE_WINDOW, CO_EMC_COMMUNICATION, tpdoDeleted);
     }
 #endif
 }
@@ -288,7 +288,7 @@ void CO_CANclearPendingSyncPDOs(CO_CANmodule_t *CANmodule){
 void CO_CANverifyErrors(CO_CANmodule_t *CANmodule){
 #if function_canGetErrorCounters_works_without_loosing_messages
     unsigned rxErrors, txErrors;
-    CO_EM_t* EM = (CO_EM_t*)CANmodule->EM;
+    CO_EM_t* em = (CO_EM_t*)CANmodule->em;
 
     canGetErrorCounters(CANmodule->CANbaseAddress, &rxErrors, &txErrors);
     if(txErrors > 0xFFFF) txErrors = 0xFFFF;
@@ -299,42 +299,42 @@ void CO_CANverifyErrors(CO_CANmodule_t *CANmodule){
         CANmodule->errOld = err;
 
         if(txErrors >= 256){                               /* bus off */
-            CO_errorReport(EM, CO_EM_CAN_TX_BUS_OFF, CO_EMC_BUS_OFF_RECOVERED, err);
+            CO_errorReport(em, CO_EM_CAN_TX_BUS_OFF, CO_EMC_BUS_OFF_RECOVERED, err);
         }
         else{                                              /* not bus off */
-            CO_errorReset(EM, CO_EM_CAN_TX_BUS_OFF, err);
+            CO_errorReset(em, CO_EM_CAN_TX_BUS_OFF, err);
 
             if(rxErrors >= 96 || txErrors >= 96){           /* bus warning */
-                CO_errorReport(EM, CO_EM_CAN_BUS_WARNING, CO_EMC_NO_ERROR, err);
+                CO_errorReport(em, CO_EM_CAN_BUS_WARNING, CO_EMC_NO_ERROR, err);
             }
 
             if(rxErrors >= 128){                            /* RX bus passive */
-                CO_errorReport(EM, CO_EM_CAN_RX_BUS_PASSIVE, CO_EMC_CAN_PASSIVE, err);
+                CO_errorReport(em, CO_EM_CAN_RX_BUS_PASSIVE, CO_EMC_CAN_PASSIVE, err);
             }
             else{
-                CO_errorReset(EM, CO_EM_CAN_RX_BUS_PASSIVE, err);
+                CO_errorReset(em, CO_EM_CAN_RX_BUS_PASSIVE, err);
             }
 
             if(txErrors >= 128){                            /* TX bus passive */
                 if(!CANmodule->firstCANtxMessage){
-                    CO_errorReport(EM, CO_EM_CAN_TX_BUS_PASSIVE, CO_EMC_CAN_PASSIVE, err);
+                    CO_errorReport(em, CO_EM_CAN_TX_BUS_PASSIVE, CO_EMC_CAN_PASSIVE, err);
                 }
             }
             else{
                 int16_t wasCleared;
-                wasCleared =        CO_errorReset(EM, CO_EM_CAN_TX_BUS_PASSIVE, err);
-                if(wasCleared == 1) CO_errorReset(EM, CO_EM_CAN_TX_OVERFLOW, err);
+                wasCleared =        CO_errorReset(em, CO_EM_CAN_TX_BUS_PASSIVE, err);
+                if(wasCleared == 1) CO_errorReset(em, CO_EM_CAN_TX_OVERFLOW, err);
             }
 
             if(rxErrors < 96 && txErrors < 96){             /* no error */
                 int16_t wasCleared;
-                wasCleared =        CO_errorReset(EM, CO_EM_CAN_BUS_WARNING, err);
-                if(wasCleared == 1) CO_errorReset(EM, CO_EM_CAN_TX_OVERFLOW, err);
+                wasCleared =        CO_errorReset(em, CO_EM_CAN_BUS_WARNING, err);
+                if(wasCleared == 1) CO_errorReset(em, CO_EM_CAN_TX_OVERFLOW, err);
             }
         }
 
         if(CANmodule->error & 0x02){                       /* CAN RX bus overflow */
-            CO_errorReport(EM, CO_EM_CAN_RXB_OVERFLOW, CO_EMC_CAN_OVERRUN, err);
+            CO_errorReport(em, CO_EM_CAN_RXB_OVERFLOW, CO_EMC_CAN_OVERRUN, err);
         }
     }
 #endif

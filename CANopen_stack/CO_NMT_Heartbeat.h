@@ -142,7 +142,7 @@ typedef struct{
     uint8_t             nodeId;         /**< CANopen Node ID of this device */
     uint16_t            HBproducerTimer;/**< Internal timer for HB producer */
     uint16_t            firstHBTime;    /**< From CO_NMT_init() */
-    CO_EMpr_t          *EMpr;           /**< From CO_NMT_init() */
+    CO_EMpr_t          *emPr;           /**< From CO_NMT_init() */
     CO_CANmodule_t     *HB_CANdev;      /**< From CO_NMT_init() */
     CO_CANtx_t         *HB_TXbuff;      /**< CAN transmit buffer */
 }CO_NMT_t;
@@ -154,7 +154,7 @@ typedef struct{
  * Function must be called in the communication reset section.
  *
  * @param NMT This object will be initialized.
- * @param EMpr Emergency main object.
+ * @param emPr Emergency main object.
  * @param nodeId CANopen Node ID of this device.
  * @param firstHBTime Time between bootup and first heartbeat message in milliseconds.
  * If firstHBTime is greater than _Producer Heartbeat time_
@@ -170,7 +170,7 @@ typedef struct{
  */
 int16_t CO_NMT_init(
         CO_NMT_t               *NMT,
-        CO_EMpr_t              *EMpr,
+        CO_EMpr_t              *emPr,
         uint8_t                 nodeId,
         uint16_t                firstHBTime,
         CO_CANmodule_t         *NMT_CANdev,

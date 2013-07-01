@@ -118,8 +118,8 @@ void programAsync(uint16_t timer1msDiff){
 
     /* Is any application critical error set? */
     /* If error register is set, device will leave operational state. */
-    if(CO->EM->errorStatusBits[8] || CO->EM->errorStatusBits[9])
-        *CO->EMpr->errorRegister |= 0x20;
+    if(CO->em->errorStatusBits[8] || CO->em->errorStatusBits[9])
+        *CO->emPr->errorRegister |= 0x20;
 }
 
 
@@ -144,8 +144,8 @@ void program1ms(void){
     /* LATAbits.LATA3 = (CO->HBcons->allMonitoredOperational) ? 1 : 0; */
 
     /* Example error is simulated from buttons on Explorer16 */
-    if(!PORTDbits.RD6) CO_errorReport(CO->EM, CO_EMA_TEST1_INFORMATIVE, CO_EMC_GENERIC, 0x12345678L);
-    if(!PORTDbits.RD7) CO_errorReset(CO->EM, CO_EMA_TEST1_INFORMATIVE, 0xAAAAAABBL);
+    if(!PORTDbits.RD6) CO_errorReport(CO->em, CO_EMA_TEST1_INFORMATIVE, CO_EMC_GENERIC, 0x12345678L);
+    if(!PORTDbits.RD7) CO_errorReset(CO->em, CO_EMA_TEST1_INFORMATIVE, 0xAAAAAABBL);
 
 
     /* Prepare TPDO from buttons on Explorer16. */

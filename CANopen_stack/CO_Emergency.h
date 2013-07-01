@@ -179,57 +179,57 @@ typedef enum{
  * _Error Status Bits_ must be large enough (up to 32 bytes).
  */
 typedef enum{
-    CO_EM_NO_ERROR                              = 0x00, /**< 0x00, Error Reset or No Error */
-    CO_EM_CAN_BUS_WARNING                       = 0x01, /**< 0x01, communication, info, CAN bus warning limit reached */
-    CO_EM_RXMSG_WRONG_LENGTH                    = 0x02, /**< 0x02, communication, info, Wrong data length of the received CAN message */
-    CO_EM_RXMSG_OVERFLOW                        = 0x03, /**< 0x03, communication, info, Previous received CAN message wasn't processed yet */
-    CO_EM_RPDO_WRONG_LENGTH                     = 0x04, /**< 0x04, communication, info, Wrong data length of received PDO */
-    CO_EM_RPDO_OVERFLOW                         = 0x05, /**< 0x05, communication, info, Previous received PDO wasn't processed yet */
-    CO_EM_CAN_RX_BUS_PASSIVE                    = 0x06, /**< 0x06, communication, info, CAN receive bus is passive */
-    CO_EM_CAN_TX_BUS_PASSIVE                    = 0x07, /**< 0x07, communication, info, CAN transmit bus is passive */
-    CO_EM_NMT_WRONG_COMMAND                     = 0x08, /**< 0x08, communication, info, Wrong NMT command received */
-    CO_EM_09_unused                             = 0x09, /**< 0x09, (unused) */
-    CO_EM_0A_unused                             = 0x0A, /**< 0x0A, (unused) */
-    CO_EM_0B_unused                             = 0x0B, /**< 0x0B, (unused) */
-    CO_EM_0C_unused                             = 0x0C, /**< 0x0C, (unused) */
-    CO_EM_0D_unused                             = 0x0D, /**< 0x0D, (unused) */
-    CO_EM_0E_unused                             = 0x0E, /**< 0x0E, (unused) */
-    CO_EM_0F_unused                             = 0x0F, /**< 0x0F, (unused) */
+    CO_EM_NO_ERROR                  = 0x00, /**< 0x00, Error Reset or No Error */
+    CO_EM_CAN_BUS_WARNING           = 0x01, /**< 0x01, communication, info, CAN bus warning limit reached */
+    CO_EM_RXMSG_WRONG_LENGTH        = 0x02, /**< 0x02, communication, info, Wrong data length of the received CAN message */
+    CO_EM_RXMSG_OVERFLOW            = 0x03, /**< 0x03, communication, info, Previous received CAN message wasn't processed yet */
+    CO_EM_RPDO_WRONG_LENGTH         = 0x04, /**< 0x04, communication, info, Wrong data length of received PDO */
+    CO_EM_RPDO_OVERFLOW             = 0x05, /**< 0x05, communication, info, Previous received PDO wasn't processed yet */
+    CO_EM_CAN_RX_BUS_PASSIVE        = 0x06, /**< 0x06, communication, info, CAN receive bus is passive */
+    CO_EM_CAN_TX_BUS_PASSIVE        = 0x07, /**< 0x07, communication, info, CAN transmit bus is passive */
+    CO_EM_NMT_WRONG_COMMAND         = 0x08, /**< 0x08, communication, info, Wrong NMT command received */
+    CO_EM_09_unused                 = 0x09, /**< 0x09, (unused) */
+    CO_EM_0A_unused                 = 0x0A, /**< 0x0A, (unused) */
+    CO_EM_0B_unused                 = 0x0B, /**< 0x0B, (unused) */
+    CO_EM_0C_unused                 = 0x0C, /**< 0x0C, (unused) */
+    CO_EM_0D_unused                 = 0x0D, /**< 0x0D, (unused) */
+    CO_EM_0E_unused                 = 0x0E, /**< 0x0E, (unused) */
+    CO_EM_0F_unused                 = 0x0F, /**< 0x0F, (unused) */
 
-    CO_EM_10_unused                             = 0x10, /**< 0x10, (unused) */
-    CO_EM_11_unused                             = 0x11, /**< 0x11, (unused) */
-    CO_EM_CAN_TX_BUS_OFF                        = 0x12, /**< 0x12, communication, critical, CAN transmit bus is off */
-    CO_EM_CAN_RXB_OVERFLOW                      = 0x13, /**< 0x13, communication, critical, CAN module receive buffer has overflowed */
-    CO_EM_CAN_TX_OVERFLOW                       = 0x14, /**< 0x14, communication, critical, CAN transmit buffer has overflowed */
-    CO_EM_TPDO_OUTSIDE_WINDOW                   = 0x15, /**< 0x15, communication, critical, TPDO is outside SYNC window */
-    CO_EM_16_unused                             = 0x16, /**< 0x16, (unused) */
-    CO_EM_17_unused                             = 0x17, /**< 0x17, (unused) */
-    CO_EM_SYNC_TIME_OUT                         = 0x18, /**< 0x18, communication, critical, SYNC message timeout */
-    CO_EM_SYNC_LENGTH                           = 0x19, /**< 0x19, communication, critical, Unexpected SYNC data length */
-    CO_EM_PDO_WRONG_MAPPING                     = 0x1A, /**< 0x1A, communication, critical, Error with PDO mapping */
-    CO_EM_HEARTBEAT_CONSUMER                    = 0x1B, /**< 0x1B, communication, critical, Heartbeat consumer timeout */
-    CO_EM_HEARTBEAT_CONSUMER_REMOTE_RESET       = 0x1C, /**< 0x1C, communication, critical, Heartbeat consumer detected remote node reset */
-    CO_EM_1D_unused                             = 0x1D, /**< 0x1D, (unused) */
-    CO_EM_1E_unused                             = 0x1E, /**< 0x1E, (unused) */
-    CO_EM_1F_unused                             = 0x1F, /**< 0x1F, (unused) */
+    CO_EM_10_unused                 = 0x10, /**< 0x10, (unused) */
+    CO_EM_11_unused                 = 0x11, /**< 0x11, (unused) */
+    CO_EM_CAN_TX_BUS_OFF            = 0x12, /**< 0x12, communication, critical, CAN transmit bus is off */
+    CO_EM_CAN_RXB_OVERFLOW          = 0x13, /**< 0x13, communication, critical, CAN module receive buffer has overflowed */
+    CO_EM_CAN_TX_OVERFLOW           = 0x14, /**< 0x14, communication, critical, CAN transmit buffer has overflowed */
+    CO_EM_TPDO_OUTSIDE_WINDOW       = 0x15, /**< 0x15, communication, critical, TPDO is outside SYNC window */
+    CO_EM_16_unused                 = 0x16, /**< 0x16, (unused) */
+    CO_EM_17_unused                 = 0x17, /**< 0x17, (unused) */
+    CO_EM_SYNC_TIME_OUT             = 0x18, /**< 0x18, communication, critical, SYNC message timeout */
+    CO_EM_SYNC_LENGTH               = 0x19, /**< 0x19, communication, critical, Unexpected SYNC data length */
+    CO_EM_PDO_WRONG_MAPPING         = 0x1A, /**< 0x1A, communication, critical, Error with PDO mapping */
+    CO_EM_HEARTBEAT_CONSUMER        = 0x1B, /**< 0x1B, communication, critical, Heartbeat consumer timeout */
+    CO_EM_HB_CONSUMER_REMOTE_RESET  = 0x1C, /**< 0x1C, communication, critical, Heartbeat consumer detected remote node reset */
+    CO_EM_1D_unused                 = 0x1D, /**< 0x1D, (unused) */
+    CO_EM_1E_unused                 = 0x1E, /**< 0x1E, (unused) */
+    CO_EM_1F_unused                 = 0x1F, /**< 0x1F, (unused) */
 
-    CO_EM_EMERGENCY_BUFFER_FULL                 = 0x20, /**< 0x20, generic, info, Emergency buffer is full, Emergency message wasn't sent */
-    CO_EM_21_unused                             = 0x21, /**< 0x21, (unused) */
-    CO_EM_MICROCONTROLLER_RESET                 = 0x22, /**< 0x22, generic, info, Microcontroller has just started */
-    CO_EM_23_unused                             = 0x23, /**< 0x23, (unused) */
-    CO_EM_24_unused                             = 0x24, /**< 0x24, (unused) */
-    CO_EM_25_unused                             = 0x25, /**< 0x25, (unused) */
-    CO_EM_26_unused                             = 0x26, /**< 0x26, (unused) */
-    CO_EM_27_unused                             = 0x27, /**< 0x27, (unused) */
+    CO_EM_EMERGENCY_BUFFER_FULL     = 0x20, /**< 0x20, generic, info, Emergency buffer is full, Emergency message wasn't sent */
+    CO_EM_21_unused                 = 0x21, /**< 0x21, (unused) */
+    CO_EM_MICROCONTROLLER_RESET     = 0x22, /**< 0x22, generic, info, Microcontroller has just started */
+    CO_EM_23_unused                 = 0x23, /**< 0x23, (unused) */
+    CO_EM_24_unused                 = 0x24, /**< 0x24, (unused) */
+    CO_EM_25_unused                 = 0x25, /**< 0x25, (unused) */
+    CO_EM_26_unused                 = 0x26, /**< 0x26, (unused) */
+    CO_EM_27_unused                 = 0x27, /**< 0x27, (unused) */
 
-    CO_EM_WRONG_ERROR_REPORT                    = 0x28, /**< 0x28, generic, critical, Wrong parameters to CO_errorReport() function */
-    CO_EM_ISR_TIMER_OVERFLOW                    = 0x29, /**< 0x29, generic, critical, Timer task has overflowed */
-    CO_EM_MEMORY_ALLOCATION_ERROR               = 0x2A, /**< 0x2A, generic, critical, Unable to allocate memory for objects */
-    CO_EM_GENERIC_ERROR                         = 0x2B, /**< 0x2B, generic, critical, Generic error, test usage */
-    CO_EM_MAIN_TIMER_OVERFLOW                   = 0x2C, /**< 0x2C, generic, critical, Mainline function exceeded maximum execution time */
-    CO_EM_INCONSISTENT_OBJECT_DICTIONARY        = 0x2D, /**< 0x2D, generic, critical, Object dictionary does not match the software */
-    CO_EM_CALCULATION_OF_PARAMETERS             = 0x2E, /**< 0x2E, generic, critical, Error in calculation of device parameters */
-    CO_EM_NON_VOLATILE_MEMORY                   = 0x2F  /**< 0x2F, generic, critical, Error with access to non volatile device memory */
+    CO_EM_WRONG_ERROR_REPORT        = 0x28, /**< 0x28, generic, critical, Wrong parameters to CO_errorReport() function */
+    CO_EM_ISR_TIMER_OVERFLOW        = 0x29, /**< 0x29, generic, critical, Timer task has overflowed */
+    CO_EM_MEMORY_ALLOCATION_ERROR   = 0x2A, /**< 0x2A, generic, critical, Unable to allocate memory for objects */
+    CO_EM_GENERIC_ERROR             = 0x2B, /**< 0x2B, generic, critical, Generic error, test usage */
+    CO_EM_MAIN_TIMER_OVERFLOW       = 0x2C, /**< 0x2C, generic, critical, Mainline function exceeded maximum execution time */
+    CO_EM_INCONSISTENT_OBJECT_DICT  = 0x2D, /**< 0x2D, generic, critical, Object dictionary does not match the software */
+    CO_EM_CALCULATION_OF_PARAMETERS = 0x2E, /**< 0x2E, generic, critical, Error in calculation of device parameters */
+    CO_EM_NON_VOLATILE_MEMORY       = 0x2F  /**< 0x2F, generic, critical, Error with access to non volatile device memory */
 }CO_EM_errorStatusBits_t;
 
 
@@ -268,7 +268,7 @@ typedef struct{
  *
  * Function is short and may be used form any task or interrupt.
  *
- * @param EM Emergency object.
+ * @param em Emergency object.
  * @param errorBit from #CO_EM_errorStatusBits_t.
  * @param errorCode from #CO_EM_errorCode_t.
  * @param infoCode 32 bit value is passed to bytes 4...7 of the Emergency message.
@@ -280,7 +280,7 @@ typedef struct{
  * @return  0: Error was already present before, no action was performed.
  * @return  1: Error is new, Emergency will be send.
  */
-int8_t CO_errorReport(CO_EM_t *EM, uint8_t errorBit, uint16_t errorCode, uint32_t infoCode);
+int8_t CO_errorReport(CO_EM_t *em, uint8_t errorBit, uint16_t errorCode, uint32_t infoCode);
 
 
 /**
@@ -291,7 +291,7 @@ int8_t CO_errorReport(CO_EM_t *EM, uint8_t errorBit, uint16_t errorCode, uint32_
  *
  * Function is short and may be used form any task or interrupt.
  *
- * @param EM Emergency object.
+ * @param em Emergency object.
  * @param errorBit from #CO_EM_errorStatusBits_t.
  * @param infoCode 32 bit value is passed to bytes 4...7 of the Emergency message.
  *
@@ -301,7 +301,7 @@ int8_t CO_errorReport(CO_EM_t *EM, uint8_t errorBit, uint16_t errorCode, uint32_
  * @return  0: Error was already present before, no action was performed.
  * @return  1: Error bit is cleared, Emergency with #CO_EM_errorCode_t 0 will be send.
  */
-int8_t CO_errorReset(CO_EM_t *EM, uint8_t errorBit, uint32_t infoCode);
+int8_t CO_errorReset(CO_EM_t *em, uint8_t errorBit, uint32_t infoCode);
 
 
 /**
@@ -309,13 +309,13 @@ int8_t CO_errorReset(CO_EM_t *EM, uint8_t errorBit, uint32_t infoCode);
  *
  * Function returns 1, if specific internal error is present. Otherwise it returns 0.
  *
- * @param EM Emergency object.
+ * @param em Emergency object.
  * @param errorBit from #CO_EM_errorStatusBits_t.
  *
  * @return 0: Error is not present.
  * @return 1: Error is present.
  */
-int8_t CO_isError(CO_EM_t *EM, uint8_t errorBit);
+int8_t CO_isError(CO_EM_t *em, uint8_t errorBit);
 
 
 #ifdef CO_DOXYGEN
@@ -336,7 +336,7 @@ typedef struct{
     uint8_t             preDefErrSize;  /**< From CO_EM_init() */
     uint8_t             preDefErrNoOfErrors;/**< Number of active errors in preDefErr */
     uint16_t            inhibitEmTimer; /**< Internal timer for emergency message */
-    CO_EM_t            *EM;             /**< CO_EM_t sub object is included here */
+    CO_EM_t            *em;             /**< CO_EM_t sub object is included here */
     CO_CANmodule_t     *CANdev;         /**< From CO_EM_init() */
     CO_CANtx_t         *CANtxBuff;      /**< CAN transmit buffer */
 }CO_EMpr_t;
@@ -347,8 +347,8 @@ typedef struct{
  *
  * Function must be called in the communication reset section.
  *
- * @param EMpr This object will be initialized.
- * @param EM Emergency object defined separately. Will be included in EMpr and
+ * @param emPr This object will be initialized.
+ * @param em Emergency object defined separately. Will be included in emPr and
  * initialized too.
  * @param SDO SDO server object.
  * @param errorStatusBits Pointer to _Error Status Bits_ array from Object Dictionary
@@ -365,8 +365,8 @@ typedef struct{
  * @return #CO_ReturnError_t CO_ERROR_NO or CO_ERROR_ILLEGAL_ARGUMENT.
  */
 int16_t CO_EM_init(
-        CO_EM_t                *EM,
-        CO_EMpr_t              *EMpr,
+        CO_EM_t                *em,
+        CO_EMpr_t              *emPr,
         CO_SDO_t               *SDO,
         uint8_t                *errorStatusBits,
         uint8_t                 errorStatusBitsSize,
@@ -385,13 +385,13 @@ int16_t CO_EM_init(
  * calculates bit 0 and bit 4 from _Error register_ and sends emergency message
  * if necessary.
  *
- * @param EMpr This object.
+ * @param emPr This object.
  * @param NMTisPreOrOperational True if this node is NMT_PRE_OPERATIONAL or NMT_OPERATIONAL.
  * @param timeDifference_100us Time difference from previous function call in [100 * microseconds].
  * @param EMinhTime _Inhibit time EMCY_ (object dictionary, index 0x1015).
  */
 void CO_EM_process(
-        CO_EMpr_t              *EMpr,
+        CO_EMpr_t              *emPr,
         uint8_t                 NMTisPreOrOperational,
         uint16_t                timeDifference_100us,
         uint16_t                EMinhTime);

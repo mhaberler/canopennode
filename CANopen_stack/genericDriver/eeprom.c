@@ -41,10 +41,10 @@
  * For more information see file CO_SDO.h.
  */
 static uint32_t CO_ODF_1010(CO_ODF_arg_t *ODF_arg){
-    EE_t *EE;
+    CO_EE_t *ee;
     uint32_t *value;
 
-    EE = (EE_t*) ODF_arg->object;
+    ee = (CO_EE_t*) ODF_arg->object;
     value = (uint32_t*) ODF_arg->data;
 
     if(!ODF_arg->reading){
@@ -55,7 +55,7 @@ static uint32_t CO_ODF_1010(CO_ODF_arg_t *ODF_arg){
 
         if(ODF_arg->subIndex == 1){
             if(valueCopy == 0x65766173){
-                /* write EE->OD_ROMAddress, EE->OD_ROMSize to eeprom (blocking function) */
+                /* write ee->OD_ROMAddress, ee->OD_ROMSize to eeprom (blocking function) */
 
                 /* verify data */
                 if(1){
@@ -79,10 +79,10 @@ static uint32_t CO_ODF_1010(CO_ODF_arg_t *ODF_arg){
  * For more information see file CO_SDO.h.
  */
 static uint32_t CO_ODF_1011(CO_ODF_arg_t *ODF_arg){
-    EE_t *EE;
+    CO_EE_t *ee;
     uint32_t *value;
 
-    EE = (EE_t*) ODF_arg->object;
+    ee = (CO_EE_t*) ODF_arg->object;
     value = (uint32_t*) ODF_arg->data;
 
     if(!ODF_arg->reading){
@@ -108,8 +108,8 @@ static uint32_t CO_ODF_1011(CO_ODF_arg_t *ODF_arg){
 
 
 /******************************************************************************/
-int16_t EE_init_1(
-        EE_t                   *EE,
+int16_t CO_EE_init_1(
+        CO_EE_t                *ee,
         uint8_t                *OD_EEPROMAddress,
         uint32_t                OD_EEPROMSize,
         uint8_t                *OD_ROMAddress,
@@ -120,12 +120,12 @@ int16_t EE_init_1(
 
 
     /* configure object variables */
-    EE->OD_EEPROMAddress = OD_EEPROMAddress;
-    EE->OD_EEPROMSize = OD_EEPROMSize;
-    EE->OD_ROMAddress = OD_ROMAddress;
-    EE->OD_ROMSize = OD_ROMSize;
-    EE->OD_EEPROMCurrentIndex = 0;
-    EE->OD_EEPROMWriteEnable = 0;
+    ee->OD_EEPROMAddress = OD_EEPROMAddress;
+    ee->OD_EEPROMSize = OD_EEPROMSize;
+    ee->OD_ROMAddress = OD_ROMAddress;
+    ee->OD_ROMSize = OD_ROMSize;
+    ee->OD_EEPROMCurrentIndex = 0;
+    ee->OD_EEPROMWriteEnable = 0;
 
     /* read the CO_OD_EEPROM from EEPROM, first verify, if data are OK */
 
@@ -136,27 +136,27 @@ int16_t EE_init_1(
 
 
 /******************************************************************************/
-void EE_init_2(
-        EE_t                   *EE,
-        int16_t                 EEStatus,
+void CO_EE_init_2(
+        CO_EE_t                *ee,
+        int16_t                 eeStatus,
         CO_SDO_t               *SDO,
-        CO_EM_t                *EM)
+        CO_EM_t                *em)
 {
-    CO_OD_configure(SDO, 0x1010, CO_ODF_1010, (void*)EE, 0, 0);
-    CO_OD_configure(SDO, 0x1011, CO_ODF_1011, (void*)EE, 0, 0);
-    if(EEStatus) CO_errorReport(EM, CO_EM_NON_VOLATILE_MEMORY, CO_EMC_HARDWARE, EEStatus);
+    CO_OD_configure(SDO, 0x1010, CO_ODF_1010, (void*)ee, 0, 0);
+    CO_OD_configure(SDO, 0x1011, CO_ODF_1011, (void*)ee, 0, 0);
+    if(eeStatus) CO_errorReport(em, CO_EM_NON_VOLATILE_MEMORY, CO_EMC_HARDWARE, eeStatus);
 }
 
 
 /******************************************************************************/
-void EE_process(EE_t *EE){
-    if(EE && EE->OD_EEPROMWriteEnable/* && !EE_isWriteInProcess()*/){
+void CO_EE_process(CO_EE_t *ee){
+    if(ee && ee->OD_EEPROMWriteEnable/* && !isWriteInProcess()*/){
         /* verify next word */
-        if(++EE->OD_EEPROMCurrentIndex == EE->OD_EEPROMSize) EE->OD_EEPROMCurrentIndex = 0;
-        unsigned int i = EE->OD_EEPROMCurrentIndex;
+        if(++ee->OD_EEPROMCurrentIndex == ee->OD_EEPROMSize) ee->OD_EEPROMCurrentIndex = 0;
+        unsigned int i = ee->OD_EEPROMCurrentIndex;
 
         /* read eeprom */
-        uint8_t RAMdata = EE->OD_EEPROMAddress[i];
+        uint8_t RAMdata = ee->OD_EEPROMAddress[i];
         uint8_t EEdata = 0/*EE_readByte(i)*/;
 
         /* if bytes in EEPROM and in RAM are different, then write to EEPROM */

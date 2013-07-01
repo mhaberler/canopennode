@@ -69,14 +69,14 @@ typedef struct{
                                            address of the battery powered SRAM */
     uint32_t            OD_EEPROMCurrentIndex;
     uint8_t             OD_EEPROMWriteEnable;
-}EE_t;
+}CO_EE_t;
 
 
 /* First part of eeprom initialization.
  *  @param SRAMAddress Address of battery powered SRAM memory.
  */
-int16_t EE_init_1(
-        EE_t                   *EE,
+int16_t CO_EE_init_1(
+        CO_EE_t                *ee,
         uint8_t                *SRAMAddress,
         uint8_t                *OD_EEPROMAddress,
         uint32_t                OD_EEPROMSize,
@@ -85,15 +85,15 @@ int16_t EE_init_1(
 
 
 /* Second part of eeprom initialization. */
-void EE_init_2(
-        EE_t                   *EE, 
-        int16_t                 EEStatus,
+void CO_EE_init_2(
+        CO_EE_t                *ee, 
+        int16_t                 eeStatus,
         CO_SDO_t               *SDO,
-        CO_EM_t                *EM);
+        CO_EM_t                *em);
 
 
 /* Process eeprom object. */
-void EE_process(EE_t *EE);
+void CO_EE_process(CO_EE_t *ee);
 
 
 #endif

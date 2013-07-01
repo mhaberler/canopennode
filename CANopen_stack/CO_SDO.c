@@ -208,7 +208,7 @@ uint16_t CO_OD_configure(
 
     ext->pODFunc = pODFunc;
     ext->object = object;
-    if(flags != NULL && flagsSize != 0 && flagsSize == maxSubIndex){
+    if(flags != 0 && flagsSize != 0 && flagsSize == maxSubIndex){
         uint16_t i;
         ext->flags = flags;
         for(i=0; i<=maxSubIndex; i++){
@@ -216,7 +216,7 @@ uint16_t CO_OD_configure(
         }
     }
     else{
-        ext->flags = NULL;
+        ext->flags = 0;
     }
 
     return entryNo;
@@ -366,7 +366,7 @@ uint32_t CO_SDO_initTransfer(CO_SDO_t *SDO, uint16_t index, uint8_t subIndex){
     SDO->ODF_arg.ODdataStorage = CO_OD_getDataPointer(SDO, SDO->entryNo, subIndex);
 
     /* fill ODF_arg */
-    SDO->ODF_arg.object = NULL;
+    SDO->ODF_arg.object = 0;
     if(SDO->ODExtensions){
         CO_OD_extension_t *ext = &SDO->ODExtensions[SDO->entryNo];
         SDO->ODF_arg.object = ext->object;
@@ -408,13 +408,13 @@ uint32_t CO_SDO_readOD(CO_SDO_t *SDO, uint16_t SDOBufferSize){
 
     /* copy data from OD to SDO buffer if not domain */
     if(ODdata){
-        DISABLE_INTERRUPTS();
+        CO_DISABLE_INTERRUPTS();
         while(length--) *(SDObuffer++) = *(ODdata++);
-        ENABLE_INTERRUPTS();
+        CO_ENABLE_INTERRUPTS();
     }
     /* if domain, Object dictionary function MUST exist */
     else{
-        if(ext->pODFunc == NULL) return SDO_ABORT_DEV_INCOMP;     /* general internal incompatibility in the device */
+        if(ext->pODFunc == 0) return SDO_ABORT_DEV_INCOMP;     /* general internal incompatibility in the device */
     }
 
     /* call Object dictionary function if registered */
@@ -496,9 +496,9 @@ uint32_t CO_SDO_writeOD(CO_SDO_t *SDO, uint16_t length){
 
     /* copy data from SDO buffer to OD if not domain */
     if(ODdata){
-        DISABLE_INTERRUPTS();
+        CO_DISABLE_INTERRUPTS();
         while(length--) *(ODdata++) = *(SDObuffer++);
-        ENABLE_INTERRUPTS();
+        CO_ENABLE_INTERRUPTS();
     }
 
     return 0;
@@ -511,7 +511,7 @@ static void CO_SDO_abort(CO_SDO_t *SDO, uint32_t code){
     SDO->CANtxBuff->data[1] = SDO->ODF_arg.index & 0xFF;
     SDO->CANtxBuff->data[2] = (SDO->ODF_arg.index>>8) & 0xFF;
     SDO->CANtxBuff->data[3] = SDO->ODF_arg.subIndex;
-    memcpySwap4(&SDO->CANtxBuff->data[4], (uint8_t*)&code);
+    CO_memcpySwap4(&SDO->CANtxBuff->data[4], (uint8_t*)&code);
     SDO->state = STATE_IDLE;
     SDO->CANrxNew = 0;
     CO_CANsend(SDO->CANdevTx, SDO->CANtxBuff);
@@ -670,7 +670,7 @@ int8_t CO_SDO_process(
                 /* verify length if size is indicated */
                 if(SDO->CANrxData[0]&0x01){
                     uint32_t lenRx;
-                    memcpySwap4((uint8_t*)&lenRx, &SDO->CANrxData[4]);
+                    CO_memcpySwap4((uint8_t*)&lenRx, &SDO->CANrxData[4]);
                     SDO->ODF_arg.dataLengthTotal = lenRx;
 
                     /* verify length except for domain data type */
@@ -772,7 +772,7 @@ int8_t CO_SDO_process(
             /* verify length if size is indicated */
             if(SDO->CANrxData[0]&0x02){
                 uint32_t lenRx;
-                memcpySwap4((uint8_t*)&lenRx, &SDO->CANrxData[4]);
+                CO_memcpySwap4((uint8_t*)&lenRx, &SDO->CANrxData[4]);
                 SDO->ODF_arg.dataLengthTotal = lenRx;
 
                 /* verify length except for domain data type */
@@ -879,7 +879,7 @@ int8_t CO_SDO_process(
                 uint16_t crc;
                 SDO->crc = crc16_ccitt(SDO->ODF_arg.data, SDO->bufferOffset, SDO->crc);
 
-                memcpySwap2((uint8_t*)&crc, &SDO->CANrxData[1]);
+                CO_memcpySwap2((uint8_t*)&crc, &SDO->CANrxData[1]);
 
                 if(SDO->crc != crc){
                     CO_SDO_abort(SDO, SDO_ABORT_CRC);   /* CRC error (block mode only). */
@@ -929,7 +929,7 @@ int8_t CO_SDO_process(
                 /* indicate data size, if known */
                 if(SDO->ODF_arg.dataLengthTotal){
                     uint32_t len = SDO->ODF_arg.dataLengthTotal;
-                    memcpySwap4(&SDO->CANtxBuff->data[4], (uint8_t*)&len);
+                    CO_memcpySwap4(&SDO->CANtxBuff->data[4], (uint8_t*)&len);
                     SDO->CANtxBuff->data[0] = 0x41;
                 }
                 else{
@@ -1040,7 +1040,7 @@ int8_t CO_SDO_process(
             /* indicate data size, if known */
             if(SDO->ODF_arg.dataLengthTotal){
                 uint32_t len = SDO->ODF_arg.dataLengthTotal;
-                memcpySwap4(&SDO->CANtxBuff->data[4], (uint8_t*)&len);
+                CO_memcpySwap4(&SDO->CANtxBuff->data[4], (uint8_t*)&len);
                 SDO->CANtxBuff->data[0] = 0xC6;
             }
             else{
@@ -1095,7 +1095,7 @@ int8_t CO_SDO_process(
 
                     /* CRC */
                     if(SDO->crcEnabled)
-                        memcpySwap2(&SDO->CANtxBuff->data[1], (uint8_t*)&SDO->crc);
+                        CO_memcpySwap2(&SDO->CANtxBuff->data[1], (uint8_t*)&SDO->crc);
 
                     SDO->state = STATE_UPLOAD_BLOCK_END;
 

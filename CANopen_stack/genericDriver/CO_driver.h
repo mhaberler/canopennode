@@ -128,15 +128,9 @@
  * functions, which may be accessed from different tasks.
  * @{
  */
-    #define DISABLE_INTERRUPTS()        /**< Disable all interrupts */
-    #define ENABLE_INTERRUPTS()         /**< Reenable interrupts */
+    #define CO_DISABLE_INTERRUPTS()     /**< Disable all interrupts */
+    #define CO_ENABLE_INTERRUPTS()      /**< Reenable interrupts */
 /** @} */
-
-
-/** Null */
-#ifndef	NULL
-#define	NULL	(0)
-#endif
 
 
 /**
@@ -243,7 +237,7 @@ typedef struct{
     /** Number of messages in transmit buffer, which are waiting to be copied to the CAN module */
     volatile uint16_t   CANtxCount;
     uint32_t            errOld;         /**< Previous state of CAN errors */
-    void               *EM;             /**< Emergency object */
+    void               *em;             /**< Emergency object */
 }CO_CANmodule_t;
 
 
@@ -264,7 +258,7 @@ typedef struct{
  * @param dest Destination location.
  * @param src Source location.
  */
-void memcpySwap2(uint8_t* dest, uint8_t* src);
+void CO_memcpySwap2(uint8_t* dest, uint8_t* src);
 
 /**
  * Copy 4 data bytes from source to destination. Swap bytes if
@@ -273,7 +267,7 @@ void memcpySwap2(uint8_t* dest, uint8_t* src);
  * @param dest Destination location.
  * @param src Source location.
  */
-void memcpySwap4(uint8_t* dest, uint8_t* src);
+void CO_memcpySwap4(uint8_t* dest, uint8_t* src);
 
 /** @} */
 

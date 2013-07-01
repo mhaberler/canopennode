@@ -132,7 +132,7 @@ static void huge _pascal CgiSendFunction(rpCgiPtr CgiRequest){
                 /* if this is a NMT message, send NMT command also to this node. */
                 if(cobId == 0 && dataLen == 2 && (data[1] == 0 || data[1] == CO->NMT->nodeId)){
                     switch(data[0]){
-                        case CO_NMT_ENTER_OPERATIONAL:      if(!(*CO->NMT->EMpr->errorRegister))
+                        case CO_NMT_ENTER_OPERATIONAL:      if(!(*CO->NMT->emPr->errorRegister))
                                                             CO->NMT->operatingState = CO_NMT_OPERATIONAL;    break;
                         case CO_NMT_ENTER_STOPPED:          CO->NMT->operatingState = CO_NMT_STOPPED;           break;
                         case CO_NMT_ENTER_PRE_OPERATIONAL:  CO->NMT->operatingState = CO_NMT_PRE_OPERATIONAL;   break;

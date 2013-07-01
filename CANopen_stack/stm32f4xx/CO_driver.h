@@ -40,8 +40,8 @@
 
 
 /* Disabling interrupts */
-#define DISABLE_INTERRUPTS()        __set_PRIMASK(1);
-#define ENABLE_INTERRUPTS()         __set_PRIMASK(0);
+#define CO_DISABLE_INTERRUPTS()     __set_PRIMASK(1);
+#define CO_ENABLE_INTERRUPTS()      __set_PRIMASK(0);
 
 
 /* Data types */
@@ -126,7 +126,7 @@ typedef struct{
     volatile uint8_t    firstCANtxMessage;
     volatile uint16_t   CANtxCount;
     uint32_t            errOld;
-    void               *EM;
+    void               *em;
 }CO_CANmodule_t;
 
 
@@ -147,8 +147,8 @@ void CanLedsSet(eCoLeds led);
 #ifdef __BIG_ENDIAN__
     #define BIG_ENDIAN
 #endif
-void memcpySwap2(uint8_t* dest, uint8_t* src);
-void memcpySwap4(uint8_t* dest, uint8_t* src);
+void CO_memcpySwap2(uint8_t* dest, uint8_t* src);
+void CO_memcpySwap4(uint8_t* dest, uint8_t* src);
 
 
 /* Request CAN configuration or normal mode */

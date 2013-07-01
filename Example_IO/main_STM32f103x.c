@@ -103,7 +103,7 @@ int main(void) {
         err = CO_init();
         if (err) {
             TRACE_FATAL("CO_init\n\r");
-            /* CO_errorReport(CO->EM, CO_EM_MEMORY_ALLOCATION_ERROR, CO_EMC_SOFTWARE_INTERNAL, err); */
+            /* CO_errorReport(CO->em, CO_EM_MEMORY_ALLOCATION_ERROR, CO_EMC_SOFTWARE_INTERNAL, err); */
         }
 
         /* start Timer */
@@ -140,7 +140,7 @@ int main(void) {
     } /*  while (reset != 2) */
     /* program exit ***************************************************************/
     /* save variables to eeprom */
-    DISABLE_INTERRUPTS();
+    CO_DISABLE_INTERRUPTS();
 
     CanLedsSet(eCoLed_None);
     /* (not implemented) eeprom_saveAll(&eeprom); */

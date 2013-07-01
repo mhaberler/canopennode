@@ -55,10 +55,10 @@ static uint8_t EE_readStatus();
 
 /* Store parameters ***********************************************************/
 uint32_t CO_ODF_1010(CO_ODF_arg_t *ODF_arg){
-    EE_t *EE;
+    CO_EE_t *ee;
     uint32_t *value;
 
-    EE = (EE_t*) ODF_arg->object;
+    ee = (CO_EE_t*) ODF_arg->object;
     value = (uint32_t*) ODF_arg->data;
 
     if(!ODF_arg->reading){
@@ -74,22 +74,22 @@ uint32_t CO_ODF_1010(CO_ODF_arg_t *ODF_arg){
                 /* read the master boot record from the last page in eeprom */
                 EE_readBlock((uint8_t*)&MBR, EE_SIZE - EE_PAGE_SIZE, sizeof(MBR));
                 /* if EEPROM is not yet initilalized, enable it now */
-                if(MBR.OD_EEPROMSize != EE->OD_EEPROMSize)
-                    EE->OD_EEPROMWriteEnable = 1;
+                if(MBR.OD_EEPROMSize != ee->OD_EEPROMSize)
+                    ee->OD_EEPROMWriteEnable = 1;
 
                 /* prepare MBR */
-                MBR.CRC = crc16_ccitt(EE->OD_ROMAddress, EE->OD_ROMSize, 0);
-                MBR.OD_EEPROMSize = EE->OD_EEPROMSize;
-                MBR.OD_ROMSize = EE->OD_ROMSize;
+                MBR.CRC = crc16_ccitt(ee->OD_ROMAddress, ee->OD_ROMSize, 0);
+                MBR.OD_EEPROMSize = ee->OD_EEPROMSize;
+                MBR.OD_ROMSize = ee->OD_ROMSize;
 
                 /* write to eeprom (blocking function) */
                 EE_writeStatus(0); /* unprotect data */
                 EE_writeBlock((uint8_t*)&MBR, EE_SIZE - EE_PAGE_SIZE, sizeof(MBR));
-                EE_writeBlock(EE->OD_ROMAddress, EE_SIZE/2, EE->OD_ROMSize);
+                EE_writeBlock(ee->OD_ROMAddress, EE_SIZE/2, ee->OD_ROMSize);
                 EE_writeStatus(0x88); /* protect data */
 
                 /* verify data and MBR and status register */
-                if(   EE_verifyBlock(EE->OD_ROMAddress, EE_SIZE/2, EE->OD_ROMSize) == 1
+                if(   EE_verifyBlock(ee->OD_ROMAddress, EE_SIZE/2, ee->OD_ROMSize) == 1
                     && EE_verifyBlock((uint8_t*)&MBR, EE_SIZE - EE_PAGE_SIZE, sizeof(MBR)) == 1
                     && (EE_readStatus()&0x8C) == 0x88){
                     /* write successfull */
@@ -108,10 +108,10 @@ uint32_t CO_ODF_1010(CO_ODF_arg_t *ODF_arg){
 
 /* Restore default parameters *************************************************/
 uint32_t CO_ODF_1011(CO_ODF_arg_t *ODF_arg){
-    EE_t *EE;
+    CO_EE_t *ee;
     uint32_t *value;
 
-    EE = (EE_t*) ODF_arg->object;
+    ee = (CO_EE_t*) ODF_arg->object;
     value = (uint32_t*) ODF_arg->data;
 
     if(!ODF_arg->reading){
@@ -133,7 +133,7 @@ uint32_t CO_ODF_1011(CO_ODF_arg_t *ODF_arg){
                 switch(ODF_arg->subIndex){
                     case 0x01: MBR.OD_ROMSize = 0;              break; /* clear the ROM */
                     /* following don't work, if not enabled in object dictionary */
-                    case 0x77: MBR.OD_ROMSize = EE->OD_ROMSize; break; /* restore the ROM back */
+                    case 0x77: MBR.OD_ROMSize = ee->OD_ROMSize; break; /* restore the ROM back */
                     case 0x7F: MBR.OD_EEPROMSize = 0;           break; /* clear EEPROM */
                     default: return 0x06090011;                        /* Sub-index does not exist. */
                 }
@@ -163,8 +163,8 @@ uint32_t CO_ODF_1011(CO_ODF_arg_t *ODF_arg){
 
 
 /******************************************************************************/
-int16_t EE_init_1(
-        EE_t                   *EE,
+int16_t CO_EE_init_1(
+        CO_EE_t                *ee,
         uint8_t                *OD_EEPROMAddress,
         uint32_t                OD_EEPROMSize,
         uint8_t                *OD_ROMAddress,
@@ -192,12 +192,12 @@ int16_t EE_init_1(
     if(OD_EEPROMSize > EE_SIZE/2) OD_EEPROMSize = EE_SIZE/2;
 
     /* configure object variables */
-    EE->OD_EEPROMAddress = OD_EEPROMAddress;
-    EE->OD_EEPROMSize = OD_EEPROMSize;
-    EE->OD_ROMAddress = OD_ROMAddress;
-    EE->OD_ROMSize = OD_ROMSize;
-    EE->OD_EEPROMCurrentIndex = 0;
-    EE->OD_EEPROMWriteEnable = 0;
+    ee->OD_EEPROMAddress = OD_EEPROMAddress;
+    ee->OD_EEPROMSize = OD_EEPROMSize;
+    ee->OD_ROMAddress = OD_ROMAddress;
+    ee->OD_ROMSize = OD_ROMSize;
+    ee->OD_EEPROMCurrentIndex = 0;
+    ee->OD_EEPROMWriteEnable = 0;
 
     /* read the master boot record from the last page in eeprom */
     EE_MBR_t MBR;
@@ -211,7 +211,7 @@ int16_t EE_init_1(
         EE_readBlock((uint8_t*)&lastWordEE, OD_EEPROMSize-4, 4);
         if(firstWordRAM == firstWordEE && firstWordRAM == lastWordEE){
             EE_readBlock(OD_EEPROMAddress, 0, OD_EEPROMSize);
-            EE->OD_EEPROMWriteEnable = 1;
+            ee->OD_EEPROMWriteEnable = 1;
         }
         else{
             return CO_ERROR_DATA_CORRUPT;
@@ -234,27 +234,27 @@ int16_t EE_init_1(
 
 
 /******************************************************************************/
-void EE_init_2(
-        EE_t                   *EE,
-        int16_t                 EEStatus,
+void CO_EE_init_2(
+        CO_EE_t                *ee,
+        int16_t                 eeStatus,
         CO_SDO_t               *SDO,
-        CO_EM_t                *EM)
+        CO_EM_t                *em)
 {
-    CO_OD_configure(SDO, 0x1010, CO_ODF_1010, (void*)EE, 0, 0);
-    CO_OD_configure(SDO, 0x1011, CO_ODF_1011, (void*)EE, 0, 0);
-    if(EEStatus) CO_errorReport(EM, CO_EM_NON_VOLATILE_MEMORY, CO_EMC_HARDWARE, EEStatus);
+    CO_OD_configure(SDO, 0x1010, CO_ODF_1010, (void*)ee, 0, 0);
+    CO_OD_configure(SDO, 0x1011, CO_ODF_1011, (void*)ee, 0, 0);
+    if(eeStatus) CO_errorReport(em, CO_EM_NON_VOLATILE_MEMORY, CO_EMC_HARDWARE, eeStatus);
 }
 
 
 /******************************************************************************/
-void EE_process(EE_t *EE){
-    if(EE && EE->OD_EEPROMWriteEnable && !EE_isWriteInProcess()){
+void CO_EE_process(CO_EE_t *ee){
+    if(ee && ee->OD_EEPROMWriteEnable && !EE_isWriteInProcess()){
         /* verify next word */
-        if(++EE->OD_EEPROMCurrentIndex == EE->OD_EEPROMSize) EE->OD_EEPROMCurrentIndex = 0;
-        unsigned int i = EE->OD_EEPROMCurrentIndex;
+        if(++ee->OD_EEPROMCurrentIndex == ee->OD_EEPROMSize) ee->OD_EEPROMCurrentIndex = 0;
+        unsigned int i = ee->OD_EEPROMCurrentIndex;
 
         /* read eeprom */
-        uint8_t RAMdata = EE->OD_EEPROMAddress[i];
+        uint8_t RAMdata = ee->OD_EEPROMAddress[i];
         uint8_t EEdata = EE_readByte(i);
 
         /* if bytes in EEPROM and in RAM are different, then write to EEPROM */
@@ -281,7 +281,7 @@ void EE_process(EE_t *EE){
  * Write to SPI and at the same time read from SPI.
  *
  * PIC32 used 16bytes long FIFO buffer with SPI. SPI module is initailized in
- * <EE_init>.
+ * CO_EE_init.
  *
  * @param tx Ponter to transmitting data. If NULL, zeroes will be transmitted.
  * @param rx Ponter to data buffer, where received data wile be stored.

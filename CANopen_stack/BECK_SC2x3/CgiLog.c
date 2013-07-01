@@ -40,17 +40,17 @@ static void CgiLogTimestamp(uint8_t *buf, uint8_t disi){
     TimeDateFineS timeDate;
 
     if(disi){
-        DISABLE_INTERRUPTS();
+        CO_DISABLE_INTERRUPTS();
         tickCount = RTX_GetTickCount();
         RTX_Get_TimeDate_us(&timeDate);
-        ENABLE_INTERRUPTS();
+        CO_ENABLE_INTERRUPTS();
     }
     else{
         tickCount = RTX_GetTickCount();
         RTX_Get_TimeDate_us(&timeDate);
     }
 
-    memcpySwap4(buf, (uint8_t*) &tickCount); buf += 4;
+    CO_memcpySwap4(buf, (uint8_t*) &tickCount); buf += 4;
     *buf++ = 16;
     *buf++ = 0;
     *buf++ = 0;
@@ -61,7 +61,7 @@ static void CgiLogTimestamp(uint8_t *buf, uint8_t disi){
     *buf++ = timeDate.hr;
     *buf++ = timeDate.min;
     *buf++ = timeDate.sec;
-    memcpySwap2(buf, (uint8_t*) &timeDate.msec);
+    CO_memcpySwap2(buf, (uint8_t*) &timeDate.msec);
 }
 
 
@@ -92,11 +92,11 @@ static void huge _pascal CgiLogCANFunction(rpCgiPtr CgiRequest){
     uint8_t *buf = CgiLog->CANBuf[bufIdx];
     uint32_t bufLen;
 
-    DISABLE_INTERRUPTS();
+    CO_DISABLE_INTERRUPTS();
     /* calculate size and write pointer of the oldest message */
     if(CgiLog->CANBufOvf){
         bufLen = CgiLog->CANBufSize;
-        memcpySwap4(buf+4, (uint8_t*) &CgiLog->CANBufOfs);
+        CO_memcpySwap4(buf+4, (uint8_t*) &CgiLog->CANBufOfs);
     }
     else{
         bufLen = CgiLog->CANBufOfs;
@@ -105,7 +105,7 @@ static void huge _pascal CgiLogCANFunction(rpCgiPtr CgiRequest){
     CgiLog->CANBufIdx = 1 - bufIdx;
     CgiLog->CANBufOvf = 0;
     CgiLog->CANBufOfs = 16;
-    ENABLE_INTERRUPTS();
+    CO_ENABLE_INTERRUPTS();
 
     /* write timestamp in the new buffer */
     CgiLogTimestamp(CgiLog->CANBuf[CgiLog->CANBufIdx], 1);
@@ -261,9 +261,9 @@ void CO_logMessage(const CanMsg *msg){
         /* emergency + CAN buffer */
         emcyBuf = (uint32_t*)(CgiLog->emcyTempBuf + emcyBufOffset);
 
-        memcpySwap4((uint8_t*) CANbuf++, (uint8_t*) &timeStamp);
+        CO_memcpySwap4((uint8_t*) CANbuf++, (uint8_t*) &timeStamp);
         *emcyBuf++ = timeStamp;
-        memcpySwap4((uint8_t*) CANbuf++, (uint8_t*) &id_len);
+        CO_memcpySwap4((uint8_t*) CANbuf++, (uint8_t*) &id_len);
         *emcyBuf++ = id_len;
         *CANbuf = *(CANbuf+1) = 0;
         memcpy(CANbuf, msg->data, len);
@@ -272,8 +272,8 @@ void CO_logMessage(const CanMsg *msg){
     }
     else{
         /* CAN buffer only */
-        memcpySwap4((uint8_t*) CANbuf++, (uint8_t*) &timeStamp);
-        memcpySwap4((uint8_t*) CANbuf++, (uint8_t*) &id_len);
+        CO_memcpySwap4((uint8_t*) CANbuf++, (uint8_t*) &timeStamp);
+        CO_memcpySwap4((uint8_t*) CANbuf++, (uint8_t*) &id_len);
         *CANbuf = *(CANbuf+1) = 0;
         memcpy(CANbuf, msg->data, len);
     }
@@ -290,11 +290,11 @@ void CgiLogSaveBuffer(CgiLog_t *CgiLog){
     uint8_t *buf = CgiLog->CANBuf[bufIdx];
     uint32_t bufLen;
 
-    DISABLE_INTERRUPTS();
+    CO_DISABLE_INTERRUPTS();
     /* calculate size and write pointer of the oldest message */
     if(CgiLog->CANBufOvf){
         bufLen = CgiLog->CANBufSize;
-        memcpySwap4(buf+4, (uint8_t*) &CgiLog->CANBufOfs);
+        CO_memcpySwap4(buf+4, (uint8_t*) &CgiLog->CANBufOfs);
     }
     else{
         bufLen = CgiLog->CANBufOfs;
@@ -303,7 +303,7 @@ void CgiLogSaveBuffer(CgiLog_t *CgiLog){
     CgiLog->CANBufIdx = 1 - bufIdx;
     CgiLog->CANBufOvf = 0;
     CgiLog->CANBufOfs = 16;
-    ENABLE_INTERRUPTS();
+    CO_ENABLE_INTERRUPTS();
 
     /* write timestamp in the new buffer */
     CgiLogTimestamp(CgiLog->CANBuf[CgiLog->CANBufIdx], 1);
@@ -400,7 +400,7 @@ void CgiLogEmcyProcess(CgiLog_t *CgiLog){
         uint8_t  errorRegister  = tBuf[start+10];
         uint8_t  errorIndex     = tBuf[start+11];
         uint32_t info;
-        memcpySwap4((uint8_t*)&info, &tBuf[start+12]);
+        CO_memcpySwap4((uint8_t*)&info, &tBuf[start+12]);
 
         SramOfs += sprintf((CgiLog->emcyBuf+SramOfs),
                 "%s - %02X - %04X %02X %02X %08X\n",

@@ -53,7 +53,7 @@
  * SYNC producer and consumer object.
  */
 typedef struct{
-    CO_EM_t            *EM;             /**< From CO_SYNC_init() */
+    CO_EM_t            *em;             /**< From CO_SYNC_init() */
     uint8_t            *operatingState; /**< From CO_SYNC_init() */
     /** True, if device is SYNC producer. Calculated from _COB ID SYNC Message_
     variable from Object dictionary (index 0x1005). */
@@ -94,7 +94,7 @@ typedef struct{
  * Function must be called in the communication reset section.
  *
  * @param SYNC This object will be initialized.
- * @param EM Emergency object.
+ * @param em Emergency object.
  * @param SDO SDO server object.
  * @param operatingState Pointer to variable indicating CANopen device NMT internal state.
  * @param COB_ID_SYNCMessage From Object dictionary (index 0x1005).
@@ -109,7 +109,7 @@ typedef struct{
  */
 int16_t CO_SYNC_init(
         CO_SYNC_t              *SYNC,
-        CO_EM_t                *EM,
+        CO_EM_t                *em,
         CO_SDO_t               *SDO,
         uint8_t                *operatingState,
         uint32_t                COB_ID_SYNCMessage,

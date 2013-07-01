@@ -48,14 +48,14 @@ static int16_t CO_SYNC_receive(void *object, CO_CANrxMsg_t *msg){
     if(*SYNC->operatingState == CO_NMT_OPERATIONAL || *SYNC->operatingState == CO_NMT_PRE_OPERATIONAL){
         if(SYNC->counterOverflowValue){
             if(msg->DLC != 1){
-                CO_errorReport(SYNC->EM, CO_EM_SYNC_LENGTH, CO_EMC_SYNC_DATA_LENGTH, msg->DLC | 0x0100);
+                CO_errorReport(SYNC->em, CO_EM_SYNC_LENGTH, CO_EMC_SYNC_DATA_LENGTH, msg->DLC | 0x0100);
                 return CO_ERROR_NO;
             }
             SYNC->counter = msg->data[0];
         }
         else{
             if(msg->DLC != 0){
-                CO_errorReport(SYNC->EM, CO_EM_SYNC_LENGTH, CO_EMC_SYNC_DATA_LENGTH, msg->DLC);
+                CO_errorReport(SYNC->em, CO_EM_SYNC_LENGTH, CO_EMC_SYNC_DATA_LENGTH, msg->DLC);
                 return CO_ERROR_NO;
             }
         }
@@ -194,7 +194,7 @@ static uint32_t CO_ODF_1019(CO_ODF_arg_t *ODF_arg){
 /******************************************************************************/
 int16_t CO_SYNC_init(
         CO_SYNC_t              *SYNC,
-        CO_EM_t                *EM,
+        CO_EM_t                *em,
         CO_SDO_t               *SDO,
         uint8_t                *operatingState,
         uint32_t                COB_ID_SYNCMessage,
@@ -225,7 +225,7 @@ int16_t CO_SYNC_init(
     SYNC->timer = 0;
     SYNC->counter = 0;
 
-    SYNC->EM = EM;
+    SYNC->em = em;
     SYNC->operatingState = operatingState;
     SYNC->CANdevRx = CANdevRx;
     SYNC->CANdevRxIdx = CANdevRxIdx;
@@ -275,10 +275,10 @@ uint8_t CO_SYNC_process(
             ret = 1;
 
         /* update sync timer, no overflow */
-        DISABLE_INTERRUPTS();
+        CO_DISABLE_INTERRUPTS();
         timerNew = SYNC->timer + timeDifference_us;
         if(timerNew > SYNC->timer) SYNC->timer = timerNew;
-        ENABLE_INTERRUPTS();
+        CO_ENABLE_INTERRUPTS();
 
         /* SYNC producer */
         if(SYNC->isProducer && SYNC->periodTime){
@@ -310,7 +310,7 @@ uint8_t CO_SYNC_process(
 
         /* Verify timeout of SYNC */
         if(SYNC->periodTime && SYNC->timer > SYNC->periodTimeoutTime && *SYNC->operatingState == CO_NMT_OPERATIONAL)
-            CO_errorReport(SYNC->EM, CO_EM_SYNC_TIME_OUT, CO_EMC_COMMUNICATION, SYNC->timer);
+            CO_errorReport(SYNC->em, CO_EM_SYNC_TIME_OUT, CO_EMC_COMMUNICATION, SYNC->timer);
     }
 
     if(*SYNC->operatingState != CO_NMT_OPERATIONAL){

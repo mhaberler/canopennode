@@ -141,7 +141,7 @@ int main (void){
         err = CO_init();
         if(err){
             while(1) ClrWdt();
-            /* CO_errorReport(CO->EM, CO_EM_MEMORY_ALLOCATION_ERROR, CO_EMC_SOFTWARE_INTERNAL, err); */
+            /* CO_errorReport(CO->em, CO_EM_MEMORY_ALLOCATION_ERROR, CO_EMC_SOFTWARE_INTERNAL, err); */
         }
 
         /* start CAN */
@@ -251,7 +251,7 @@ CO_TIMER_ISR(){
 
     /* verify timer overflow */
     if(CO_TMR_ISR_FLAG == 1){
-        CO_errorReport(CO->EM, CO_EM_ISR_TIMER_OVERFLOW, CO_EMC_SOFTWARE_INTERNAL, 0);
+        CO_errorReport(CO->em, CO_EM_ISR_TIMER_OVERFLOW, CO_EMC_SOFTWARE_INTERNAL, 0);
         CO_TMR_ISR_FLAG = 0;
     }
 
