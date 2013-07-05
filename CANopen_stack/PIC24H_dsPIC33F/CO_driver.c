@@ -270,7 +270,7 @@ int16_t CO_CANmodule_init(
     DMA_REG(DMArxBaseAddress, DMA_CON) = 0x0020;
     DMA_REG(DMArxBaseAddress, DMA_PAD) = (volatile uint16_t) &CAN_REG(CANbaseAddress, C_RXD);
     DMA_REG(DMArxBaseAddress, DMA_CNT) = 7;
-    DMA_REG(DMArxBaseAddress, DMA_REQ) = (CANbaseAddress==0x400) ? 34 : 55;
+    DMA_REG(DMArxBaseAddress, DMA_REQ) = (CANbaseAddress==ADDR_CAN1) ? 34 : 55;
 
 #ifndef __HAS_EDS__
     DMA_REG(DMArxBaseAddress, DMA_STA) = CANmsgBuffDMAoffset;
@@ -285,7 +285,7 @@ int16_t CO_CANmodule_init(
     DMA_REG(DMAtxBaseAddress, DMA_CON) = 0x2020;
     DMA_REG(DMAtxBaseAddress, DMA_PAD) = (volatile uint16_t) &CAN_REG(CANbaseAddress, C_TXD);
     DMA_REG(DMAtxBaseAddress, DMA_CNT) = 7;
-    DMA_REG(DMAtxBaseAddress, DMA_REQ) = (CANbaseAddress==0x400) ? 70 : 71;
+    DMA_REG(DMAtxBaseAddress, DMA_REQ) = (CANbaseAddress==ADDR_CAN1) ? 70 : 71;
 
 #ifndef __HAS_EDS__
     DMA_REG(DMAtxBaseAddress, DMA_STA) = CANmsgBuffDMAoffset;

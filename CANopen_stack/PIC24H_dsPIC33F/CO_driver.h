@@ -42,28 +42,17 @@
 #endif
 
 /* Peripheral addresses */
-#define ADDR_CAN1    0x400
-#define ADDR_CAN2    0x500
+#define ADDR_CAN1    ((uint16_t)&C1CTRL1)
+#define ADDR_CAN2    ((uint16_t)&C2CTRL1)
 
-#if defined(__dsPIC33F__) || defined(__PIC24H__)
-#define ADDR_DMA0    0x380
-#define ADDR_DMA1    0x38C
-#define ADDR_DMA2    0x398
-#define ADDR_DMA3    0x3A4
-#define ADDR_DMA4    0x3B0
-#define ADDR_DMA5    0x3BC
-#define ADDR_DMA6    0x3C8
-#define ADDR_DMA7    0x3D4
-#elif defined(__dsPIC33E__) || defined(__PIC24E__)
-#define ADDR_DMA0    0xB00
-#define ADDR_DMA1    0xB10
-#define ADDR_DMA2    0xB20
-#define ADDR_DMA3    0xB30
-#define ADDR_DMA4    0xB40
-#define ADDR_DMA5    0xB50
-#define ADDR_DMA6    0xB60
-#define ADDR_DMA7    0xB70
-#endif
+#define ADDR_DMA0    ((uint16_t)&DMA0CON)
+#define ADDR_DMA1    ((uint16_t)&DMA1CON)
+#define ADDR_DMA2    ((uint16_t)&DMA2CON)
+#define ADDR_DMA3    ((uint16_t)&DMA3CON)
+#define ADDR_DMA4    ((uint16_t)&DMA4CON)
+#define ADDR_DMA5    ((uint16_t)&DMA5CON)
+#define ADDR_DMA6    ((uint16_t)&DMA6CON)
+#define ADDR_DMA7    ((uint16_t)&DMA7CON)
 
 /* Disabling interrupts */
 #define CO_DISABLE_INTERRUPTS()  asm volatile ("disi #0x3FFF")
