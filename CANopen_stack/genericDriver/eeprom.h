@@ -50,7 +50,7 @@ typedef struct{
     uint8_t     *OD_ROMAddress;         /**< From CO_EE_init_1() */
     uint32_t     OD_ROMSize;            /**< From CO_EE_init_1() */
     uint32_t     OD_EEPROMCurrentIndex; /**< Internal variable controls the OD_EEPROM vrite */
-    uint8_t      OD_EEPROMWriteEnable;  /**< Writing to EEPROM is enabled */
+    bool         OD_EEPROMWriteEnable;  /**< Writing to EEPROM is enabled */
 }CO_EE_t;
 
 
@@ -66,7 +66,7 @@ typedef struct{
  * @return #CO_ReturnError_t: CO_ERROR_NO, CO_ERROR_DATA_CORRUPT (Data in eeprom corrupt) or
  * CO_ERROR_CRC (CRC from MBR does not match the CRC of OD_ROM block in eeprom).
  */
-int16_t CO_EE_init_1(
+CO_ReturnError_t CO_EE_init_1(
         CO_EE_t                *ee,
         uint8_t                *OD_EEPROMAddress,
         uint32_t                OD_EEPROMSize,
@@ -84,7 +84,7 @@ int16_t CO_EE_init_1(
  */
 void CO_EE_init_2(
         CO_EE_t                *ee, 
-        int16_t                 eeStatus,
+        CO_ReturnError_t        eeStatus,
         CO_SDO_t               *SDO,
         CO_EM_t                *em);
 

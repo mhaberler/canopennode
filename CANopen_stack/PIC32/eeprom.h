@@ -69,7 +69,7 @@ typedef struct{
     uint8_t            *OD_ROMAddress;
     uint32_t            OD_ROMSize;
     uint32_t            OD_EEPROMCurrentIndex;
-    uint8_t             OD_EEPROMWriteEnable;
+    bool                OD_EEPROMWriteEnable;
 
 }CO_EE_t;
 
@@ -79,7 +79,7 @@ typedef struct{
  * Allocate memory for object, configure SPI port for use with 25LCxxx, read
  * eeprom and store to OD_EEPROM and OD_ROM.
  */
-int16_t CO_EE_init_1(
+CO_ReturnError_t CO_EE_init_1(
         CO_EE_t                *ee,
         uint8_t                *OD_EEPROMAddress,
         uint32_t                OD_EEPROMSize,
@@ -90,7 +90,7 @@ int16_t CO_EE_init_1(
 /* Second part of eeprom initialization. */
 void CO_EE_init_2(
         CO_EE_t                *ee, 
-        int16_t                 eeStatus,
+        CO_ReturnError_t        eeStatus,
         CO_SDO_t               *SDO,
         CO_EM_t                *em);
 

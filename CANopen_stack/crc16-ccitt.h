@@ -55,7 +55,7 @@
  * @return Calculated CRC.
  */
 unsigned short crc16_ccitt(
-        unsigned char          *block,
+        const unsigned char     block[],
         unsigned int            blockLength,
         unsigned short          crc);
 

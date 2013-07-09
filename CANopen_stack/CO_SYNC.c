@@ -40,31 +40,38 @@
  * message with correct identifier will be received. For more information and
  * description of parameters see file CO_driver.h.
  */
-static int16_t CO_SYNC_receive(void *object, CO_CANrxMsg_t *msg){
+static void CO_SYNC_receive(void *object, const CO_CANrxMsg_t *msg){
     CO_SYNC_t *SYNC;
+    uint8_t operState;
+    bool err = false;
 
     SYNC = (CO_SYNC_t*)object;   /* this is the correct pointer type of the first argument */
+    operState = *SYNC->operatingState;
 
-    if(*SYNC->operatingState == CO_NMT_OPERATIONAL || *SYNC->operatingState == CO_NMT_PRE_OPERATIONAL){
-        if(SYNC->counterOverflowValue){
-            if(msg->DLC != 1){
-                CO_errorReport(SYNC->em, CO_EM_SYNC_LENGTH, CO_EMC_SYNC_DATA_LENGTH, msg->DLC | 0x0100);
-                return CO_ERROR_NO;
+    if((operState == CO_NMT_OPERATIONAL) || (operState == CO_NMT_PRE_OPERATIONAL)){
+        if(SYNC->counterOverflowValue != 0){
+            if(msg->DLC != 1U){
+                SYNC->receiveError = (uint16_t)msg->DLC | 0x0100U;
+                err = true;
             }
-            SYNC->counter = msg->data[0];
+            else{
+                SYNC->counter = msg->data[0];
+            }
         }
         else{
-            if(msg->DLC != 0){
-                CO_errorReport(SYNC->em, CO_EM_SYNC_LENGTH, CO_EMC_SYNC_DATA_LENGTH, msg->DLC);
-                return CO_ERROR_NO;
+            if(msg->DLC != 0U){
+                SYNC->receiveError = (uint16_t)msg->DLC | 0x0200U;
+                err = true;
             }
         }
 
-        if(*SYNC->operatingState == CO_NMT_OPERATIONAL) SYNC->running = 1;
-        SYNC->timer = 0;
+        if(!err){
+            if(operState == CO_NMT_OPERATIONAL){
+                SYNC->running = true;
+            }
+            SYNC->timer = 0;
+        }
     }
-
-    return CO_ERROR_NO;
 }
 
 
@@ -73,59 +80,71 @@ static int16_t CO_SYNC_receive(void *object, CO_CANrxMsg_t *msg){
  *
  * For more information see file CO_SDO.h.
  */
-static uint32_t CO_ODF_1005(CO_ODF_arg_t *ODF_arg){
+static CO_SDO_abortCode_t CO_ODF_1005(CO_ODF_arg_t *ODF_arg){
     CO_SYNC_t *SYNC;
-    uint32_t *value;
+    uint32_t value;
+    CO_SDO_abortCode_t ret = CO_SDO_AB_NONE;
 
     SYNC = (CO_SYNC_t*) ODF_arg->object;
-    value = (uint32_t*) ODF_arg->data;
+    value = CO_getUint32(ODF_arg->data);
 
     if(!ODF_arg->reading){
         uint8_t configureSyncProducer = 0;
 
         /* only 11-bit CAN identifier is supported */
-        if(*value & 0x20000000L) return SDO_ABORT_INVALID_VALUE; /* Invalid value for parameter (download only). */
-
-        /* is 'generate Sync messge' bit set? */
-        if(*value & 0x40000000L){
-            /* if bit was set before, value can not be changed */
-            if(SYNC->isProducer) return SDO_ABORT_DATA_DEV_STATE;   /* Data cannot be transferred or stored to the application because of the present device state. */
-            configureSyncProducer = 1;
-        }
-        SYNC->COB_ID = *value & 0x7FF;
-
-        if(configureSyncProducer){
-            uint8_t len = 0;
-            if(SYNC->counterOverflowValue){
-                len = 1;
-                SYNC->counter = 0;
-                SYNC->running = 0;
-                SYNC->timer = 0;
-            }
-            SYNC->CANtxBuff = CO_CANtxBufferInit(
-                    SYNC->CANdevTx,         /* CAN device */
-                    SYNC->CANdevTxIdx,      /* index of specific buffer inside CAN module */
-                    SYNC->COB_ID,           /* CAN identifier */
-                    0,                      /* rtr */
-                    len,                    /* number of data bytes */
-                    0);                     /* synchronous message flag bit */
-            SYNC->isProducer = 1;
+        if(value & 0x20000000UL){
+            ret = CO_SDO_AB_INVALID_VALUE;
         }
         else{
-            SYNC->isProducer = 0;
+            /* is 'generate Sync messge' bit set? */
+            if(value & 0x40000000UL){
+                /* if bit was set before, value can not be changed */
+                if(SYNC->isProducer){
+                    ret = CO_SDO_AB_DATA_DEV_STATE;
+                }
+                else{
+                    configureSyncProducer = 1;
+                }
+            }
         }
 
-        CO_CANrxBufferInit(
-                SYNC->CANdevRx,         /* CAN device */
-                SYNC->CANdevRxIdx,      /* rx buffer index */
-                SYNC->COB_ID,           /* CAN identifier */
-                0x7FF,                  /* mask */
-                0,                      /* rtr */
-                (void*)SYNC,            /* object passed to receive function */
-                CO_SYNC_receive);       /* this function will process received message */
+        /* configure sync producer and consumer */
+        if(ret == CO_SDO_AB_NONE){
+            SYNC->COB_ID = (uint16_t)(value & 0x7FFU);
+
+            if(configureSyncProducer){
+                uint8_t len = 0U;
+                if(SYNC->counterOverflowValue != 0U){
+                    len = 1U;
+                    SYNC->counter = 0U;
+                    SYNC->running = false;
+                    SYNC->timer = 0U;
+                }
+                SYNC->CANtxBuff = CO_CANtxBufferInit(
+                        SYNC->CANdevTx,         /* CAN device */
+                        SYNC->CANdevTxIdx,      /* index of specific buffer inside CAN module */
+                        SYNC->COB_ID,           /* CAN identifier */
+                        0,                      /* rtr */
+                        len,                    /* number of data bytes */
+                        0);                     /* synchronous message flag bit */
+                SYNC->isProducer = true;
+            }
+            else{
+                SYNC->isProducer = false;
+            }
+
+            CO_CANrxBufferInit(
+                    SYNC->CANdevRx,         /* CAN device */
+                    SYNC->CANdevRxIdx,      /* rx buffer index */
+                    SYNC->COB_ID,           /* CAN identifier */
+                    0x7FF,                  /* mask */
+                    0,                      /* rtr */
+                    (void*)SYNC,            /* object passed to receive function */
+                    CO_SYNC_receive);       /* this function will process received message */
+        }
     }
 
-    return 0;
+    return ret;
 }
 
 
@@ -134,28 +153,32 @@ static uint32_t CO_ODF_1005(CO_ODF_arg_t *ODF_arg){
  *
  * For more information see file CO_SDO.h.
  */
-static uint32_t CO_ODF_1006(CO_ODF_arg_t *ODF_arg){
+static CO_SDO_abortCode_t CO_ODF_1006(CO_ODF_arg_t *ODF_arg){
     CO_SYNC_t *SYNC;
-    uint32_t *value;
+    uint32_t value;
+    CO_SDO_abortCode_t ret = CO_SDO_AB_NONE;
 
     SYNC = (CO_SYNC_t*) ODF_arg->object;
-    value = (uint32_t*) ODF_arg->data;
+    value = CO_getUint32(ODF_arg->data);
 
     if(!ODF_arg->reading){
         /* period transition from 0 to something */
-        if(SYNC->periodTime == 0 && *value)
+        if((SYNC->periodTime == 0) && (value != 0)){
             SYNC->counter = 0;
+        }
 
-        SYNC->periodTime = *value;
-        SYNC->periodTimeoutTime = *value / 2 * 3;
+        SYNC->periodTime = value;
+        SYNC->periodTimeoutTime = (value / 2U) * 3U;
         /* overflow? */
-        if(SYNC->periodTimeoutTime < *value) SYNC->periodTimeoutTime = 0xFFFFFFFFL;
+        if(SYNC->periodTimeoutTime < value){
+            SYNC->periodTimeoutTime = 0xFFFFFFFFUL;
+        }
 
-        SYNC->running = 0;
+        SYNC->running = false;
         SYNC->timer = 0;
     }
 
-    return 0;
+    return ret;
 }
 
 
@@ -164,30 +187,37 @@ static uint32_t CO_ODF_1006(CO_ODF_arg_t *ODF_arg){
  *
  * For more information see file CO_SDO.h.
  */
-static uint32_t CO_ODF_1019(CO_ODF_arg_t *ODF_arg){
+static CO_SDO_abortCode_t CO_ODF_1019(CO_ODF_arg_t *ODF_arg){
     CO_SYNC_t *SYNC;
-    uint8_t *value;
+    uint8_t value;
+    CO_SDO_abortCode_t ret = CO_SDO_AB_NONE;
 
     SYNC = (CO_SYNC_t*) ODF_arg->object;
-    value = (uint8_t*) ODF_arg->data;
+    value = ODF_arg->data[0];
 
     if(!ODF_arg->reading){
-        uint8_t len = 0;
+        uint8_t len = 0U;
 
-        if(SYNC->periodTime) return SDO_ABORT_DATA_DEV_STATE; /* Data cannot be transferred or stored to the application because of the present device state. */
-        SYNC->counterOverflowValue = *value;
-        if(SYNC->counterOverflowValue) len = 1;
+        if(SYNC->periodTime){
+            ret = CO_SDO_AB_DATA_DEV_STATE;
+        }
+        else{
+            SYNC->counterOverflowValue = value;
+            if(value != 0){
+                len = 1U;
+            }
 
-        SYNC->CANtxBuff = CO_CANtxBufferInit(
-                SYNC->CANdevTx,         /* CAN device */
-                SYNC->CANdevTxIdx,      /* index of specific buffer inside CAN module */
-                SYNC->COB_ID,           /* CAN identifier */
-                0,                      /* rtr */
-                len,                    /* number of data bytes */
-                0);                     /* synchronous message flag bit */
+            SYNC->CANtxBuff = CO_CANtxBufferInit(
+                    SYNC->CANdevTx,         /* CAN device */
+                    SYNC->CANdevTxIdx,      /* index of specific buffer inside CAN module */
+                    SYNC->COB_ID,           /* CAN identifier */
+                    0,                      /* rtr */
+                    len,                    /* number of data bytes */
+                    0);                     /* synchronous message flag bit */
+        }
     }
 
-    return 0;
+    return ret;
 }
 
 
@@ -208,7 +238,7 @@ int16_t CO_SYNC_init(
     uint8_t len = 0;
 
     /* Configure object variables */
-    SYNC->isProducer = (COB_ID_SYNCMessage&0x40000000L) ? 1 : 0;
+    SYNC->isProducer = (COB_ID_SYNCMessage&0x40000000L) ? true : false;
     SYNC->COB_ID = COB_ID_SYNCMessage&0x7FF;
 
     SYNC->periodTime = communicationCyclePeriod;
@@ -219,11 +249,12 @@ int16_t CO_SYNC_init(
     SYNC->counterOverflowValue = synchronousCounterOverflowValue;
     if(synchronousCounterOverflowValue) len = 1;
 
-    SYNC->curentSyncTimeIsInsideWindow = 1;
+    SYNC->curentSyncTimeIsInsideWindow = true;
 
-    SYNC->running = 0;
+    SYNC->running = false;
     SYNC->timer = 0;
     SYNC->counter = 0;
+    SYNC->receiveError = 0U;
 
     SYNC->em = em;
     SYNC->operatingState = operatingState;
@@ -284,7 +315,7 @@ uint8_t CO_SYNC_process(
         if(SYNC->isProducer && SYNC->periodTime){
             if(SYNC->timer >= SYNC->periodTime){
                 if(++SYNC->counter > SYNC->counterOverflowValue) SYNC->counter = 1;
-                SYNC->running = 1;
+                SYNC->running = true;
                 SYNC->timer = 0;
                 SYNC->CANtxBuff->data[0] = SYNC->counter;
                 CO_CANsend(SYNC->CANdevTx, SYNC->CANtxBuff);
@@ -295,17 +326,17 @@ uint8_t CO_SYNC_process(
         /* Synchronous PDOs are allowed only inside time window */
         if(ObjDict_synchronousWindowLength){
             if(SYNC->timer > ObjDict_synchronousWindowLength){
-                if(SYNC->curentSyncTimeIsInsideWindow == 1){
+                if(SYNC->curentSyncTimeIsInsideWindow){
                     ret = 2;
                 }
-                SYNC->curentSyncTimeIsInsideWindow = 0;
+                SYNC->curentSyncTimeIsInsideWindow = false;
             }
             else{
-                SYNC->curentSyncTimeIsInsideWindow = 1;
+                SYNC->curentSyncTimeIsInsideWindow = true;
             }
         }
         else{
-            SYNC->curentSyncTimeIsInsideWindow = 1;
+            SYNC->curentSyncTimeIsInsideWindow = true;
         }
 
         /* Verify timeout of SYNC */
@@ -314,7 +345,13 @@ uint8_t CO_SYNC_process(
     }
 
     if(*SYNC->operatingState != CO_NMT_OPERATIONAL){
-        SYNC->running = 0;
+        SYNC->running = false;
+    }
+
+    /* verify error from receive function */
+    if(SYNC->receiveError != 0U){
+        CO_errorReport(SYNC->em, CO_EM_SYNC_LENGTH, CO_EMC_SYNC_DATA_LENGTH, (uint32_t)SYNC->receiveError);
+        SYNC->receiveError = 0U;
     }
 
     return ret;

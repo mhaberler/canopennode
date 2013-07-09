@@ -44,10 +44,10 @@
 /* Global variables ***********************************************************/
     extern const CO_OD_entry_t CO_OD[CO_OD_NoOfElements];  /* Object Dictionary array */
     static CO_t COO;
-    CO_t *CO = 0;
+    CO_t *CO = NULL;
 
 #if defined(__dsPIC33F__) || defined(__PIC24H__) \
-	|| defined(__dsPIC33E__) || defined(__PIC24E__)
+    || defined(__dsPIC33E__) || defined(__PIC24E__)
     /* CAN message buffer for one TX and seven RX messages. */
     #define CO_CANmsgBuffSize   8
 #ifdef __HAS_EDS__
@@ -150,48 +150,57 @@
 
 
 /* CAN node ID - Object dictionary function ***********************************/
-static uint32_t CO_ODF_nodeId(CO_ODF_arg_t *ODF_arg){
-    uint8_t *value;
+static CO_SDO_abortCode_t CO_ODF_nodeId(CO_ODF_arg_t *ODF_arg){
+    uint8_t value;
+    CO_SDO_abortCode_t ret = CO_SDO_AB_NONE;
 
-    value = (uint8_t*) ODF_arg->data;
+    value = ODF_arg->data[0];
 
     if(!ODF_arg->reading){
-        if(*value < 1)   return SDO_ABORT_VALUE_LOW;  /* Value of parameter written too low. */
-        if(*value > 127) return SDO_ABORT_VALUE_HIGH;  /* Value of parameter written too high. */
+        if(value < 1U){
+            ret = CO_SDO_AB_VALUE_LOW;
+        }
+        else if(value > 127U){
+            ret = CO_SDO_AB_VALUE_HIGH;
+        }
+        else{
+            ret = CO_SDO_AB_NONE;
+        }
     }
 
-    return 0;
+    return ret;
 }
 
 
 /* CAN bit rate - Object dictionary function **********************************/
-static uint32_t CO_ODF_bitRate(CO_ODF_arg_t *ODF_arg){
-    uint16_t *value;
+static CO_SDO_abortCode_t CO_ODF_bitRate(CO_ODF_arg_t *ODF_arg){
+    uint16_t value;
+    CO_SDO_abortCode_t ret = CO_SDO_AB_NONE;
 
-    value = (uint16_t*) ODF_arg->data;
+    value = CO_getUint16(ODF_arg->data);
 
     if(!ODF_arg->reading){
-        switch(*value){
-            case 10:
-            case 20:
-            case 50:
-            case 125:
-            case 250:
-            case 500:
-            case 800:
-            case 1000:
+        switch(value){
+            case 10U:
+            case 20U:
+            case 50U:
+            case 125U:
+            case 250U:
+            case 500U:
+            case 800U:
+            case 1000U:
                 break;
             default:
-                return SDO_ABORT_INVALID_VALUE;  /* Invalid value for the parameter */
+                ret = CO_SDO_AB_INVALID_VALUE;
         }
     }
 
-    return 0;
+    return ret;
 }
 
 
 /******************************************************************************/
-int16_t CO_init(){
+CO_ReturnError_t CO_init(){
 
     int16_t i;
     uint8_t nodeId;
@@ -246,7 +255,7 @@ int16_t CO_init(){
   #endif
 
 #else
-    if(CO == 0){    /* Use malloc only once */
+    if(CO == NULL){    /* Use malloc only once */
         CO = &COO;
         CO->CANmodule[0]                    = (CO_CANmodule_t *)    malloc(sizeof(CO_CANmodule_t));
         CO_CANmodule_rxArray0               = (CO_CANrx_t *)        malloc(sizeof(CO_CANrx_t) * CO_RXCAN_NO_MSGS);
@@ -299,30 +308,30 @@ int16_t CO_init(){
                   + 0;
 
     errCnt = 0;
-    if(CO->CANmodule[0]                 == 0) errCnt++;
-    if(CO_CANmodule_rxArray0            == 0) errCnt++;
-    if(CO_CANmodule_txArray0            == 0) errCnt++;
+    if(CO->CANmodule[0]                 == NULL) errCnt++;
+    if(CO_CANmodule_rxArray0            == NULL) errCnt++;
+    if(CO_CANmodule_txArray0            == NULL) errCnt++;
   #if CO_NO_CAN_MODULES >= 2
-    if(CO->CANmodule[1]                 == 0) errCnt++;
-    if(CO_CANmodule_rxArray1            == 0) errCnt++;
-    if(CO_CANmodule_txArray1            == 0) errCnt++;
+    if(CO->CANmodule[1]                 == NULL) errCnt++;
+    if(CO_CANmodule_rxArray1            == NULL) errCnt++;
+    if(CO_CANmodule_txArray1            == NULL) errCnt++;
   #endif
-    if(CO->SDO                          == 0) errCnt++;
-    if(CO_SDO_ODExtensions              == 0) errCnt++;
-    if(CO->em                           == 0) errCnt++;
-    if(CO->emPr                         == 0) errCnt++;
-    if(CO->NMT                          == 0) errCnt++;
-    if(CO->SYNC                         == 0) errCnt++;
+    if(CO->SDO                          == NULL) errCnt++;
+    if(CO_SDO_ODExtensions              == NULL) errCnt++;
+    if(CO->em                           == NULL) errCnt++;
+    if(CO->emPr                         == NULL) errCnt++;
+    if(CO->NMT                          == NULL) errCnt++;
+    if(CO->SYNC                         == NULL) errCnt++;
     for(i=0; i<CO_NO_RPDO; i++){
-        if(CO->RPDO[i]                  == 0) errCnt++;
+        if(CO->RPDO[i]                  == NULL) errCnt++;
     }
     for(i=0; i<CO_NO_TPDO; i++){
-        if(CO->TPDO[i]                  == 0) errCnt++;
+        if(CO->TPDO[i]                  == NULL) errCnt++;
     }
-    if(CO->HBcons                       == 0) errCnt++;
-    if(CO_HBcons_monitoredNodes         == 0) errCnt++;
+    if(CO->HBcons                       == NULL) errCnt++;
+    if(CO_HBcons_monitoredNodes         == NULL) errCnt++;
   #if CO_NO_SDO_CLIENT == 1
-    if(CO->SDOclient                    == 0) errCnt++;
+    if(CO->SDOclient                    == NULL) errCnt++;
   #endif
 
     if(errCnt != 0) return CO_ERROR_OUT_OF_MEMORY;
@@ -340,7 +349,7 @@ int16_t CO_init(){
             CO->CANmodule[0],
             ADDR_CAN1,
 #if defined(__dsPIC33F__) || defined(__PIC24H__) \
-	|| defined(__dsPIC33E__) || defined(__PIC24E__)
+    || defined(__dsPIC33E__) || defined(__PIC24E__)
             ADDR_DMA0,
             ADDR_DMA1,
            &CO_CANmsg[0],
@@ -583,12 +592,12 @@ CO_NMT_reset_cmd_t CO_process(
         CO_t                   *CO,
         uint16_t                timeDifference_ms)
 {
-    uint8_t NMTisPreOrOperational = 0;
+    bool NMTisPreOrOperational = false;
     CO_NMT_reset_cmd_t reset = CO_RESET_NOT;
     static uint8_t ms50 = 0;
 
     if(CO->NMT->operatingState == CO_NMT_PRE_OPERATIONAL || CO->NMT->operatingState == CO_NMT_OPERATIONAL)
-        NMTisPreOrOperational = 1;
+        NMTisPreOrOperational = true;
 
     ms50 += timeDifference_ms;
     if(ms50 >= 50){

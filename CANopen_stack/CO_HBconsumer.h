@@ -55,7 +55,7 @@ typedef struct{
     uint8_t             monStarted;     /**< True after reception of the first Heartbeat mesage */
     uint16_t            timeoutTimer;   /**< Time since last heartbeat received */
     uint16_t            time;           /**< Consumer heartbeat time from OD */
-    uint8_t             CANrxNew;       /**< True if new Heartbeat message received from the CAN bus */
+    bool                CANrxNew;       /**< True if new Heartbeat message received from the CAN bus */
 }CO_HBconsNode_t;
 
 
@@ -101,8 +101,8 @@ int16_t CO_HBconsumer_init(
         CO_HBconsumer_t        *HBcons,
         CO_EM_t                *em,
         CO_SDO_t               *SDO,
-        const uint32_t         *HBconsTime,
-        CO_HBconsNode_t        *monitoredNodes,
+        const uint32_t          HBconsTime[],
+        CO_HBconsNode_t         monitoredNodes[],
         uint8_t                 numberOfMonitoredNodes,
         CO_CANmodule_t         *CANdevRx,
         uint16_t                CANdevRxIdxStart);
@@ -119,7 +119,7 @@ int16_t CO_HBconsumer_init(
  */
 void CO_HBconsumer_process(
         CO_HBconsumer_t        *HBcons,
-        uint8_t                 NMTisPreOrOperational,
+        bool                    NMTisPreOrOperational,
         uint16_t                timeDifference_ms);
 
 

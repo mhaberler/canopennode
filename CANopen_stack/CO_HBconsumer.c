@@ -39,22 +39,18 @@
  * message with correct identifier will be received. For more information and
  * description of parameters see file CO_driver.h.
  */
-static int16_t CO_HBcons_receive(void *object, CO_CANrxMsg_t *msg){
+static void CO_HBcons_receive(void *object, const CO_CANrxMsg_t *msg);
+static void CO_HBcons_receive(void *object, const CO_CANrxMsg_t *msg){
     CO_HBconsNode_t *HBconsNode;
 
     HBconsNode = (CO_HBconsNode_t*) object; /* this is the correct pointer type of the first argument */
 
-    /* verify message length */
-    if(msg->DLC != 1) return CO_ERROR_RX_MSG_LENGTH;
-
-    /* verify message overflow (previous message was not processed yet) */
-    if(HBconsNode->CANrxNew) return CO_ERROR_RX_OVERFLOW;
-
-    /* copy data and set 'new message' flag */
-    HBconsNode->NMTstate = msg->data[0];
-    HBconsNode->CANrxNew = 1;
-
-    return CO_ERROR_NO;
+    /* verify message length and message overflow (previous message was not processed yet) */
+    if((msg->DLC == 1) && !HBconsNode->CANrxNew){
+        /* copy data and set 'new message' flag */
+        HBconsNode->NMTstate = msg->data[0];
+        HBconsNode->CANrxNew = true;
+    }
 }
 
 
@@ -67,9 +63,13 @@ static void CO_HBcons_monitoredNodeConfig(
         uint32_t                HBconsTime)
 {
     uint16_t COB_ID;
-    uint16_t NodeID = (uint16_t)((HBconsTime>>16)&0xFF);
-    CO_HBconsNode_t *monitoredNode = &HBcons->monitoredNodes[idx];
+    uint16_t NodeID;
+    CO_HBconsNode_t *monitoredNode;
 
+    if(idx >= HBcons->numberOfMonitoredNodes) return;
+
+    NodeID = (uint16_t)((HBconsTime>>16)&0xFF);
+    monitoredNode = &HBcons->monitoredNodes[idx];
     monitoredNode->time = (uint16_t)HBconsTime;
     monitoredNode->NMTstate = 0;
     monitoredNode->monStarted = 0;
@@ -100,40 +100,48 @@ static void CO_HBcons_monitoredNodeConfig(
  *
  * For more information see file CO_SDO.h.
  */
-static uint32_t CO_ODF_1016(CO_ODF_arg_t *ODF_arg){
+static CO_SDO_abortCode_t CO_ODF_1016(CO_ODF_arg_t *ODF_arg);
+static CO_SDO_abortCode_t CO_ODF_1016(CO_ODF_arg_t *ODF_arg){
     CO_HBconsumer_t *HBcons;
-    uint32_t *value;
+    uint32_t value;
+    CO_SDO_abortCode_t ret = CO_SDO_AB_NONE;
 
     HBcons = (CO_HBconsumer_t*) ODF_arg->object;
-    value = (uint32_t*) ODF_arg->data;
+    value = CO_getUint32(ODF_arg->data);
 
     if(!ODF_arg->reading){
         uint8_t NodeID;
         uint16_t HBconsTime;
-        uint8_t i;
 
-        NodeID = (*value >> 16) & 0xFF;
-        HBconsTime = *value & 0xFFFF;
+        NodeID = (value >> 16U) & 0xFFU;
+        HBconsTime = value & 0xFFFFU;
 
-        if(*value & 0xFF800000)
-            return SDO_ABORT_PRAM_INCOMP;  /* General parameter incompatibility reason. */
-
-        if(HBconsTime && NodeID){
+        if((value & 0xFF800000U) != 0){
+            ret = CO_SDO_AB_PRAM_INCOMPAT;
+        }
+        else if((HBconsTime != 0) && (NodeID != 0)){
+            uint8_t i;
             /* there must not be more entries with same index and time different than zero */
-            for(i = 0; i<HBcons->numberOfMonitoredNodes; i++){
+            for(i = 0U; i<HBcons->numberOfMonitoredNodes; i++){
                 uint32_t objectCopy = HBcons->HBconsTime[i];
-                uint8_t NodeIDObj = (objectCopy >> 16) & 0xFF;
-                uint16_t HBconsTimeObj = objectCopy & 0xFFFF;
-                if((ODF_arg->subIndex-1)!=i && HBconsTimeObj && (NodeID == NodeIDObj))
-                    return SDO_ABORT_PRAM_INCOMP;  /* General parameter incompatibility reason. */
+                uint8_t NodeIDObj = (objectCopy >> 16U) & 0xFFU;
+                uint16_t HBconsTimeObj = objectCopy & 0xFFFFU;
+                if(((ODF_arg->subIndex-1U) != i) && (HBconsTimeObj != 0) && (NodeID == NodeIDObj)){
+                    ret = CO_SDO_AB_PRAM_INCOMPAT;
+                }
             }
+        }
+        else{
+            ret = CO_SDO_AB_NONE;
         }
 
         /* Configure */
-        CO_HBcons_monitoredNodeConfig(HBcons, ODF_arg->subIndex-1, *value);
+        if(ret == CO_SDO_AB_NONE){
+            CO_HBcons_monitoredNodeConfig(HBcons, ODF_arg->subIndex-1U, value);
+        }
     }
 
-    return 0;
+    return ret;
 }
 
 
@@ -142,8 +150,8 @@ int16_t CO_HBconsumer_init(
         CO_HBconsumer_t        *HBcons,
         CO_EM_t                *em,
         CO_SDO_t               *SDO,
-        const uint32_t         *HBconsTime,
-        CO_HBconsNode_t        *monitoredNodes,
+        const uint32_t          HBconsTime[],
+        CO_HBconsNode_t         monitoredNodes[],
         uint8_t                 numberOfMonitoredNodes,
         CO_CANmodule_t         *CANdevRx,
         uint16_t                CANdevRxIdxStart)
@@ -172,7 +180,7 @@ int16_t CO_HBconsumer_init(
 /******************************************************************************/
 void CO_HBconsumer_process(
         CO_HBconsumer_t        *HBcons,
-        uint8_t                 NMTisPreOrOperational,
+        bool                    NMTisPreOrOperational,
         uint16_t                timeDifference_ms)
 {
     uint8_t i;
@@ -193,7 +201,7 @@ void CO_HBconsumer_process(
                         monitoredNode->timeoutTimer = 0;  /* reset timer */
                         timeDifference_ms = 0;
                     }
-                    monitoredNode->CANrxNew = 0;
+                    monitoredNode->CANrxNew = false;
                 }
                 /* Verify timeout */
                 if(monitoredNode->timeoutTimer < monitoredNode->time) monitoredNode->timeoutTimer += timeDifference_ms;
@@ -217,7 +225,7 @@ void CO_HBconsumer_process(
     else{ /* not in (pre)operational state */
         for(i=0; i<HBcons->numberOfMonitoredNodes; i++){
             monitoredNode->NMTstate = 0;
-            monitoredNode->CANrxNew = 0;
+            monitoredNode->CANrxNew = false;
             monitoredNode->monStarted = 0;
             monitoredNode++;
         }

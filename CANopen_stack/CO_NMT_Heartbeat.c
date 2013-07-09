@@ -38,32 +38,37 @@
  * message with correct identifier will be received. For more information and
  * description of parameters see file CO_driver.h.
  */
-static int16_t CO_NMT_receive(void *object, CO_CANrxMsg_t *msg){
+static void CO_NMT_receive(void *object, const CO_CANrxMsg_t *msg){
     CO_NMT_t *NMT;
-    uint8_t command, nodeId;
+    uint8_t nodeId;
 
     NMT = (CO_NMT_t*)object;   /* this is the correct pointer type of the first argument */
 
-    /* verify message length */
-    if(msg->DLC != 2) return CO_ERROR_RX_MSG_LENGTH;
-
     nodeId = msg->data[1];
 
-    if(nodeId == 0 || nodeId == NMT->nodeId){
-        command = msg->data[0];
+    if((msg->DLC == 2) && ((nodeId == 0) || (nodeId == NMT->nodeId))){
+        uint8_t command = msg->data[0];
 
         switch(command){
-            case CO_NMT_ENTER_OPERATIONAL:      if(!(*NMT->emPr->errorRegister))
-                                                    NMT->operatingState = CO_NMT_OPERATIONAL;   break;
-            case CO_NMT_ENTER_STOPPED:          NMT->operatingState = CO_NMT_STOPPED;           break;
-            case CO_NMT_ENTER_PRE_OPERATIONAL:  NMT->operatingState = CO_NMT_PRE_OPERATIONAL;   break;
-            case CO_NMT_RESET_NODE:             NMT->resetCommand = CO_RESET_APP;               break;
-            case CO_NMT_RESET_COMMUNICATION:    NMT->resetCommand = CO_RESET_COMM;              break;
-            default: CO_errorReport(NMT->emPr->em, CO_EM_NMT_WRONG_COMMAND, CO_EMC_PROTOCOL_ERROR, command);
+            case CO_NMT_ENTER_OPERATIONAL:
+                if((*NMT->emPr->errorRegister) == 0U){
+                    NMT->operatingState = CO_NMT_OPERATIONAL;
+                }
+                break;
+            case CO_NMT_ENTER_STOPPED:
+                NMT->operatingState = CO_NMT_STOPPED;
+                break;
+            case CO_NMT_ENTER_PRE_OPERATIONAL:
+                NMT->operatingState = CO_NMT_PRE_OPERATIONAL;
+                break;
+            case CO_NMT_RESET_NODE:
+                NMT->resetCommand = CO_RESET_APP;
+                break;
+            case CO_NMT_RESET_COMMUNICATION:
+                NMT->resetCommand = CO_RESET_COMM;
+                break;
         }
     }
-
-    return CO_ERROR_NO;
 }
 
 
@@ -165,7 +170,7 @@ CO_NMT_reset_cmd_t CO_NMT_process(
         uint16_t                HBtime,
         uint32_t                NMTstartup,
         uint8_t                 errorRegister,
-        const uint8_t          *errorBehavior)
+        const uint8_t           errorBehavior[])
 {
     uint8_t CANpassive;
 

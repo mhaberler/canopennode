@@ -100,7 +100,7 @@ typedef struct{
     uint16_t            ident;
     uint16_t            mask;
     void               *object;
-    int16_t           (*pFunct)(void *object, CO_CANrxMsg_t *message);
+    void              (*pFunct)(void *object, CO_CANrxMsg_t *message);
 }CO_CANrx_t;
 
 
@@ -147,8 +147,8 @@ void CanLedsSet(eCoLeds led);
 #ifdef __BIG_ENDIAN__
     #define BIG_ENDIAN
 #endif
-void CO_memcpySwap2(uint8_t* dest, uint8_t* src);
-void CO_memcpySwap4(uint8_t* dest, uint8_t* src);
+void CO_memcpySwap2(uint8_t dest[], const uint8_t src[]);
+void CO_memcpySwap4(uint8_t dest[], const uint8_t src[]);
 
 
 /* Request CAN configuration or normal mode */
@@ -157,12 +157,12 @@ void CO_CANsetNormalMode(CAN_TypeDef *CANbaseAddress);
 
 
 /* Initialize CAN module object. */
-int16_t CO_CANmodule_init(
+CO_ReturnError_t CO_CANmodule_init(
         CO_CANmodule_t         *CANmodule,
         CAN_TypeDef            *CANbaseAddress,
-        CO_CANrx_t             *rxArray,
+        CO_CANrx_t              rxArray[],
         uint16_t                rxSize,
-        CO_CANtx_t             *txArray,
+        CO_CANtx_t              txArray[],
         uint16_t                txSize,
         uint16_t                CANbitRate);
 
@@ -172,18 +172,18 @@ void CO_CANmodule_disable(CO_CANmodule_t *CANmodule);
 
 
 /* Read CAN identifier */
-uint16_t CO_CANrxMsg_readIdent(CO_CANrxMsg_t *rxMsg);
+uint16_t CO_CANrxMsg_readIdent(const CO_CANrxMsg_t *rxMsg);
 
 
 /* Configure CAN message receive buffer. */
-int16_t CO_CANrxBufferInit(
+CO_ReturnError_t CO_CANrxBufferInit(
         CO_CANmodule_t         *CANmodule,
         uint16_t                index,
         uint16_t                ident,
         uint16_t                mask,
-        uint8_t                 rtr,
+        int8_t                  rtr,
         void                   *object,
-        int16_t               (*pFunct)(void *object, CO_CANrxMsg_t *message));
+        void                  (*pFunct)(void *object, CO_CANrxMsg_t *message));
 
 
 /* Configure CAN message transmit buffer. */
@@ -191,13 +191,13 @@ CO_CANtx_t *CO_CANtxBufferInit(
         CO_CANmodule_t         *CANmodule,
         uint16_t                index,
         uint16_t                ident,
-        uint8_t                 rtr,
+        int8_t                  rtr,
         uint8_t                 noOfBytes,
-        uint8_t                 syncFlag);
+        int8_t                  syncFlag);
 
 
 /* Send CAN message. */
-int16_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer);
+CO_ReturnError_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer);
 
 
 /* Clear all synchronous TPDOs from CAN module transmit buffers. */

@@ -114,34 +114,30 @@
  * message with correct identifier will be received. For more information and
  * description of parameters see file CO_driver.h.
  */
-static int16_t CO_SDOclient_receive(void *object, CO_CANrxMsg_t *msg){
+static void CO_SDOclient_receive(void *object, const CO_CANrxMsg_t *msg){
     CO_SDOclient_t *SDO_C;
 
     SDO_C = (CO_SDOclient_t*)object;    /* this is the correct pointer type of the first argument */
 
-    /* verify message length */
-    if(msg->DLC != 8) return CO_ERROR_RX_MSG_LENGTH;
+    /* verify message length and message overflow (previous message was not processed yet) */
+    if((msg->DLC == 8) && (!SDO_C->CANrxNew)){
+        /* copy data and set 'new message' flag */
+        SDO_C->CANrxData[0] = msg->data[0];
+        SDO_C->CANrxData[1] = msg->data[1];
+        SDO_C->CANrxData[2] = msg->data[2];
+        SDO_C->CANrxData[3] = msg->data[3];
+        SDO_C->CANrxData[4] = msg->data[4];
+        SDO_C->CANrxData[5] = msg->data[5];
+        SDO_C->CANrxData[6] = msg->data[6];
+        SDO_C->CANrxData[7] = msg->data[7];
 
-    /* verify message overflow (previous message was not processed yet) */
-    if(SDO_C->CANrxNew) return CO_ERROR_RX_OVERFLOW;
+        SDO_C->CANrxNew = 1;
 
-    /* copy data and set 'new message' flag */
-    SDO_C->CANrxData[0] = msg->data[0];
-    SDO_C->CANrxData[1] = msg->data[1];
-    SDO_C->CANrxData[2] = msg->data[2];
-    SDO_C->CANrxData[3] = msg->data[3];
-    SDO_C->CANrxData[4] = msg->data[4];
-    SDO_C->CANrxData[5] = msg->data[5];
-    SDO_C->CANrxData[6] = msg->data[6];
-    SDO_C->CANrxData[7] = msg->data[7];
-
-    SDO_C->CANrxNew = 1;
-
-    /* Optional signal to RTOS, which can resume task, which handles SDO client. */
-    if(SDO_C->pFunctSignal)
-        SDO_C->pFunctSignal(SDO_C->functArg);
-
-    return CO_ERROR_NO;
+        /* Optional signal to RTOS, which can resume task, which handles SDO client. */
+        if(SDO_C->pFunctSignal){
+            SDO_C->pFunctSignal(SDO_C->functArg);
+        }
+    }
 }
 
 

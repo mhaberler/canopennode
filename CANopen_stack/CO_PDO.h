@@ -170,7 +170,7 @@ typedef struct{
     uint16_t            defaultCOB_ID;  /**< From CO_RPDO_init() */
     uint8_t             restrictionFlags;/**< From CO_RPDO_init() */
     /** True, if PDO is enabled and valid */
-    uint8_t             valid;
+    bool                valid;
     /** Data length of the received PDO message. Calculated from mapping */
     uint8_t             dataLength;
     /** Pointers to 8 data objects, where PDO will be copied */
@@ -197,7 +197,7 @@ typedef struct{
     uint8_t             nodeId;         /**< From CO_TPDO_init() */
     uint16_t            defaultCOB_ID;  /**< From CO_TPDO_init() */
     uint8_t             restrictionFlags;/**< From CO_TPDO_init() */
-    uint8_t             valid;          /**< True, if PDO is enabled and valid */
+    bool                valid;          /**< True, if PDO is enabled and valid */
     /** Data length of the transmitting PDO message. Calculated from mapping */
     uint8_t             dataLength;
     /** If application set this flag, PDO will be later sent by

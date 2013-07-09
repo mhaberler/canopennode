@@ -32,7 +32,7 @@
 
 
 /* Global variables and objects */
-    volatile uint16_t CO_timer1ms=0;    /* variable increments each millisecond */
+    volatile uint16_t CO_timer1ms = 0U; /* variable increments each millisecond */
 
 
 /* main ***********************************************************************/
@@ -63,7 +63,7 @@ int main (void){
 
         /* initialize CANopen */
         err = CO_init();
-        if(err){
+        if(err != CO_ERROR_NO){
             while(1);
             /* CO_errorReport(CO->em, CO_EM_MEMORY_ALLOCATION_ERROR, CO_EMC_SOFTWARE_INTERNAL, err); */
         }
@@ -149,7 +149,7 @@ void /* interrupt */ CO_TimerInterruptHandler(void){
 
     /* verify timer overflow (is flag set again?) */
     if(0){
-        CO_errorReport(CO->em, CO_EM_ISR_TIMER_OVERFLOW, CO_EMC_SOFTWARE_INTERNAL, 0);
+        CO_errorReport(CO->em, CO_EM_ISR_TIMER_OVERFLOW, CO_EMC_SOFTWARE_INTERNAL, 0U);
     }
 }
 

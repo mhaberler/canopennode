@@ -1,9 +1,10 @@
 /*
- * CAN module object for Microchip dsPIC33F or PIC24H microcontroller.
+ * CAN module object for Microchip dsPIC33 or PIC24 microcontroller.
  *
  * @file        CO_driver.h
  * @version     SVN: \$Id$
  * @author      Janez Paternoster
+ * @author      Péter Rózsahegyi
  * @copyright   2004 - 2013 Janez Paternoster
  *
  * This file is part of CANopenNode, an opensource CANopen Stack.
@@ -34,6 +35,9 @@
 #elif defined(__dsPIC33E__) || defined(__PIC24E__)
 #include <p33exxxx.h>       /* processor header file */
 #endif
+#include <stddef.h>         /* for 'NULL' */
+#include <stdbool.h>        /* for 'bool', 'true' and 'false' */
+#include <stdint.h>         /* for 'int8_t' to 'uint64_t' */
 
 #ifdef __HAS_EDS__
 #define EDS_PTR __eds__
@@ -59,21 +63,9 @@
 #define CO_ENABLE_INTERRUPTS()   asm volatile ("disi #0x0000")
 
 
-/* Null */
-#ifndef	NULL
-#define	NULL	(0)
-#endif
-
-
 /* Data types */
-    typedef unsigned char           uint8_t;
-    typedef unsigned short int      uint16_t;
-    typedef unsigned long int       uint32_t;
-    typedef unsigned long long int  uint64_t;
-    typedef signed char             int8_t;
-    typedef signed short int        int16_t;
-    typedef signed long int         int32_t;
-    typedef signed long long int    int64_t;
+    /* bool, true and false are defined in stdbool.h */
+    /* int8_t to uint64_t are defined in stdint.h */
     typedef float                   float32_t;
     typedef long double             float64_t;
     typedef char                    char_t;
@@ -320,7 +312,7 @@ typedef struct{
     uint16_t            ident;
     uint16_t            mask;
     void               *object;
-    int16_t           (*pFunct)(void *object, CO_CANrxMsg_t *message);
+    void              (*pFunct)(void *object, const CO_CANrxMsg_t *message);
 }CO_CANrx_t;
 
 
@@ -330,8 +322,8 @@ typedef struct{
                                       'SSSSSUUU SSSSSSRE' (U: unused; S: SID; R=SRR; E=IDE). */
     uint8_t             DLC;
     uint8_t             data[8];
-    volatile uint8_t    bufferFull;
-    volatile uint8_t    syncFlag;
+    volatile bool       bufferFull;
+    volatile bool       syncFlag;
 }CO_CANtx_t;
 
 
@@ -344,9 +336,9 @@ typedef struct{
     uint16_t            rxSize;
     CO_CANtx_t         *txArray;
     uint16_t            txSize;
-    volatile uint8_t    useCANrxFilters;
-    volatile uint8_t    bufferInhibitFlag;
-    volatile uint8_t    firstCANtxMessage;
+    volatile bool       useCANrxFilters;
+    volatile bool       bufferInhibitFlag;
+    volatile bool       firstCANtxMessage;
     volatile uint16_t   CANtxCount;
     uint32_t            errOld;
     void               *em;
@@ -354,9 +346,7 @@ typedef struct{
 
 
 /* Endianes */
-/* #define BIG_ENDIAN */
-void CO_memcpySwap2(uint8_t* dest, uint8_t* src);
-void CO_memcpySwap4(uint8_t* dest, uint8_t* src);
+#define CO_LITTLE_ENDIAN
 
 
 /* Request CAN configuration or normal mode */
@@ -374,7 +364,7 @@ void CO_CANsetNormalMode(uint16_t CANbaseAddress);
  * @param CANmsgBuffSize dsPIC33F specific: Size of above buffer.
  * @param CANmsgBuffDMAoffset dsPIC33F specific: DMA offset of the above buffer.
  */
-int16_t CO_CANmodule_init(
+CO_ReturnError_t CO_CANmodule_init(
         CO_CANmodule_t         *CANmodule,
         uint16_t                CANbaseAddress,
         uint16_t                DMArxBaseAddress,
@@ -385,9 +375,9 @@ int16_t CO_CANmodule_init(
 #ifdef __HAS_EDS__
         uint16_t                CANmsgBuffDMApage,
 #endif
-        CO_CANrx_t             *rxArray,
+        CO_CANrx_t              rxArray[],
         uint16_t                rxSize,
-        CO_CANtx_t             *txArray,
+        CO_CANtx_t              txArray[],
         uint16_t                txSize,
         uint16_t                CANbitRate);
 
@@ -397,18 +387,18 @@ void CO_CANmodule_disable(CO_CANmodule_t *CANmodule);
 
 
 /* Read CAN identifier */
-uint16_t CO_CANrxMsg_readIdent(CO_CANrxMsg_t *rxMsg);
+uint16_t CO_CANrxMsg_readIdent(const CO_CANrxMsg_t *rxMsg);
 
 
 /* Configure CAN message receive buffer. */
-int16_t CO_CANrxBufferInit(
+CO_ReturnError_t CO_CANrxBufferInit(
         CO_CANmodule_t         *CANmodule,
         uint16_t                index,
         uint16_t                ident,
         uint16_t                mask,
-        uint8_t                 rtr,
+        bool                    rtr,
         void                   *object,
-        int16_t               (*pFunct)(void *object, CO_CANrxMsg_t *message));
+        void                  (*pFunct)(void *object, const CO_CANrxMsg_t *message));
 
 
 /* Configure CAN message transmit buffer. */
@@ -416,13 +406,13 @@ CO_CANtx_t *CO_CANtxBufferInit(
         CO_CANmodule_t         *CANmodule,
         uint16_t                index,
         uint16_t                ident,
-        uint8_t                 rtr,
+        bool                    rtr,
         uint8_t                 noOfBytes,
-        uint8_t                 syncFlag);
+        bool                    syncFlag);
 
 
 /* Send CAN message. */
-int16_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer);
+CO_ReturnError_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer);
 
 
 /* Clear all synchronous TPDOs from CAN module transmit buffers. */

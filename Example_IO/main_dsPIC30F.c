@@ -58,9 +58,9 @@
     #define CO_CAN_ISR_ENABLE   IEC1bits.C1IE    /* Interrupt Enable bit */
 
 
-/* Global variables */
+/* Global variables and objects */
+    volatile uint16_t CO_timer1ms = 0U; /* variable increments each millisecond */
     const CO_CANbitRateData_t  CO_CANbitRateData[8] = {CO_CANbitRateDataInitializers};
-    volatile uint16_t CO_timer1ms;
     //eeprom_t eeprom;
 
 
@@ -103,7 +103,7 @@ int main (void){
 
         /* initialize CANopen */
         err = CO_init();
-        if(err){
+        if(err != CO_ERROR_NO){
             while(1) ClrWdt();
             /* CO_errorReport(CO->em, CO_EM_MEMORY_ALLOCATION_ERROR, CO_EMC_SOFTWARE_INTERNAL, err); */
         }

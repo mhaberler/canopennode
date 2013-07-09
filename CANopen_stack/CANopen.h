@@ -151,7 +151,7 @@ typedef struct{
  * @return #CO_ReturnError_t: CO_ERROR_NO, CO_ERROR_ILLEGAL_ARGUMENT,
  * CO_ERROR_OUT_OF_MEMORY, CO_ERROR_ILLEGAL_BAUDRATE
  */
-int16_t CO_init(void);
+CO_ReturnError_t CO_init(void);
 
 
 /**

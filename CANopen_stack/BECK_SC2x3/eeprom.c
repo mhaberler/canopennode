@@ -35,21 +35,20 @@
 #include <stdlib.h>     /* for malloc, free */
 
 /******************************************************************************/
-static uint32_t CO_ODF_1010(CO_ODF_arg_t *ODF_arg){
+static CO_SDO_abortCode_t CO_ODF_1010(CO_ODF_arg_t *ODF_arg){
     CO_EE_t *ee;
-    uint32_t *value;
+    uint32_t value;
+    CO_SDO_abortCode_t ret = CO_SDO_AB_NONE;
 
     ee = (CO_EE_t*) ODF_arg->object;
-    value = (uint32_t*) ODF_arg->data;
+    value = CO_getUint32(ODF_arg->data);
 
     if(!ODF_arg->reading){
         /* don't change the old value */
-        uint32_t valueCopy = *value;
-        uint32_t *valueOld = (uint32_t*) ODF_arg->ODdataStorage;
-        *value = *valueOld;
+        CO_memcpy(ODF_arg->data, (const uint8_t*)ODF_arg->ODdataStorage, 4U);
 
         if(ODF_arg->subIndex == 1){
-            if(valueCopy == 0x65766173){
+            if(value == 0x65766173UL){
                 /* store parameters */
                 /* rename current file to .old */
                 remove(EE_ROM_FILENAME_OLD);
@@ -58,7 +57,7 @@ static uint32_t CO_ODF_1010(CO_ODF_arg_t *ODF_arg){
                 FILE *fp = fopen(EE_ROM_FILENAME, "wb");
                 if(!fp){
                     rename(EE_ROM_FILENAME_OLD, EE_ROM_FILENAME);
-                    return 0x06060000;   /* Access failed due to an hardware error. */
+                    return CO_SDO_AB_HW;
                 }
 
                 /* write data to the file */
@@ -84,40 +83,39 @@ static uint32_t CO_ODF_1010(CO_ODF_arg_t *ODF_arg){
                     free(buf);
                     if(cnt == (ee->OD_ROMSize + 2) && CRC == CRC2){
                         /* write successful */
-                        return 0;
+                        return CO_SDO_AB_NONE;
                     }
                 }
                 /* error, set back the old file */
                 remove(EE_ROM_FILENAME);
                 rename(EE_ROM_FILENAME_OLD, EE_ROM_FILENAME);
 
-                return 0x06060000;   /* Access failed due to an hardware error. */
+                return CO_SDO_AB_HW;
             }
             else
-                return 0x08000020; /* Data cannot be transferred or stored to the application. */
+                return CO_SDO_AB_DATA_TRANSF;
         }
     }
 
-    return 0;
+    return ret;
 }
 
 
 /******************************************************************************/
-static uint32_t CO_ODF_1011(CO_ODF_arg_t *ODF_arg){
+static CO_SDO_abortCode_t CO_ODF_1011(CO_ODF_arg_t *ODF_arg){
     CO_EE_t *ee;
-    uint32_t *value;
+    uint32_t value;
+    CO_SDO_abortCode_t ret = CO_SDO_AB_NONE;
 
     ee = (CO_EE_t*) ODF_arg->object;
-    value = (uint32_t*) ODF_arg->data;
+    value = CO_getUint32(ODF_arg->data);
 
     if(!ODF_arg->reading){
         /* don't change the old value */
-        uint32_t valueCopy = *value;
-        uint32_t *valueOld = (uint32_t*) ODF_arg->ODdataStorage;
-        *value = *valueOld;
+        CO_memcpy(ODF_arg->data, (const uint8_t*)ODF_arg->ODdataStorage, 4U);
 
         if(ODF_arg->subIndex >= 1){
-            if(valueCopy == 0x64616F6C){
+            if(value == 0x64616F6CUL){
                 /* restore default parameters */
                 /* rename current file to .old, so it no longer exist */
                 remove(EE_ROM_FILENAME_OLD);
@@ -127,25 +125,25 @@ static uint32_t CO_ODF_1011(CO_ODF_arg_t *ODF_arg){
                 FILE *fp = fopen(EE_ROM_FILENAME, "wt");
                 if(!fp){
                     rename(EE_ROM_FILENAME_OLD, EE_ROM_FILENAME);
-                    return 0x06060000;   /* Access failed due to an hardware error. */
+                    return CO_SDO_AB_HW;
                 }
                 /* write one byte '-' to the file */
                 fputc('-', fp);
                 fclose(fp);
 
-                return 0;
+                return CO_SDO_AB_NONE;
             }
             else
-                return 0x08000020; /* Data cannot be transferred or stored to the application. */
+                return CO_SDO_AB_DATA_TRANSF;
         }
     }
 
-    return 0;
+    return ret;
 }
 
 
 /******************************************************************************/
-int16_t CO_EE_init_1(
+CO_ReturnError_t CO_EE_init_1(
         CO_EE_t                *ee,
         uint8_t                *SRAMAddress,
         uint8_t                *OD_EEPROMAddress,
@@ -161,7 +159,7 @@ int16_t CO_EE_init_1(
     ee->OD_ROMAddress = OD_ROMAddress;
     ee->OD_ROMSize = OD_ROMSize;
     ee->OD_EEPROMCurrentIndex = 0;
-    ee->OD_EEPROMWriteEnable = 0;
+    ee->OD_EEPROMWriteEnable = false;
 
     /* read the CO_OD_EEPROM from SRAM, first verify, if data are OK */
     if(ee->pSRAM == 0) return CO_ERROR_OUT_OF_MEMORY;
@@ -173,12 +171,12 @@ int16_t CO_EE_init_1(
         for(i=0; i<ee->OD_EEPROMSize; i++)
             (ee->OD_EEPROMAddress)[i] = (ee->pSRAM)[i];
     }
-    ee->OD_EEPROMWriteEnable = 1;
+    ee->OD_EEPROMWriteEnable = true;
 
     /* read the CO_OD_ROM from file and verify CRC */
     void *buf = malloc(ee->OD_ROMSize);
     if(buf){
-        int16_t ret = CO_ERROR_NO;
+        CO_ReturnError_t ret = CO_ERROR_NO;
         FILE *fp = fopen(EE_ROM_FILENAME, "rb");
         uint32_t cnt = 0;
         uint16_t CRC[2];
@@ -216,13 +214,15 @@ int16_t CO_EE_init_1(
 /******************************************************************************/
 void CO_EE_init_2(
         CO_EE_t                *ee,
-        int16_t                 eeStatus,
+        CO_ReturnError_t        eeStatus,
         CO_SDO_t               *SDO,
         CO_EM_t                *em)
 {
-    CO_OD_configure(SDO, 0x1010, CO_ODF_1010, (void*)ee, 0, 0);
-    CO_OD_configure(SDO, 0x1011, CO_ODF_1011, (void*)ee, 0, 0);
-    if(eeStatus) CO_errorReport(em, CO_EM_NON_VOLATILE_MEMORY, CO_EMC_HARDWARE, eeStatus);
+    CO_OD_configure(SDO, OD_H1010_STORE_PARAM_FUNC, CO_ODF_1010, (void*)ee, 0, 0U);
+    CO_OD_configure(SDO, OD_H1011_REST_PARAM_FUNC, CO_ODF_1011, (void*)ee, 0, 0U);
+    if(eeStatus != CO_ERROR_NO){
+        CO_errorReport(em, CO_EM_NON_VOLATILE_MEMORY, CO_EMC_HARDWARE, (uint32_t)eeStatus);
+    }
 }
 
 

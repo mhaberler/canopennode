@@ -98,29 +98,28 @@ void CanLedsOff(eCoLeds led) {
 
 /******************************************************************************/
 #ifdef BIG_ENDIAN
-void CO_memcpySwap2(uint8_t* dest, uint8_t* src){
-    *(dest++) = *(src+1);
-    *(dest) = *(src);
+void CO_memcpySwap2(uint8_t dest[], const uint8_t src[]){
+    dest[0] = src[1];
+    dest[1] = src[0];
 }
 
-void CO_memcpySwap4(uint8_t* dest, uint8_t* src){
-    src += 3;
-    *(dest++) = *(src--);
-    *(dest++) = *(src--);
-    *(dest++) = *(src--);
-    *(dest) = *(src);
+void CO_memcpySwap4(uint8_t dest[], const uint8_t src[]){
+    dest[0] = src[3];
+    dest[1] = src[2];
+    dest[2] = src[1];
+    dest[3] = src[0];
 }
 #else
-void CO_memcpySwap2(uint8_t* dest, uint8_t* src){
-    *(dest++) = *(src++);
-    *(dest) = *(src);
+void CO_memcpySwap2(uint8_t dest[], const uint8_t src[]){
+    dest[0] = src[0];
+    dest[1] = src[1];
 }
 
-void CO_memcpySwap4(uint8_t* dest, uint8_t* src){
-    *(dest++) = *(src++);
-    *(dest++) = *(src++);
-    *(dest++) = *(src++);
-    *(dest) = *(src);
+void CO_memcpySwap4(uint8_t dest[], const uint8_t src[]){
+    dest[0] = src[0];
+    dest[1] = src[1];
+    dest[2] = src[2];
+    dest[3] = src[3];
 }
 #endif
 

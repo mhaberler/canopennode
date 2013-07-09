@@ -68,14 +68,14 @@ typedef struct{
     uint32_t           *pSRAM;          /* SC243 specific: Pointer to start
                                            address of the battery powered SRAM */
     uint32_t            OD_EEPROMCurrentIndex;
-    uint8_t             OD_EEPROMWriteEnable;
+    bool                OD_EEPROMWriteEnable;
 }CO_EE_t;
 
 
 /* First part of eeprom initialization.
  *  @param SRAMAddress Address of battery powered SRAM memory.
  */
-int16_t CO_EE_init_1(
+CO_ReturnError_t CO_EE_init_1(
         CO_EE_t                *ee,
         uint8_t                *SRAMAddress,
         uint8_t                *OD_EEPROMAddress,
@@ -87,7 +87,7 @@ int16_t CO_EE_init_1(
 /* Second part of eeprom initialization. */
 void CO_EE_init_2(
         CO_EE_t                *ee, 
-        int16_t                 eeStatus,
+        CO_ReturnError_t        eeStatus,
         CO_SDO_t               *SDO,
         CO_EM_t                *em);
 

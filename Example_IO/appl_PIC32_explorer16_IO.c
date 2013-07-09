@@ -70,7 +70,7 @@ typedef enum{
  * For more information see topic <Object dictionary function>.
  */
 #define ODF_testDomain_index     0x2120
-uint32_t ODF_testDomain(CO_ODF_arg_t *ODF_arg);
+CO_SDO_abortCode_t ODF_testDomain(CO_ODF_arg_t *ODF_arg);
 
 
 /******************************************************************************/
@@ -162,10 +162,10 @@ void program1ms(void){
 #ifdef OD_testVar
 /******************************************************************************/
 /* Function passes some data to SDO server on testDomain variable access */
-uint32_t ODF_testDomain(CO_ODF_arg_t *ODF_arg){
+CO_SDO_abortCode_t ODF_testDomain(CO_ODF_arg_t *ODF_arg){
 
     /* domain data type is on subIndex 5, nothing to do on other subObjects */
-    if(ODF_arg->subIndex != 5) return 0;
+    if(ODF_arg->subIndex != 5) return CO_SDO_AB_NONE;
 
     /* reading object dictionary */
     if(ODF_arg->reading){
@@ -189,7 +189,7 @@ uint32_t ODF_testDomain(CO_ODF_arg_t *ODF_arg){
         for(i = 0; offset < domainFileSize; i++, offset++){
             if(i >= SDObufferSize){
                 /* SDO buffer is full */
-                ODF_arg->lastSegment = 0;
+                ODF_arg->lastSegment = false;
                 break;
             }
             ODF_arg->data[i] = (uint8_t)(offset+1);
@@ -197,12 +197,12 @@ uint32_t ODF_testDomain(CO_ODF_arg_t *ODF_arg){
 
         /* all data was copied */
         if(offset == domainFileSize){
-            ODF_arg->lastSegment = 1;
+            ODF_arg->lastSegment = true;
             ODF_arg->dataLength = i;
         }
 
         /* return OK */
-        return 0;
+        return CO_SDO_AB_NONE;
     }
 
     /* writing object dictionary */
@@ -225,14 +225,14 @@ uint32_t ODF_testDomain(CO_ODF_arg_t *ODF_arg){
             /* printf("%02X ", b); */
         }
 
-        if(err) return 0x06090030; /* Invalid value for parameter (download only). */
+        if(err) return CO_SDO_AB_INVALID_VALUE;
 
         /* end of transfer */
         /* if(ODF_arg->lastSegment) */
             /* printf("\nReceived %d bytes of data.\n", offset); */
 
         /* return OK */
-        return 0;
+        return CO_SDO_AB_NONE;
     }
 }
 #endif

@@ -61,20 +61,6 @@ unsigned int CO_interruptStatus = 0;
 
 
 /******************************************************************************/
-void CO_memcpySwap2(uint8_t* dest, uint8_t* src){
-    *(dest++) = *(src++);
-    *(dest) = *(src);
-}
-
-void CO_memcpySwap4(uint8_t* dest, uint8_t* src){
-    *(dest++) = *(src++);
-    *(dest++) = *(src++);
-    *(dest++) = *(src++);
-    *(dest) = *(src);
-}
-
-
-/******************************************************************************/
 void CO_CANsetConfigurationMode(uint16_t CANbaseAddress){
     uint32_t C_CONcopy = CAN_REG(CANbaseAddress, C_CON);
 
@@ -104,12 +90,12 @@ void CO_CANsetNormalMode(uint16_t CANbaseAddress){
 
 
 /******************************************************************************/
-int16_t CO_CANmodule_init(
+CO_ReturnError_t CO_CANmodule_init(
         CO_CANmodule_t         *CANmodule,
         uint16_t                CANbaseAddress,
-        CO_CANrx_t             *rxArray,
+        CO_CANrx_t              rxArray[],
         uint16_t                rxSize,
-        CO_CANtx_t             *txArray,
+        CO_CANtx_t              txArray[],
         uint16_t                txSize,
         uint16_t                CANbitRate)
 {
@@ -122,19 +108,21 @@ int16_t CO_CANmodule_init(
     CANmodule->rxSize = rxSize;
     CANmodule->txArray = txArray;
     CANmodule->txSize = txSize;
-    CANmodule->useCANrxFilters = (rxSize <= 32) ? 1 : 0;
-    CANmodule->bufferInhibitFlag = 0;
-    CANmodule->firstCANtxMessage = 1;
-    CANmodule->CANtxCount = 0;
-    CANmodule->errOld = 0;
-    CANmodule->em = 0;
-    for(i=0; i<rxSize; i++){
-        CANmodule->rxArray[i].ident = 0;
-        CANmodule->rxArray[i].pFunct = 0;
+    CANmodule->useCANrxFilters = (rxSize <= 32U) ? true : false;
+    CANmodule->bufferInhibitFlag = false;
+    CANmodule->firstCANtxMessage = true;
+    CANmodule->CANtxCount = 0U;
+    CANmodule->errOld = 0U;
+    CANmodule->em = NULL;
+
+    for(i=0U; i<rxSize; i++){
+        rxArray[i].ident = 0U;
+        rxArray[i].pFunct = NULL;
     }
-    for(i=0; i<txSize; i++){
-        CANmodule->txArray[i].bufferFull = 0;
+    for(i=0U; i<txSize; i++){
+        txArray[i].bufferFull = false;
     }
+
     /* clear FIFO */
     if(sizeof(CO_CANrxMsg_t) != 16) while(1);/* some safety */
     uint32_t* f = (uint32_t*) CANmodule->CANmsgBuff;
@@ -219,98 +207,99 @@ void CO_CANmodule_disable(CO_CANmodule_t *CANmodule){
 
 
 /******************************************************************************/
-uint16_t CO_CANrxMsg_readIdent(CO_CANrxMsg_t *rxMsg){
+uint16_t CO_CANrxMsg_readIdent(const CO_CANrxMsg_t *rxMsg){
     return rxMsg->ident;
 }
 
 
 /******************************************************************************/
-int16_t CO_CANrxBufferInit(
+CO_ReturnError_t CO_CANrxBufferInit(
         CO_CANmodule_t         *CANmodule,
         uint16_t                index,
         uint16_t                ident,
         uint16_t                mask,
-        uint8_t                 rtr,
+        bool                    rtr,
         void                   *object,
-        int16_t               (*pFunct)(void *object, CO_CANrxMsg_t *message))
+        void                  (*pFunct)(void *object, const CO_CANrxMsg_t *message))
 {
-    CO_CANrx_t *rxBuffer;
-    uint16_t addr = CANmodule->CANbaseAddress;
     CO_ReturnError_t ret = CO_ERROR_NO;
 
-    /* safety */
-    if(!CANmodule || !object || !pFunct || index >= CANmodule->rxSize){
-        return CO_ERROR_ILLEGAL_ARGUMENT;
+    if((CANmodule!=NULL) && (object!=NULL) && (pFunct!=NULL) && (index < CANmodule->rxSize)){
+        /* buffer, which will be configured */
+        CO_CANrx_t *buffer = &CANmodule->rxArray[index];
+
+        /* Configure object variables */
+        buffer->object = object;
+        buffer->pFunct = pFunct;
+
+        /* CAN identifier and CAN mask, bit aligned with CAN module FIFO buffers (RTR is extra) */
+        buffer->ident = ident & 0x07FFU;
+        if(rtr){
+            buffer->ident |= 0x0800U;
+        }
+        buffer->mask = (mask & 0x07FFU) | 0x0800U;
+
+        /* Set CAN hardware module filter and mask. */
+        if(CANmodule->useCANrxFilters){
+            uint32_t RXF, RXM;
+            volatile uint32_t *pRXF;
+            volatile uint32_t *pRXM0, *pRXM1, *pRXM2, *pRXM3;
+            volatile uint8_t *pFLTCON;
+            uint8_t selectMask;
+            uint16_t addr = CANmodule->CANbaseAddress;
+
+            /* get correct part of the filter control register */
+            pFLTCON = (volatile uint8_t*)(&CAN_REG(addr, C_FLTCON)); /* pointer to first filter control register */
+            pFLTCON += (index/4) * 0x10;   /* now points to the correct C_FLTCONi */
+            pFLTCON += index%4;   /* now points to correct part of the correct C_FLTCONi */
+
+            /* disable filter and wait if necessary */
+            while(*pFLTCON & 0x80) *pFLTCON &= 0x7F;
+
+            /* align RXF and RXM with C_RXF and C_RXM registers */
+            RXF = (uint32_t)ident << 21;
+            RXM = (uint32_t)mask << 21 | 0x00080000;
+
+            /* write to filter */
+            pRXF = &CAN_REG(addr, C_RXF); /* pointer to first filter register */
+            pRXF += index * (0x10/4);   /* now points to C_RXFi (i == index) */
+            *pRXF = RXF;         /* write value to filter */
+
+            /* configure mask (There are four masks, each of them can be asigned to any filter. */
+            /*                 First mask has always the value 0xFFE80000 - all 11 bits must match). */
+            pRXM0 = &CAN_REG(addr, C_RXM);
+            pRXM1 = &CAN_REG(addr, C_RXM+0x10);
+            pRXM2 = &CAN_REG(addr, C_RXM+0x20);
+            pRXM3 = &CAN_REG(addr, C_RXM+0x30);
+            if(RXM == 0xFFE80000){
+                selectMask = 0;
+            }
+            else if(RXM == *pRXM1 || *pRXM1 == 0xFFE80000){
+                /* RXM is equal to mask 1 or mask 1 was not yet configured. */
+                *pRXM1 = RXM;
+                selectMask = 1;
+            }
+            else if(RXM == *pRXM2 || *pRXM2 == 0xFFE80000){
+                /* RXM is equal to mask 2 or mask 2 was not yet configured. */
+                *pRXM2 = RXM;
+                selectMask = 2;
+            }
+            else if(RXM == *pRXM3 || *pRXM3 == 0xFFE80000){
+                /* RXM is equal to mask 3 or mask 3 was not yet configured. */
+                *pRXM3 = RXM;
+                selectMask = 3;
+            }
+            else{
+                /* not enough masks */
+                selectMask = 0;
+                ret = CO_ERROR_OUT_OF_MEMORY;
+            }
+            /* write to appropriate filter control register */
+            *pFLTCON = 0x80 | (selectMask << 5); /* enable filter and write filter mask select bit */
+        }
     }
-
-    /* buffer, which will be configured */
-    rxBuffer = CANmodule->rxArray + index;
-
-    /* Configure object variables */
-    rxBuffer->object = object;
-    rxBuffer->pFunct = pFunct;
-
-    /* CAN identifier and CAN mask, bit aligned with CAN module FIFO buffers (RTR is extra) */
-    rxBuffer->ident = ident & 0x07FF;
-    if(rtr) rxBuffer->ident |= 0x0800;
-    rxBuffer->mask = (mask & 0x07FF) | 0x0800;
-
-    /* Set CAN hardware module filter and mask. */
-    if(CANmodule->useCANrxFilters){
-        uint32_t RXF, RXM;
-        volatile uint32_t *pRXF;
-        volatile uint32_t *pRXM0, *pRXM1, *pRXM2, *pRXM3;
-        volatile uint8_t *pFLTCON;
-        uint8_t selectMask;
-
-        /* get correct part of the filter control register */
-        pFLTCON = (volatile uint8_t*)(&CAN_REG(addr, C_FLTCON)); /* pointer to first filter control register */
-        pFLTCON += (index/4) * 0x10;   /* now points to the correct C_FLTCONi */
-        pFLTCON += index%4;   /* now points to correct part of the correct C_FLTCONi */
-
-        /* disable filter and wait if necessary */
-        while(*pFLTCON & 0x80) *pFLTCON &= 0x7F;
-
-        /* align RXF and RXM with C_RXF and C_RXM registers */
-        RXF = (uint32_t)ident << 21;
-        RXM = (uint32_t)mask << 21 | 0x00080000;
-
-        /* write to filter */
-        pRXF = &CAN_REG(addr, C_RXF); /* pointer to first filter register */
-        pRXF += index * (0x10/4);   /* now points to C_RXFi (i == index) */
-        *pRXF = RXF;         /* write value to filter */
-
-        /* configure mask (There are four masks, each of them can be asigned to any filter. */
-        /*                 First mask has always the value 0xFFE80000 - all 11 bits must match). */
-        pRXM0 = &CAN_REG(addr, C_RXM);
-        pRXM1 = &CAN_REG(addr, C_RXM+0x10);
-        pRXM2 = &CAN_REG(addr, C_RXM+0x20);
-        pRXM3 = &CAN_REG(addr, C_RXM+0x30);
-        if(RXM == 0xFFE80000){
-            selectMask = 0;
-        }
-        else if(RXM == *pRXM1 || *pRXM1 == 0xFFE80000){
-            /* RXM is equal to mask 1 or mask 1 was not yet configured. */
-            *pRXM1 = RXM;
-            selectMask = 1;
-        }
-        else if(RXM == *pRXM2 || *pRXM2 == 0xFFE80000){
-            /* RXM is equal to mask 2 or mask 2 was not yet configured. */
-            *pRXM2 = RXM;
-            selectMask = 2;
-        }
-        else if(RXM == *pRXM3 || *pRXM3 == 0xFFE80000){
-            /* RXM is equal to mask 3 or mask 3 was not yet configured. */
-            *pRXM3 = RXM;
-            selectMask = 3;
-        }
-        else{
-            /* not enough masks */
-            selectMask = 0;
-            ret = CO_ERROR_OUT_OF_MEMORY;
-        }
-        /* write to appropriate filter control register */
-        *pFLTCON = 0x80 | (selectMask << 5); /* enable filter and write filter mask select bit */
+    else{
+        ret = CO_ERROR_ILLEGAL_ARGUMENT;
     }
 
     return ret;
@@ -322,29 +311,30 @@ CO_CANtx_t *CO_CANtxBufferInit(
         CO_CANmodule_t         *CANmodule,
         uint16_t                index,
         uint16_t                ident,
-        uint8_t                 rtr,
+        bool                    rtr,
         uint8_t                 noOfBytes,
-        uint8_t                 syncFlag)
+        bool                    syncFlag)
 {
-    /* safety */
-    if(!CANmodule || CANmodule->txSize <= index) return 0;
+    CO_CANtx_t *buffer = NULL;
 
-    /* get specific buffer */
-    CO_CANtx_t *buffer = &CANmodule->txArray[index];
+    if((CANmodule != NULL) && (index < CANmodule->txSize)){
+        /* get specific buffer */
+        buffer = &CANmodule->txArray[index];
 
-    /* CAN identifier, DLC and rtr, bit aligned with CAN module transmit buffer */
-    buffer->CMSGSID = ident & 0x07FF;
-    buffer->CMSGEID = (noOfBytes & 0xF) | (rtr?0x0200:0);
+        /* CAN identifier, DLC and rtr, bit aligned with CAN module transmit buffer */
+        buffer->CMSGSID = ident & 0x07FF;
+        buffer->CMSGEID = (noOfBytes & 0xF) | (rtr?0x0200:0);
 
-    buffer->bufferFull = 0;
-    buffer->syncFlag = syncFlag?1:0;
+        buffer->bufferFull = false;
+        buffer->syncFlag = syncFlag;
+    }
 
     return buffer;
 }
 
 
 /******************************************************************************/
-int16_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer){
+CO_ReturnError_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer){
     CO_ReturnError_t err = CO_ERROR_NO;
     uint16_t addr = CANmodule->CANbaseAddress;
     volatile uint32_t* TX_FIFOcon = &CAN_REG(addr, C_FIFOCON+0x40);
@@ -355,8 +345,10 @@ int16_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer){
 
     /* Verify overflow */
     if(buffer->bufferFull){
-        if(!CANmodule->firstCANtxMessage)/* don't set error, if bootup message is still on buffers */
+        if(!CANmodule->firstCANtxMessage){
+            /* don't set error, if bootup message is still on buffers */
             CO_errorReport((CO_EM_t*)CANmodule->em, CO_EM_CAN_TX_OVERFLOW, CO_EMC_CAN_OVERRUN, buffer->CMSGSID);
+        }
         err = CO_ERROR_TX_OVERFLOW;
     }
 
@@ -376,7 +368,7 @@ int16_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer){
     }
     /* if no buffer is free, message will be sent by interrupt */
     else{
-        buffer->bufferFull = 1;
+        buffer->bufferFull = true;
         CANmodule->CANtxCount++;
     }
     /* Enable 'Tx buffer empty' (TXEMPTYIE) interrupt in FIFO 1 (third layer interrupt) */
@@ -389,27 +381,29 @@ int16_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer){
 
 /******************************************************************************/
 void CO_CANclearPendingSyncPDOs(CO_CANmodule_t *CANmodule){
-    uint8_t tpdoDeleted = 0;
+    uint32_t tpdoDeleted = 0U;
     volatile uint32_t* TX_FIFOcon = &CAN_REG(CANmodule->CANbaseAddress, C_FIFOCON+0x40);
     volatile uint32_t* TX_FIFOconClr = &CAN_REG(CANmodule->CANbaseAddress, C_FIFOCON+0x44);
-    CO_CANtx_t *buffer = CANmodule->txArray;
 
     CO_DISABLE_INTERRUPTS();
     /* Abort message from CAN module, if there is synchronous TPDO.
      * Take special care with this functionality. */
     if((*TX_FIFOcon & 0x8) && CANmodule->bufferInhibitFlag){
         *TX_FIFOconClr = 0x0008;   /* clear TXREQ */
-        CANmodule->bufferInhibitFlag = 0;
-        tpdoDeleted = 1;
+        CANmodule->bufferInhibitFlag = false;
+        tpdoDeleted = 1U;
     }
     /* delete also pending synchronous TPDOs in TX buffers */
-    if(CANmodule->CANtxCount){
+    if(CANmodule->CANtxCount != 0U){
         uint16_t i;
-        for(i = CANmodule->txSize; i > 0; i--){
-            if(buffer->bufferFull && buffer->syncFlag){
-                buffer->bufferFull = 0;
-                CANmodule->CANtxCount--;
-                tpdoDeleted = 2;
+        CO_CANtx_t *buffer = &CANmodule->txArray[0];
+        for(i = CANmodule->txSize; i > 0U; i--){
+            if(buffer->bufferFull){
+                if(buffer->syncFlag){
+                    buffer->bufferFull = false;
+                    CANmodule->CANtxCount--;
+                    tpdoDeleted = 2U;
+                }
             }
             buffer++;
         }
@@ -417,7 +411,7 @@ void CO_CANclearPendingSyncPDOs(CO_CANmodule_t *CANmodule){
     CO_ENABLE_INTERRUPTS();
 
 
-    if(tpdoDeleted){
+    if(tpdoDeleted != 0U){
         CO_errorReport((CO_EM_t*)CANmodule->em, CO_EM_TPDO_OUTSIDE_WINDOW, CO_EMC_COMMUNICATION, tpdoDeleted);
     }
 }
@@ -428,6 +422,7 @@ void CO_CANverifyErrors(CO_CANmodule_t *CANmodule){
     uint16_t rxErrors, txErrors, overflow;
     uint32_t TREC;
     CO_EM_t* em = (CO_EM_t*)CANmodule->em;
+    uint32_t err;
 
     TREC = CAN_REG(CANmodule->CANbaseAddress, C_TREC);
     rxErrors = (uint8_t) TREC;
@@ -435,45 +430,47 @@ void CO_CANverifyErrors(CO_CANmodule_t *CANmodule){
     if(TREC&0x00200000) txErrors = 256; /* bus off */
     overflow = (CAN_REG(CANmodule->CANbaseAddress, C_FIFOINT)&0x8) ? 1 : 0;
 
-    uint32_t err = (uint32_t)txErrors << 16 | rxErrors << 8 | overflow;
+    err = ((uint32_t)txErrors << 16) | ((uint32_t)rxErrors << 8) | overflow;
 
     if(CANmodule->errOld != err){
         CANmodule->errOld = err;
 
-        if(txErrors >= 256){                               /* bus off */
+        if(txErrors >= 256U){                               /* bus off */
             CO_errorReport(em, CO_EM_CAN_TX_BUS_OFF, CO_EMC_BUS_OFF_RECOVERED, err);
         }
-        else{                                              /* not bus off */
+        else{                                               /* not bus off */
             CO_errorReset(em, CO_EM_CAN_TX_BUS_OFF, err);
 
-            if(rxErrors >= 96 || txErrors >= 96){           /* bus warning */
+            if((rxErrors >= 96U) || (txErrors >= 96U)){     /* bus warning */
                 CO_errorReport(em, CO_EM_CAN_BUS_WARNING, CO_EMC_NO_ERROR, err);
             }
 
-            if(rxErrors >= 128){                            /* RX bus passive */
+            if(rxErrors >= 128U){                           /* RX bus passive */
                 CO_errorReport(em, CO_EM_CAN_RX_BUS_PASSIVE, CO_EMC_CAN_PASSIVE, err);
             }
             else{
                 CO_errorReset(em, CO_EM_CAN_RX_BUS_PASSIVE, err);
             }
 
-            if(txErrors >= 128){                            /* TX bus passive */
+            if(txErrors >= 128U){                           /* TX bus passive */
                 if(!CANmodule->firstCANtxMessage){
                     CO_errorReport(em, CO_EM_CAN_TX_BUS_PASSIVE, CO_EMC_CAN_PASSIVE, err);
                 }
             }
             else{
-                int16_t wasCleared;
-                wasCleared =        CO_errorReset(em, CO_EM_CAN_TX_BUS_PASSIVE, err);
-                if(wasCleared == 1) CO_errorReset(em, CO_EM_CAN_TX_OVERFLOW, err);
+                bool isError = CO_isError(em, CO_EM_CAN_TX_BUS_PASSIVE);
+                if(isError){
+                    CO_errorReset(em, CO_EM_CAN_TX_BUS_PASSIVE, err);
+                    CO_errorReset(em, CO_EM_CAN_TX_OVERFLOW, err);
+                }
             }
 
-            if(rxErrors < 96 && txErrors < 96){             /* no error */
+            if((rxErrors < 96U) && (txErrors < 96U)){       /* no error */
                 CO_errorReset(em, CO_EM_CAN_BUS_WARNING, err);
             }
         }
 
-        if(overflow){                       /* CAN RX bus overflow */
+        if(overflow != 0U){                                 /* CAN RX bus overflow */
             CO_errorReport(em, CO_EM_CAN_RXB_OVERFLOW, CO_EMC_CAN_OVERRUN, err);
         }
     }
@@ -487,11 +484,11 @@ void CO_CANinterrupt(CO_CANmodule_t *CANmodule){
 
     /* receive interrupt (New CAN messagge is available in RX FIFO 0 buffer) */
     if(ICODE == 0){
-        CO_CANrxMsg_t *rcvMsg;     /* pointer to received message in CAN module */
-        uint16_t index;          /* index of received message */
-        uint16_t rcvMsgIdent;    /* identifier of the received message */
-        CO_CANrx_t *msgBuff;  /* receive message buffer from CO_CANmodule_t object. */
-        uint8_t msgMatched = 0;
+        CO_CANrxMsg_t *rcvMsg;      /* pointer to received message in CAN module */
+        uint16_t index;             /* index of received message */
+        uint16_t rcvMsgIdent;       /* identifier of the received message */
+        CO_CANrx_t *buffer = NULL;  /* receive message buffer from CO_CANmodule_t object. */
+        bool msgMatched = false;
 
         rcvMsg = (CO_CANrxMsg_t*) PA_TO_KVA1(CAN_REG(CANmodule->CANbaseAddress, C_FIFOUA));
         rcvMsgIdent = rcvMsg->ident;
@@ -500,26 +497,31 @@ void CO_CANinterrupt(CO_CANmodule_t *CANmodule){
             /* CAN module filters are used. Message with known 11-bit identifier has */
             /* been received */
             index = rcvMsg->FILHIT;
-            msgBuff = CANmodule->rxArray + index;
-            /* verify also RTR */
-            if(((rcvMsgIdent ^ msgBuff->ident) & msgBuff->mask) == 0)
-                msgMatched = 1;
+            if(index < CANmodule->rxSize){
+                buffer = &CANmodule->rxArray[index];
+                /* verify also RTR */
+                if(((rcvMsgIdent ^ buffer->ident) & buffer->mask) == 0U){
+                    msgMatched = true;
+                }
+            }
         }
         else{
             /* CAN module filters are not used, message with any standard 11-bit identifier */
             /* has been received. Search rxArray form CANmodule for the same CAN-ID. */
-            msgBuff = CANmodule->rxArray;
-            for(index = CANmodule->rxSize; index > 0; index--){
-                if(((rcvMsgIdent ^ msgBuff->ident) & msgBuff->mask) == 0){
-                    msgMatched = 1;
+            buffer = &CANmodule->rxArray[0];
+            for(index = CANmodule->rxSize; index > 0U; index--){
+                if(((rcvMsgIdent ^ buffer->ident) & buffer->mask) == 0U){
+                    msgMatched = true;
                     break;
                 }
-                msgBuff++;
+                buffer++;
             }
         }
 
         /* Call specific function, which will process the message */
-        if(msgMatched) msgBuff->pFunct(msgBuff->object, rcvMsg);
+        if(msgMatched && (buffer != NULL) && (buffer->pFunct != NULL)){
+            buffer->pFunct(buffer->object, rcvMsg);
+        }
 
         /* Update the message buffer pointer */
         CAN_REG(CANmodule->CANbaseAddress, C_FIFOCON+0x08) = 0x2000;   /* set UINC */
@@ -529,20 +531,20 @@ void CO_CANinterrupt(CO_CANmodule_t *CANmodule){
     /* transmit interrupt (TX buffer FIFO 1 is free) */
     else if(ICODE == 1){
         /* First CAN message (bootup) was sent successfully */
-        CANmodule->firstCANtxMessage = 0;
+        CANmodule->firstCANtxMessage = false;
         /* clear flag from previous message */
-        CANmodule->bufferInhibitFlag = 0;
+        CANmodule->bufferInhibitFlag = false;
         /* Are there any new messages waiting to be send */
-        if(CANmodule->CANtxCount > 0){
+        if(CANmodule->CANtxCount > 0U){
             uint16_t i;             /* index of transmitting message */
 
             /* first buffer */
-            CO_CANtx_t *buffer = CANmodule->txArray;
+            CO_CANtx_t *buffer = &CANmodule->txArray[0];
             /* search through whole array of pointers to transmit message buffers. */
-            for(i = CANmodule->txSize; i > 0; i--){
+            for(i = CANmodule->txSize; i > 0U; i--){
                 /* if message buffer is full, send it. */
                 if(buffer->bufferFull){
-                    buffer->bufferFull = 0;
+                    buffer->bufferFull = false;
                     CANmodule->CANtxCount--;
 
                     /* Copy message to CAN buffer */
@@ -562,11 +564,13 @@ void CO_CANinterrupt(CO_CANmodule_t *CANmodule){
             }/* end of for loop */
 
             /* Clear counter if no more messages */
-            if(i == 0) CANmodule->CANtxCount = 0;
+            if(i == 0U){
+                CANmodule->CANtxCount = 0U;
+            }
         }
 
         /* if no more messages, disable 'Tx buffer empty' (TXEMPTYIE) interrupt */
-        if(CANmodule->CANtxCount == 0){
+        if(CANmodule->CANtxCount == 0U){
             CAN_REG(CANmodule->CANbaseAddress, C_FIFOINT+0x44) = 0x01000000;
         }
     }

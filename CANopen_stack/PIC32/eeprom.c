@@ -54,28 +54,27 @@ static uint8_t EE_readStatus();
 
 
 /* Store parameters ***********************************************************/
-uint32_t CO_ODF_1010(CO_ODF_arg_t *ODF_arg){
+static CO_SDO_abortCode_t CO_ODF_1010(CO_ODF_arg_t *ODF_arg){
     CO_EE_t *ee;
-    uint32_t *value;
+    uint32_t value;
+    CO_SDO_abortCode_t ret = CO_SDO_AB_NONE;
 
     ee = (CO_EE_t*) ODF_arg->object;
-    value = (uint32_t*) ODF_arg->data;
+    value = CO_getUint32(ODF_arg->data);
 
     if(!ODF_arg->reading){
         /* don't change the old value */
-        uint32_t valueCopy = *value;
-        uint32_t *valueOld = (uint32_t*) ODF_arg->ODdataStorage;
-        *value = *valueOld;
+        CO_memcpy(ODF_arg->data, (const uint8_t*)ODF_arg->ODdataStorage, 4U);
 
         if(ODF_arg->subIndex == 1){
-            if(valueCopy == 0x65766173){
+            if(value == 0x65766173UL){
                 EE_MBR_t MBR;
 
                 /* read the master boot record from the last page in eeprom */
                 EE_readBlock((uint8_t*)&MBR, EE_SIZE - EE_PAGE_SIZE, sizeof(MBR));
                 /* if EEPROM is not yet initilalized, enable it now */
                 if(MBR.OD_EEPROMSize != ee->OD_EEPROMSize)
-                    ee->OD_EEPROMWriteEnable = 1;
+                    ee->OD_EEPROMWriteEnable = true;
 
                 /* prepare MBR */
                 MBR.CRC = crc16_ccitt(ee->OD_ROMAddress, ee->OD_ROMSize, 0);
@@ -93,42 +92,41 @@ uint32_t CO_ODF_1010(CO_ODF_arg_t *ODF_arg){
                     && EE_verifyBlock((uint8_t*)&MBR, EE_SIZE - EE_PAGE_SIZE, sizeof(MBR)) == 1
                     && (EE_readStatus()&0x8C) == 0x88){
                     /* write successfull */
-                    return 0;
+                    return CO_SDO_AB_NONE;
                 }
-                return 0x06060000;   /* Access failed due to an hardware error. */
+                return CO_SDO_AB_HW;
             }
             else
-                return 0x08000020; /* Data cannot be transferred or stored to the application. */
+                return CO_SDO_AB_DATA_TRANSF;
         }
     }
 
-    return 0;
+    return ret;
 }
 
 
 /* Restore default parameters *************************************************/
-uint32_t CO_ODF_1011(CO_ODF_arg_t *ODF_arg){
+static CO_SDO_abortCode_t CO_ODF_1011(CO_ODF_arg_t *ODF_arg){
     CO_EE_t *ee;
-    uint32_t *value;
+    uint32_t value;
+    CO_SDO_abortCode_t ret = CO_SDO_AB_NONE;
 
     ee = (CO_EE_t*) ODF_arg->object;
-    value = (uint32_t*) ODF_arg->data;
+    value = CO_getUint32(ODF_arg->data);
 
     if(!ODF_arg->reading){
         /* don't change the old value */
-        uint32_t valueCopy = *value;
-        uint32_t *valueOld = (uint32_t*) ODF_arg->ODdataStorage;
-        *value = *valueOld;
+        CO_memcpy(ODF_arg->data, (const uint8_t*)ODF_arg->ODdataStorage, 4U);
 
-        if(ODF_arg->subIndex >= 1){
-            if(valueCopy == 0x64616F6C){
+        if(ODF_arg->subIndex >= 1U){
+            if(value == 0x64616F6CUL){
                 EE_MBR_t MBR;
 
                 /* read the master boot record from the last page in eeprom */
                 EE_readBlock((uint8_t*)&MBR, EE_SIZE - EE_PAGE_SIZE, sizeof(MBR));
                 /* verify MBR for safety */
                 if(EE_verifyBlock((uint8_t*)&MBR, EE_SIZE - EE_PAGE_SIZE, sizeof(MBR)) == 0)
-                    return 0x06060000;   /* Access failed due to an hardware error. */
+                    return CO_SDO_AB_HW;
 
                 switch(ODF_arg->subIndex){
                     case 0x01: MBR.OD_ROMSize = 0;              break; /* clear the ROM */
@@ -147,23 +145,23 @@ uint32_t CO_ODF_1011(CO_ODF_arg_t *ODF_arg){
                 if(EE_verifyBlock((uint8_t*)&MBR, EE_SIZE - EE_PAGE_SIZE, sizeof(MBR)) == 1
                     && (EE_readStatus()&0x8C) == 0x88){
                     /* write successfull */
-                    return 0;
+                    return CO_SDO_AB_NONE;
                 }
                 else{
-                    return 0x06060000;   /* Access failed due to an hardware error. */
+                    return CO_SDO_AB_HW;
                 }
             }
             else
-                return 0x08000020; /* Data cannot be transferred or stored to the application. */
+                return CO_SDO_AB_DATA_TRANSF;
         }
     }
 
-    return 0;
+    return ret;
 }
 
 
 /******************************************************************************/
-int16_t CO_EE_init_1(
+CO_ReturnError_t CO_EE_init_1(
         CO_EE_t                *ee,
         uint8_t                *OD_EEPROMAddress,
         uint32_t                OD_EEPROMSize,
@@ -197,7 +195,7 @@ int16_t CO_EE_init_1(
     ee->OD_ROMAddress = OD_ROMAddress;
     ee->OD_ROMSize = OD_ROMSize;
     ee->OD_EEPROMCurrentIndex = 0;
-    ee->OD_EEPROMWriteEnable = 0;
+    ee->OD_EEPROMWriteEnable = false;
 
     /* read the master boot record from the last page in eeprom */
     EE_MBR_t MBR;
@@ -211,7 +209,7 @@ int16_t CO_EE_init_1(
         EE_readBlock((uint8_t*)&lastWordEE, OD_EEPROMSize-4, 4);
         if(firstWordRAM == firstWordEE && firstWordRAM == lastWordEE){
             EE_readBlock(OD_EEPROMAddress, 0, OD_EEPROMSize);
-            ee->OD_EEPROMWriteEnable = 1;
+            ee->OD_EEPROMWriteEnable = true;
         }
         else{
             return CO_ERROR_DATA_CORRUPT;
@@ -236,13 +234,15 @@ int16_t CO_EE_init_1(
 /******************************************************************************/
 void CO_EE_init_2(
         CO_EE_t                *ee,
-        int16_t                 eeStatus,
+        CO_ReturnError_t        eeStatus,
         CO_SDO_t               *SDO,
         CO_EM_t                *em)
 {
-    CO_OD_configure(SDO, 0x1010, CO_ODF_1010, (void*)ee, 0, 0);
-    CO_OD_configure(SDO, 0x1011, CO_ODF_1011, (void*)ee, 0, 0);
-    if(eeStatus) CO_errorReport(em, CO_EM_NON_VOLATILE_MEMORY, CO_EMC_HARDWARE, eeStatus);
+    CO_OD_configure(SDO, OD_H1010_STORE_PARAM_FUNC, CO_ODF_1010, (void*)ee, 0, 0U);
+    CO_OD_configure(SDO, OD_H1011_REST_PARAM_FUNC, CO_ODF_1011, (void*)ee, 0, 0U);
+    if(eeStatus != CO_ERROR_NO){
+        CO_errorReport(em, CO_EM_NON_VOLATILE_MEMORY, CO_EMC_HARDWARE, (uint32_t)eeStatus);
+    }
 }
 
 

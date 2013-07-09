@@ -84,8 +84,8 @@
 
 
 /* Global variables and objects */
+    volatile uint16_t CO_timer1ms = 0U; /* variable increments each millisecond */
     const CO_CANbitRateData_t   CO_CANbitRateData[8] = {CO_CANbitRateDataInitializers};
-    volatile uint16_t           CO_timer1ms=0;  /* variable increments each millisecond */
 #ifdef USE_EEPROM
     CO_EE_t                     CO_EEO;         /* Eeprom object */
 #endif
@@ -113,7 +113,7 @@ int main (void){
 
     /* initialize EEPROM - part 1 */
 #ifdef USE_EEPROM
-    int16_t eeStatus = CO_EE_init_1(&CO_EEO, (uint8_t*) &CO_OD_EEPROM, sizeof(CO_OD_EEPROM),
+    CO_ReturnError_t eeStatus = CO_EE_init_1(&CO_EEO, (uint8_t*) &CO_OD_EEPROM, sizeof(CO_OD_EEPROM),
                             (uint8_t*) &CO_OD_ROM, sizeof(CO_OD_ROM));
 #endif
 
@@ -139,7 +139,7 @@ int main (void){
 
         /* initialize CANopen */
         err = CO_init();
-        if(err){
+        if(err != CO_ERROR_NO){
             while(1) ClearWDT();
             /* CO_errorReport(CO->em, CO_EM_MEMORY_ALLOCATION_ERROR, CO_EMC_SOFTWARE_INTERNAL, err); */
         }

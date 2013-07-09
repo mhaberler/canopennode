@@ -40,36 +40,35 @@
  *
  * For more information see file CO_SDO.h.
  */
-static uint32_t CO_ODF_1010(CO_ODF_arg_t *ODF_arg){
+static CO_SDO_abortCode_t CO_ODF_1010(CO_ODF_arg_t *ODF_arg);
+static CO_SDO_abortCode_t CO_ODF_1010(CO_ODF_arg_t *ODF_arg){
     CO_EE_t *ee;
-    uint32_t *value;
+    uint32_t value;
+    CO_SDO_abortCode_t ret = CO_SDO_AB_NONE;
 
     ee = (CO_EE_t*) ODF_arg->object;
-    value = (uint32_t*) ODF_arg->data;
+    value = CO_getUint32(ODF_arg->data);
 
     if(!ODF_arg->reading){
         /* don't change the old value */
-        uint32_t valueCopy = *value;
-        uint32_t *valueOld = (uint32_t*) ODF_arg->ODdataStorage;
-        *value = *valueOld;
+        CO_memcpy(ODF_arg->data, (const uint8_t*)ODF_arg->ODdataStorage, 4U);
 
-        if(ODF_arg->subIndex == 1){
-            if(valueCopy == 0x65766173){
+        if(ODF_arg->subIndex == 1U){
+            if(value == 0x65766173UL){
                 /* write ee->OD_ROMAddress, ee->OD_ROMSize to eeprom (blocking function) */
 
                 /* verify data */
-                if(1){
-                    /* write successfull */
-                    return 0;
+                if(0/*error*/){
+                    ret = CO_SDO_AB_HW;
                 }
-                return 0x06060000;   /* Access failed due to an hardware error. */
             }
-            else
-                return 0x08000020; /* Data cannot be transferred or stored to the application. */
+            else{
+                ret = CO_SDO_AB_DATA_TRANSF;
+            }
         }
     }
 
-    return 0;
+    return ret;
 }
 
 
@@ -78,37 +77,36 @@ static uint32_t CO_ODF_1010(CO_ODF_arg_t *ODF_arg){
  *
  * For more information see file CO_SDO.h.
  */
-static uint32_t CO_ODF_1011(CO_ODF_arg_t *ODF_arg){
+static CO_SDO_abortCode_t CO_ODF_1011(CO_ODF_arg_t *ODF_arg);
+static CO_SDO_abortCode_t CO_ODF_1011(CO_ODF_arg_t *ODF_arg){
     CO_EE_t *ee;
-    uint32_t *value;
+    uint32_t value;
+    CO_SDO_abortCode_t ret = CO_SDO_AB_NONE;
 
     ee = (CO_EE_t*) ODF_arg->object;
-    value = (uint32_t*) ODF_arg->data;
+    value = CO_getUint32(ODF_arg->data);
 
     if(!ODF_arg->reading){
         /* don't change the old value */
-        uint32_t valueCopy = *value;
-        uint32_t *valueOld = (uint32_t*) ODF_arg->ODdataStorage;
-        *value = *valueOld;
+        CO_memcpy(ODF_arg->data, (const uint8_t*)ODF_arg->ODdataStorage, 4U);
 
-        if(ODF_arg->subIndex >= 1){
-            if(valueCopy == 0x64616F6C){
-
-
+        if(ODF_arg->subIndex >= 1U){
+            if(value == 0x64616F6CUL){
                 /* Clear the eeprom */
-                return 0;
+
             }
-            else
-                return 0x08000020; /* Data cannot be transferred or stored to the application. */
+            else{
+                ret = CO_SDO_AB_DATA_TRANSF;
+            }
         }
     }
 
-    return 0;
+    return ret;
 }
 
 
 /******************************************************************************/
-int16_t CO_EE_init_1(
+CO_ReturnError_t CO_EE_init_1(
         CO_EE_t                *ee,
         uint8_t                *OD_EEPROMAddress,
         uint32_t                OD_EEPROMSize,
@@ -124,8 +122,8 @@ int16_t CO_EE_init_1(
     ee->OD_EEPROMSize = OD_EEPROMSize;
     ee->OD_ROMAddress = OD_ROMAddress;
     ee->OD_ROMSize = OD_ROMSize;
-    ee->OD_EEPROMCurrentIndex = 0;
-    ee->OD_EEPROMWriteEnable = 0;
+    ee->OD_EEPROMCurrentIndex = 0U;
+    ee->OD_EEPROMWriteEnable = false;
 
     /* read the CO_OD_EEPROM from EEPROM, first verify, if data are OK */
 
@@ -138,29 +136,36 @@ int16_t CO_EE_init_1(
 /******************************************************************************/
 void CO_EE_init_2(
         CO_EE_t                *ee,
-        int16_t                 eeStatus,
+        CO_ReturnError_t        eeStatus,
         CO_SDO_t               *SDO,
         CO_EM_t                *em)
 {
-    CO_OD_configure(SDO, 0x1010, CO_ODF_1010, (void*)ee, 0, 0);
-    CO_OD_configure(SDO, 0x1011, CO_ODF_1011, (void*)ee, 0, 0);
-    if(eeStatus) CO_errorReport(em, CO_EM_NON_VOLATILE_MEMORY, CO_EMC_HARDWARE, eeStatus);
+    CO_OD_configure(SDO, OD_H1010_STORE_PARAM_FUNC, CO_ODF_1010, (void*)ee, 0, 0U);
+    CO_OD_configure(SDO, OD_H1011_REST_PARAM_FUNC, CO_ODF_1011, (void*)ee, 0, 0U);
+    if(eeStatus != CO_ERROR_NO){
+        CO_errorReport(em, CO_EM_NON_VOLATILE_MEMORY, CO_EMC_HARDWARE, (uint32_t)eeStatus);
+    }
 }
 
 
 /******************************************************************************/
 void CO_EE_process(CO_EE_t *ee){
-    if(ee && ee->OD_EEPROMWriteEnable/* && !isWriteInProcess()*/){
+    if((ee != 0) && (ee->OD_EEPROMWriteEnable)/* && !isWriteInProcess()*/){
+        uint32_t i;
+        uint8_t RAMdata, eeData;
+
         /* verify next word */
-        if(++ee->OD_EEPROMCurrentIndex == ee->OD_EEPROMSize) ee->OD_EEPROMCurrentIndex = 0;
-        unsigned int i = ee->OD_EEPROMCurrentIndex;
+        if(++ee->OD_EEPROMCurrentIndex == ee->OD_EEPROMSize){
+            ee->OD_EEPROMCurrentIndex = 0U;
+        }
+        i = ee->OD_EEPROMCurrentIndex;
 
         /* read eeprom */
-        uint8_t RAMdata = ee->OD_EEPROMAddress[i];
-        uint8_t EEdata = 0/*EE_readByte(i)*/;
+        RAMdata = ee->OD_EEPROMAddress[i];
+        eeData = 0/*EE_readByte(i)*/;
 
         /* if bytes in EEPROM and in RAM are different, then write to EEPROM */
-        if(EEdata != RAMdata){
+        if(eeData != RAMdata){
             /* EE_writeByteNoWait(RAMdata, i);*/
         }
     }

@@ -116,10 +116,10 @@ typedef enum{
  * reset.
  */
 typedef enum{
-	CO_RESET_NOT  = 0,/**< Normal return, no action */
-	CO_RESET_COMM = 1,/**< Application must provide communication reset. */
-	CO_RESET_APP  = 2,/**< Application must provide complete device reset */
-	CO_RESET_QUIT = 3 /**< Application must quit, no reset of microcontroller (command is not requested by the stack.) */
+    CO_RESET_NOT  = 0,/**< Normal return, no action */
+    CO_RESET_COMM = 1,/**< Application must provide communication reset. */
+    CO_RESET_APP  = 2,/**< Application must provide complete device reset */
+    CO_RESET_QUIT = 3 /**< Application must quit, no reset of microcontroller (command is not requested by the stack.) */
 }CO_NMT_reset_cmd_t;
 
 
@@ -213,7 +213,7 @@ CO_NMT_reset_cmd_t CO_NMT_process(
         uint16_t                HBtime,
         uint32_t                NMTstartup,
         uint8_t                 errorRegister,
-        const uint8_t          *errorBehavior);
+        const uint8_t           errorBehavior[]);
 
 
 /** @} */

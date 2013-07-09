@@ -33,6 +33,9 @@
 
 
 /* Include processor header file */
+#include <stddef.h>         /* for 'NULL' */
+#include <stdbool.h>        /* for 'bool', 'true' and 'false' */
+#include <stdint.h>         /* for 'int8_t' to 'uint64_t' */
 
 
 /**
@@ -139,14 +142,8 @@
  *
  * According to Misra C
  */
-    typedef unsigned char           uint8_t;    /**< uint8_t */
-    typedef unsigned short int      uint16_t;   /**< uint16_t */
-    typedef unsigned long int       uint32_t;   /**< uint32_t */
-    typedef unsigned long long int  uint64_t;   /**< uint64_t */
-    typedef signed char             int8_t;     /**< int8_t */
-    typedef signed short int        int16_t;    /**< int16_t */
-    typedef signed long int         int32_t;    /**< int32_t */
-    typedef signed long long int    int64_t;    /**< int64_t */
+    /* bool, true and false are defined in stdbool.h */
+    /* int8_t to uint64_t are defined in stdint.h */
     typedef float                   float32_t;  /**< float32_t */
     typedef long double             float64_t;  /**< float64_t */
     typedef char                    char_t;     /**< char_t */
@@ -197,7 +194,7 @@ typedef struct{
     uint16_t            ident;          /**< Standard CAN Identifier (bits 0..10) + RTR (bit 11) */
     uint16_t            mask;           /**< Standard Identifier mask with same alignment as ident */
     void               *object;         /**< From CO_CANrxBufferInit() */
-    int16_t           (*pFunct)(void *object, CO_CANrxMsg_t *message);  /**< From CO_CANrxBufferInit() */
+    void              (*pFunct)(void *object, const CO_CANrxMsg_t *message);  /**< From CO_CANrxBufferInit() */
 }CO_CANrx_t;
 
 
@@ -207,9 +204,9 @@ typedef struct{
 typedef struct{
     uint32_t            ident;          /**< CAN identifier as aligned in CAN module */
     uint8_t             data[8];        /**< 8 data bytes */
-    volatile uint8_t    bufferFull;     /**< True if previous message is still in buffer */
+    volatile bool       bufferFull;     /**< True if previous message is still in buffer */
     /** Synchronous PDO messages has this flag set. It prevents them to be sent outside the synchronous window */
-    volatile uint8_t    syncFlag;
+    volatile bool       syncFlag;
 }CO_CANtx_t;
 
 
@@ -226,14 +223,14 @@ typedef struct{
       * are used for CAN reception. If there is not enough hardware filters,
       * they won't be used. In this case will be *all* received CAN messages
       * processed by software. */
-    volatile uint8_t    useCANrxFilters;
+    volatile bool       useCANrxFilters;
     /** If flag is true, then message in transmitt buffer is synchronous PDO
       * message, which will be aborted, if CO_clearPendingSyncPDOs() function
       * will be called by application. This may be necessary if Synchronous
       * window time was expired. */
-    volatile uint8_t    bufferInhibitFlag;
+    volatile bool       bufferInhibitFlag;
     /** Equal to 1, when the first transmitted message (bootup message) is in CAN TX buffers */
-    volatile uint8_t    firstCANtxMessage;
+    volatile bool       firstCANtxMessage;
     /** Number of messages in transmit buffer, which are waiting to be copied to the CAN module */
     volatile uint16_t   CANtxCount;
     uint32_t            errOld;         /**< Previous state of CAN errors */
@@ -242,34 +239,12 @@ typedef struct{
 
 
 /**
- * @defgroup CO_endianes Endianes
- * @{
+ * Endianes.
  *
- * Functions and macros for big or little endian. If microcontroller is big
- * endian, then BIG_ENDIAN macro must be defined.
+ * Depending on processor or compiler architecture, one of the two macros must
+ * be defined: CO_LITTLE_ENDIAN or CO_BIG_ENDIAN. CANopen itself is little endian.
  */
-
-/* #define BIG_ENDIAN */
-
-/**
- * Copy 2 data bytes from source to destination. Swap bytes if
- * microcontroller is big-endian.
- *
- * @param dest Destination location.
- * @param src Source location.
- */
-void CO_memcpySwap2(uint8_t* dest, uint8_t* src);
-
-/**
- * Copy 4 data bytes from source to destination. Swap bytes if
- * microcontroller is big-endian.
- *
- * @param dest Destination location.
- * @param src Source location.
- */
-void CO_memcpySwap4(uint8_t* dest, uint8_t* src);
-
-/** @} */
+#define CO_LITTLE_ENDIAN
 
 
 /**
@@ -305,12 +280,12 @@ void CO_CANsetNormalMode(uint16_t CANbaseAddress);
  *
  * Return #CO_ReturnError_t: CO_ERROR_NO or CO_ERROR_ILLEGAL_ARGUMENT.
  */
-int16_t CO_CANmodule_init(
+CO_ReturnError_t CO_CANmodule_init(
         CO_CANmodule_t         *CANmodule,
         uint16_t                CANbaseAddress,
-        CO_CANrx_t             *rxArray,
+        CO_CANrx_t              rxArray[],
         uint16_t                rxSize,
-        CO_CANtx_t             *txArray,
+        CO_CANtx_t              txArray[],
         uint16_t                txSize,
         uint16_t                CANbitRate);
 
@@ -329,7 +304,7 @@ void CO_CANmodule_disable(CO_CANmodule_t *CANmodule);
  * @param rxMsg Pointer to received message
  * @return 11-bit CAN standard identifier.
  */
-uint16_t CO_CANrxMsg_readIdent(CO_CANrxMsg_t *rxMsg);
+uint16_t CO_CANrxMsg_readIdent(const CO_CANrxMsg_t *rxMsg);
 
 
 /**
@@ -355,14 +330,14 @@ uint16_t CO_CANrxMsg_readIdent(CO_CANrxMsg_t *rxMsg);
  * Return #CO_ReturnError_t: CO_ERROR_NO CO_ERROR_ILLEGAL_ARGUMENT or
  * CO_ERROR_OUT_OF_MEMORY (not enough masks for configuration).
  */
-int16_t CO_CANrxBufferInit(
+CO_ReturnError_t CO_CANrxBufferInit(
         CO_CANmodule_t         *CANmodule,
         uint16_t                index,
         uint16_t                ident,
         uint16_t                mask,
-        uint8_t                 rtr,
+        bool                    rtr,
         void                   *object,
-        int16_t               (*pFunct)(void *object, CO_CANrxMsg_t *message));
+        void                  (*pFunct)(void *object, const CO_CANrxMsg_t *message));
 
 
 /**
@@ -387,9 +362,9 @@ CO_CANtx_t *CO_CANtxBufferInit(
         CO_CANmodule_t         *CANmodule,
         uint16_t                index,
         uint16_t                ident,
-        uint8_t                 rtr,
+        bool                    rtr,
         uint8_t                 noOfBytes,
-        uint8_t                 syncFlag);
+        bool                    syncFlag);
 
 
 /**
@@ -402,7 +377,7 @@ CO_CANtx_t *CO_CANtxBufferInit(
  * @return #CO_ReturnError_t: CO_ERROR_NO, CO_ERROR_TX_OVERFLOW or
  * CO_ERROR_TX_PDO_WINDOW (Synchronous TPDO is outside window).
  */
-int16_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer);
+CO_ReturnError_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer);
 
 
 /**

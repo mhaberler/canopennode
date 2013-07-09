@@ -40,18 +40,16 @@
  * message with correct identifier will be received. For more information and
  * description of parameters see file CO_driver.h.
  */
-static int16_t CO_PDO_receive(void *object, CO_CANrxMsg_t *msg){
+static void CO_PDO_receive(void *object, const CO_CANrxMsg_t *msg){
     CO_RPDO_t *RPDO;
 
     RPDO = (CO_RPDO_t*)object;   /* this is the correct pointer type of the first argument */
 
-    if(RPDO->valid && *RPDO->operatingState == CO_NMT_OPERATIONAL){
-        /* verify message length */
-        if(RPDO->dataLength && msg->DLC < RPDO->dataLength) return CO_ERROR_RX_PDO_LENGTH;
-
-        /* verify message overflow (previous message was not processed yet) */
-        if(RPDO->CANrxNew) return CO_ERROR_RX_PDO_OVERFLOW;
-
+    if( (RPDO->valid) &&
+        (*RPDO->operatingState == CO_NMT_OPERATIONAL) &&
+        (msg->DLC >= RPDO->dataLength) &&
+        (!RPDO->CANrxNew))
+    {
         /* copy data and set 'new message' flag */
         RPDO->CANrxData[0] = msg->data[0];
         RPDO->CANrxData[1] = msg->data[1];
@@ -63,13 +61,7 @@ static int16_t CO_PDO_receive(void *object, CO_CANrxMsg_t *msg){
         RPDO->CANrxData[7] = msg->data[7];
 
         RPDO->CANrxNew = 1;
-
-        /* verify message length */
-        if(RPDO->dataLength && msg->DLC > RPDO->dataLength) return CO_ERROR_RX_PDO_LENGTH;
     }
-    else RPDO->CANrxNew = 0;
-
-    return CO_ERROR_NO;
 }
 
 
@@ -96,11 +88,11 @@ static void CO_RPDOconfigCom(CO_RPDO_t* RPDO, uint32_t COB_IDUsedByRPDO){
     if((COB_IDUsedByRPDO & 0xBFFFF800L) == 0 && RPDO->dataLength && ID){
         /* is used default COB-ID? */
         if(ID == RPDO->defaultCOB_ID) ID += RPDO->nodeId;
-        RPDO->valid = 1;
+        RPDO->valid = true;
     }
     else{
         ID = 0;
-        RPDO->valid = 0;
+        RPDO->valid = false;
         RPDO->CANrxNew = 0;
     }
     r = CO_CANrxBufferInit(
@@ -112,7 +104,7 @@ static void CO_RPDOconfigCom(CO_RPDO_t* RPDO, uint32_t COB_IDUsedByRPDO){
             (void*)RPDO,            /* object passed to receive function */
             CO_PDO_receive);        /* this function will process received message */
     if(r != CO_ERROR_NO){
-        RPDO->valid = 0;
+        RPDO->valid = false;
         RPDO->CANrxNew = 0;
     }
 }
@@ -141,11 +133,11 @@ static void CO_TPDOconfigCom(CO_TPDO_t* TPDO, uint32_t COB_IDUsedByTPDO, uint8_t
     if((COB_IDUsedByTPDO & 0xBFFFF800L) == 0 && TPDO->dataLength && ID){
         /* is used default COB-ID? */
         if(ID == TPDO->defaultCOB_ID) ID += TPDO->nodeId;
-        TPDO->valid = 1;
+        TPDO->valid = true;
     }
     else{
         ID = 0;
-        TPDO->valid = 0;
+        TPDO->valid = false;
     }
 
     TPDO->CANtxBuff = CO_CANtxBufferInit(
@@ -157,7 +149,7 @@ static void CO_TPDOconfigCom(CO_TPDO_t* TPDO, uint32_t COB_IDUsedByTPDO, uint8_t
             syncFlag);                 /* synchronous message flag bit */
 
     if(TPDO->CANtxBuff == 0){
-        TPDO->valid = 0;
+        TPDO->valid = false;
     }
 }
 
@@ -198,13 +190,13 @@ static uint32_t CO_PDOfindMap(
     dataLen = (uint8_t) map;   /* data length in bits */
 
     /* data length must be byte aligned */
-    if(dataLen&0x07) return SDO_ABORT_NO_MAP;   /* Object cannot be mapped to the PDO. */
+    if(dataLen&0x07) return CO_SDO_AB_NO_MAP;   /* Object cannot be mapped to the PDO. */
 
     dataLen >>= 3;    /* new data length is in bytes */
     *pLength += dataLen;
 
     /* total PDO length can not be more than 8 bytes */
-    if(*pLength > 8) return SDO_ABORT_MAP_LEN;  /* The number and length of the objects to be mapped would exceed PDO length. */
+    if(*pLength > 8) return CO_SDO_AB_MAP_LEN;  /* The number and length of the objects to be mapped would exceed PDO length. */
 
     /* is there a reference to dummy entries */
     if(index <=7 && subIndex == 0){
@@ -217,7 +209,7 @@ static uint32_t CO_PDOfindMap(
         else if(index==3 || index==6) dummySize = 2;
 
         /* is size of variable big enough for map */
-        if(dummySize < dataLen) return SDO_ABORT_NO_MAP;   /* Object cannot be mapped to the PDO. */
+        if(dummySize < dataLen) return CO_SDO_AB_NO_MAP;   /* Object cannot be mapped to the PDO. */
 
         /* Data and ODE pointer */
         if(R_T == 0) *ppData = (uint8_t*) &dummyRX;
@@ -231,24 +223,24 @@ static uint32_t CO_PDOfindMap(
 
     /* Does object exist in OD? */
     if(entryNo == 0xFFFF || subIndex > SDO->OD[entryNo].maxSubIndex)
-        return SDO_ABORT_NOT_EXIST;   /* Object does not exist in the object dictionary. */
+        return CO_SDO_AB_NOT_EXIST;   /* Object does not exist in the object dictionary. */
 
     attr = CO_OD_getAttribute(SDO, entryNo, subIndex);
     /* Is object Mappable for RPDO? */
-    if(R_T==0 && !(attr&CO_ODA_RPDO_MAPABLE && attr&CO_ODA_WRITEABLE)) return SDO_ABORT_NO_MAP;   /* Object cannot be mapped to the PDO. */
+    if(R_T==0 && !(attr&CO_ODA_RPDO_MAPABLE && attr&CO_ODA_WRITEABLE)) return CO_SDO_AB_NO_MAP;   /* Object cannot be mapped to the PDO. */
     /* Is object Mappable for TPDO? */
-    if(R_T!=0 && !(attr&CO_ODA_TPDO_MAPABLE && attr&CO_ODA_READABLE)) return SDO_ABORT_NO_MAP;   /* Object cannot be mapped to the PDO. */
+    if(R_T!=0 && !(attr&CO_ODA_TPDO_MAPABLE && attr&CO_ODA_READABLE)) return CO_SDO_AB_NO_MAP;   /* Object cannot be mapped to the PDO. */
 
     /* is size of variable big enough for map */
     objectLen = CO_OD_getLength(SDO, entryNo, subIndex);
-    if(objectLen < dataLen) return SDO_ABORT_NO_MAP;   /* Object cannot be mapped to the PDO. */
+    if(objectLen < dataLen) return CO_SDO_AB_NO_MAP;   /* Object cannot be mapped to the PDO. */
 
     /* mark multibyte variable */
     *pIsMultibyteVar = (attr&CO_ODA_MB_VALUE) ? 1 : 0;
 
     /* pointer to data */
     *ppData = (uint8_t*) CO_OD_getDataPointer(SDO, entryNo, subIndex);
-#ifdef BIG_ENDIAN
+#ifdef CO_BIG_ENDIAN
     /* skip unused MSB bytes */
     if(*pIsMultibyteVar){
         *ppData += objectLen - dataLen;
@@ -310,7 +302,7 @@ static uint32_t CO_RPDOconfigMap(CO_RPDO_t* RPDO, uint8_t noOfMappedObjects){
         }
 
         /* write PDO data pointers */
-#ifdef BIG_ENDIAN
+#ifdef CO_BIG_ENDIAN
         if(MBvar){
             for(j=length-1; j>=prevLength; j--)
                 RPDO->mapPointer[j] = pData++;
@@ -377,7 +369,7 @@ static uint32_t CO_TPDOconfigMap(CO_TPDO_t* TPDO, uint8_t noOfMappedObjects){
         }
 
         /* write PDO data pointers */
-#ifdef BIG_ENDIAN
+#ifdef CO_BIG_ENDIAN
         if(MBvar){
             for(j=length-1; j>=prevLength; j--)
                 TPDO->mapPointer[j] = pData++;
@@ -405,7 +397,7 @@ static uint32_t CO_TPDOconfigMap(CO_TPDO_t* TPDO, uint8_t noOfMappedObjects){
  *
  * For more information see file CO_SDO.h.
  */
-static uint32_t CO_ODF_RPDOcom(CO_ODF_arg_t *ODF_arg){
+static CO_SDO_abortCode_t CO_ODF_RPDOcom(CO_ODF_arg_t *ODF_arg){
     CO_RPDO_t *RPDO;
 
     RPDO = (CO_RPDO_t*) ODF_arg->object;
@@ -422,21 +414,21 @@ static uint32_t CO_ODF_RPDOcom(CO_ODF_arg_t *ODF_arg){
             /* If PDO is not valid, set bit 31 */
             if(!RPDO->valid) *value |= 0x80000000L;
         }
-        return 0;
+        return CO_SDO_AB_NONE;
     }
 
     /* Writing Object Dictionary variable */
     if(RPDO->restrictionFlags & 0x04)
-        return SDO_ABORT_READONLY;  /* Attempt to write a read only object. */
+        return CO_SDO_AB_READONLY;  /* Attempt to write a read only object. */
     if(*RPDO->operatingState == CO_NMT_OPERATIONAL && (RPDO->restrictionFlags & 0x01))
-        return SDO_ABORT_DATA_DEV_STATE;   /* Data cannot be transferred or stored to the application because of the present device state. */
+        return CO_SDO_AB_DATA_DEV_STATE;   /* Data cannot be transferred or stored to the application because of the present device state. */
 
     if(ODF_arg->subIndex == 1){   /* COB_ID */
         uint32_t *value = (uint32_t*) ODF_arg->data;
 
         /* bits 11...29 must be zero */
         if(*value & 0x3FFF8000L)
-            return SDO_ABORT_INVALID_VALUE;  /* Invalid value for parameter (download only). */
+            return CO_SDO_AB_INVALID_VALUE;  /* Invalid value for parameter (download only). */
 
         /* if default COB-ID is being written, write defaultCOB_ID without nodeId */
         if(((*value)&0xFFFF) == (RPDO->defaultCOB_ID + RPDO->nodeId)){
@@ -446,7 +438,7 @@ static uint32_t CO_ODF_RPDOcom(CO_ODF_arg_t *ODF_arg){
 
         /* if PDO is valid, bits 0..29 can not be changed */
         if(RPDO->valid && ((*value ^ RPDO->RPDOCommPar->COB_IDUsedByRPDO) & 0x3FFFFFFFL))
-            return SDO_ABORT_INVALID_VALUE;  /* Invalid value for parameter (download only). */
+            return CO_SDO_AB_INVALID_VALUE;  /* Invalid value for parameter (download only). */
 
         /* configure RPDO */
         CO_RPDOconfigCom(RPDO, *value);
@@ -456,10 +448,10 @@ static uint32_t CO_ODF_RPDOcom(CO_ODF_arg_t *ODF_arg){
 
         /* values from 241...253 are not valid */
         if(*value >= 241 && *value <= 253)
-            return SDO_ABORT_INVALID_VALUE;  /* Invalid value for parameter (download only). */
+            return CO_SDO_AB_INVALID_VALUE;  /* Invalid value for parameter (download only). */
     }
 
-    return 0;
+    return CO_SDO_AB_NONE;
 }
 
 
@@ -468,12 +460,12 @@ static uint32_t CO_ODF_RPDOcom(CO_ODF_arg_t *ODF_arg){
  *
  * For more information see file CO_SDO.h.
  */
-static uint32_t CO_ODF_TPDOcom(CO_ODF_arg_t *ODF_arg){
+static CO_SDO_abortCode_t CO_ODF_TPDOcom(CO_ODF_arg_t *ODF_arg){
     CO_TPDO_t *TPDO;
 
     TPDO = (CO_TPDO_t*) ODF_arg->object;
 
-    if(ODF_arg->subIndex == 4) return SDO_ABORT_SUB_UNKNOWN;  /* Sub-index does not exist. */
+    if(ODF_arg->subIndex == 4) return CO_SDO_AB_SUB_UNKNOWN;  /* Sub-index does not exist. */
 
     /* Reading Object Dictionary variable */
     if(ODF_arg->reading){
@@ -487,21 +479,21 @@ static uint32_t CO_ODF_TPDOcom(CO_ODF_arg_t *ODF_arg){
             /* If PDO is not valid, set bit 31 */
             if(!TPDO->valid) *value |= 0x80000000L;
         }
-        return 0;
+        return CO_SDO_AB_NONE;
     }
 
     /* Writing Object Dictionary variable */
     if(TPDO->restrictionFlags & 0x04)
-        return SDO_ABORT_READONLY;  /* Attempt to write a read only object. */
+        return CO_SDO_AB_READONLY;  /* Attempt to write a read only object. */
     if(*TPDO->operatingState == CO_NMT_OPERATIONAL && (TPDO->restrictionFlags & 0x01))
-        return SDO_ABORT_DATA_DEV_STATE;   /* Data cannot be transferred or stored to the application because of the present device state. */
+        return CO_SDO_AB_DATA_DEV_STATE;   /* Data cannot be transferred or stored to the application because of the present device state. */
 
     if(ODF_arg->subIndex == 1){   /* COB_ID */
         uint32_t *value = (uint32_t*) ODF_arg->data;
 
         /* bits 11...29 must be zero */
         if(*value & 0x3FFF8000L)
-            return SDO_ABORT_INVALID_VALUE;  /* Invalid value for parameter (download only). */
+            return CO_SDO_AB_INVALID_VALUE;  /* Invalid value for parameter (download only). */
 
         /* if default COB-ID is being written, write defaultCOB_ID without nodeId */
         if(((*value)&0xFFFF) == (TPDO->defaultCOB_ID + TPDO->nodeId)){
@@ -511,7 +503,7 @@ static uint32_t CO_ODF_TPDOcom(CO_ODF_arg_t *ODF_arg){
 
         /* if PDO is valid, bits 0..29 can not be changed */
         if(TPDO->valid && ((*value ^ TPDO->TPDOCommPar->COB_IDUsedByTPDO) & 0x3FFFFFFFL))
-            return SDO_ABORT_INVALID_VALUE;  /* Invalid value for parameter (download only). */
+            return CO_SDO_AB_INVALID_VALUE;  /* Invalid value for parameter (download only). */
 
         /* configure TPDO */
         CO_TPDOconfigCom(TPDO, *value, TPDO->CANtxBuff->syncFlag);
@@ -522,14 +514,14 @@ static uint32_t CO_ODF_TPDOcom(CO_ODF_arg_t *ODF_arg){
 
         /* values from 241...253 are not valid */
         if(*value >= 241 && *value <= 253)
-            return SDO_ABORT_INVALID_VALUE;  /* Invalid value for parameter (download only). */
+            return CO_SDO_AB_INVALID_VALUE;  /* Invalid value for parameter (download only). */
         TPDO->CANtxBuff->syncFlag = (*value <= 240) ? 1 : 0;
         TPDO->syncCounter = 255;
     }
     else if(ODF_arg->subIndex == 3){   /* Inhibit_Time */
         /* if PDO is valid, value can not be changed */
         if(TPDO->valid)
-            return SDO_ABORT_INVALID_VALUE;  /* Invalid value for parameter (download only). */
+            return CO_SDO_AB_INVALID_VALUE;  /* Invalid value for parameter (download only). */
 
         TPDO->inhibitTimer = 0;
     }
@@ -543,14 +535,14 @@ static uint32_t CO_ODF_TPDOcom(CO_ODF_arg_t *ODF_arg){
 
         /* if PDO is valid, value can not be changed */
         if(TPDO->valid)
-            return SDO_ABORT_INVALID_VALUE;  /* Invalid value for parameter (download only). */
+            return CO_SDO_AB_INVALID_VALUE;  /* Invalid value for parameter (download only). */
 
         /* values from 240...255 are not valid */
         if(*value > 240)
-            return SDO_ABORT_INVALID_VALUE;  /* Invalid value for parameter (download only). */
+            return CO_SDO_AB_INVALID_VALUE;  /* Invalid value for parameter (download only). */
     }
 
-    return 0;
+    return CO_SDO_AB_NONE;
 }
 
 
@@ -559,7 +551,7 @@ static uint32_t CO_ODF_TPDOcom(CO_ODF_arg_t *ODF_arg){
  *
  * For more information see file CO_SDO.h.
  */
-static uint32_t CO_ODF_RPDOmap(CO_ODF_arg_t *ODF_arg){
+static CO_SDO_abortCode_t CO_ODF_RPDOmap(CO_ODF_arg_t *ODF_arg){
     CO_RPDO_t *RPDO;
 
     RPDO = (CO_RPDO_t*) ODF_arg->object;
@@ -572,23 +564,23 @@ static uint32_t CO_ODF_RPDOmap(CO_ODF_arg_t *ODF_arg){
             /* If there is error in mapping, dataLength is 0, so numberOfMappedObjects is 0. */
             if(!RPDO->dataLength) *value = 0;
         }
-        return 0;
+        return CO_SDO_AB_NONE;
     }
 
     /* Writing Object Dictionary variable */
     if(RPDO->restrictionFlags & 0x08)
-        return SDO_ABORT_READONLY;  /* Attempt to write a read only object. */
+        return CO_SDO_AB_READONLY;  /* Attempt to write a read only object. */
     if(*RPDO->operatingState == CO_NMT_OPERATIONAL && (RPDO->restrictionFlags & 0x02))
-        return SDO_ABORT_DATA_DEV_STATE;   /* Data cannot be transferred or stored to the application because of the present device state. */
+        return CO_SDO_AB_DATA_DEV_STATE;   /* Data cannot be transferred or stored to the application because of the present device state. */
     if(RPDO->valid)
-        return SDO_ABORT_INVALID_VALUE;  /* Invalid value for parameter (download only). */
+        return CO_SDO_AB_INVALID_VALUE;  /* Invalid value for parameter (download only). */
 
     /* numberOfMappedObjects */
     if(ODF_arg->subIndex == 0){
         uint8_t *value = (uint8_t*) ODF_arg->data;
 
         if(*value > 8)
-            return SDO_ABORT_VALUE_HIGH;  /* Value of parameter written too high. */
+            return CO_SDO_AB_VALUE_HIGH;  /* Value of parameter written too high. */
 
         /* configure mapping */
         return CO_RPDOconfigMap(RPDO, *value);
@@ -603,7 +595,7 @@ static uint32_t CO_ODF_RPDOmap(CO_ODF_arg_t *ODF_arg){
         uint8_t MBvar;
 
         if(RPDO->dataLength)
-            return SDO_ABORT_INVALID_VALUE;  /* Invalid value for parameter (download only). */
+            return CO_SDO_AB_INVALID_VALUE;  /* Invalid value for parameter (download only). */
 
         /* verify if mapping is correct */
         return CO_PDOfindMap(
@@ -616,7 +608,7 @@ static uint32_t CO_ODF_RPDOmap(CO_ODF_arg_t *ODF_arg){
                &MBvar);
     }
 
-    return 0;
+    return CO_SDO_AB_NONE;
 }
 
 
@@ -625,7 +617,7 @@ static uint32_t CO_ODF_RPDOmap(CO_ODF_arg_t *ODF_arg){
  *
  * For more information see file CO_SDO.h.
  */
-static uint32_t CO_ODF_TPDOmap(CO_ODF_arg_t *ODF_arg){
+static CO_SDO_abortCode_t CO_ODF_TPDOmap(CO_ODF_arg_t *ODF_arg){
     CO_TPDO_t *TPDO;
 
     TPDO = (CO_TPDO_t*) ODF_arg->object;
@@ -638,23 +630,23 @@ static uint32_t CO_ODF_TPDOmap(CO_ODF_arg_t *ODF_arg){
             /* If there is error in mapping, dataLength is 0, so numberOfMappedObjects is 0. */
             if(!TPDO->dataLength) *value = 0;
         }
-        return 0;
+        return CO_SDO_AB_NONE;
     }
 
     /* Writing Object Dictionary variable */
     if(TPDO->restrictionFlags & 0x08)
-        return SDO_ABORT_READONLY;  /* Attempt to write a read only object. */
+        return CO_SDO_AB_READONLY;  /* Attempt to write a read only object. */
     if(*TPDO->operatingState == CO_NMT_OPERATIONAL && (TPDO->restrictionFlags & 0x02))
-        return SDO_ABORT_DATA_DEV_STATE;   /* Data cannot be transferred or stored to the application because of the present device state. */
+        return CO_SDO_AB_DATA_DEV_STATE;   /* Data cannot be transferred or stored to the application because of the present device state. */
     if(TPDO->valid)
-        return SDO_ABORT_INVALID_VALUE;  /* Invalid value for parameter (download only). */
+        return CO_SDO_AB_INVALID_VALUE;  /* Invalid value for parameter (download only). */
 
     /* numberOfMappedObjects */
     if(ODF_arg->subIndex == 0){
         uint8_t *value = (uint8_t*) ODF_arg->data;
 
         if(*value > 8)
-            return SDO_ABORT_VALUE_HIGH;  /* Value of parameter written too high. */
+            return CO_SDO_AB_VALUE_HIGH;  /* Value of parameter written too high. */
 
         /* configure mapping */
         return CO_TPDOconfigMap(TPDO, *value);
@@ -669,7 +661,7 @@ static uint32_t CO_ODF_TPDOmap(CO_ODF_arg_t *ODF_arg){
         uint8_t MBvar;
 
         if(TPDO->dataLength)
-            return SDO_ABORT_INVALID_VALUE;  /* Invalid value for parameter (download only). */
+            return CO_SDO_AB_INVALID_VALUE;  /* Invalid value for parameter (download only). */
 
         /* verify if mapping is correct */
         return CO_PDOfindMap(
@@ -682,7 +674,7 @@ static uint32_t CO_ODF_TPDOmap(CO_ODF_arg_t *ODF_arg){
                &MBvar);
     }
 
-    return 0;
+    return CO_SDO_AB_NONE;
 }
 
 
@@ -775,7 +767,7 @@ int16_t CO_TPDO_init(
     if((TPDOCommPar->transmissionType>240 &&
          TPDOCommPar->transmissionType<254) ||
          TPDOCommPar->SYNCStartValue>240){
-            TPDO->valid = 0;
+            TPDO->valid = false;
     }
 
     return CO_ERROR_NO;
