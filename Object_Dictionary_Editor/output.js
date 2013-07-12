@@ -123,7 +123,7 @@ function generateFiles(){
 	generateCO_OD_H();
 	generateCO_OD_C();
 	generateEDSspec();
-	generateXMLspec();
+	//generateXMLspec();
 	generateDOC();
 
 	//Finish
@@ -133,8 +133,12 @@ function generateFiles(){
 		var err = "Output files are generated with errors or warnings:\n\n" + errorMessages.join("\n");
 		//document.getElementById("errors").removeAttribute("hidden");
 		//document.getElementById("errors").value = err;
-		alert(err);
+		//alert(err);
+        g_openerWindow.source.postMessage("XDD"+err, "*");
 	}
+    else{
+        g_openerWindow.source.postMessage("XDD"+"All output files are generated successfully without errors or warnings.", "*");
+    }
 	//else alert("All output files are generated successfully without errors or warnings.");
 }
 
