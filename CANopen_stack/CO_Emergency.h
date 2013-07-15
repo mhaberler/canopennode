@@ -226,7 +226,7 @@ typedef enum{
 #define CO_EM_ISR_TIMER_OVERFLOW        0x29U /**< 0x29, generic, critical, Timer task has overflowed */
 #define CO_EM_MEMORY_ALLOCATION_ERROR   0x2AU /**< 0x2A, generic, critical, Unable to allocate memory for objects */
 #define CO_EM_GENERIC_ERROR             0x2BU /**< 0x2B, generic, critical, Generic error, test usage */
-#define CO_EM_MAIN_TIMER_OVERFLOW       0x2CU /**< 0x2C, generic, critical, Mainline function exceeded maximum execution time */
+#define CO_EM_GENERIC_SOFTWARE_ERROR    0x2CU /**< 0x2C, generic, critical, Software error */
 #define CO_EM_INCONSISTENT_OBJECT_DICT  0x2DU /**< 0x2D, generic, critical, Object dictionary does not match the software */
 #define CO_EM_CALCULATION_OF_PARAMETERS 0x2EU /**< 0x2E, generic, critical, Error in calculation of device parameters */
 #define CO_EM_NON_VOLATILE_MEMORY       0x2FU /**< 0x2F, generic, critical, Error with access to non volatile device memory */
