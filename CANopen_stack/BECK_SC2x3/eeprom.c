@@ -159,7 +159,7 @@ CO_ReturnError_t CO_EE_init_1(
     ee->OD_ROMAddress = OD_ROMAddress;
     ee->OD_ROMSize = OD_ROMSize;
     ee->OD_EEPROMCurrentIndex = 0;
-    ee->OD_EEPROMWriteEnable = false;
+    ee->OD_EEPROMWriteEnable = CO_false;
 
     /* read the CO_OD_EEPROM from SRAM, first verify, if data are OK */
     if(ee->pSRAM == 0) return CO_ERROR_OUT_OF_MEMORY;
@@ -171,7 +171,7 @@ CO_ReturnError_t CO_EE_init_1(
         for(i=0; i<ee->OD_EEPROMSize; i++)
             (ee->OD_EEPROMAddress)[i] = (ee->pSRAM)[i];
     }
-    ee->OD_EEPROMWriteEnable = true;
+    ee->OD_EEPROMWriteEnable = CO_true;
 
     /* read the CO_OD_ROM from file and verify CRC */
     void *buf = malloc(ee->OD_ROMSize);

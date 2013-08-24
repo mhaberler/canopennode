@@ -68,7 +68,7 @@ typedef struct{
     uint32_t           *pSRAM;          /* SC243 specific: Pointer to start
                                            address of the battery powered SRAM */
     uint32_t            OD_EEPROMCurrentIndex;
-    bool                OD_EEPROMWriteEnable;
+    CO_bool_t           OD_EEPROMWriteEnable;
 }CO_EE_t;
 
 

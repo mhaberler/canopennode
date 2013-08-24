@@ -36,6 +36,9 @@
 #define CANopen_H
 
 
+/* TODO: protect public functions against null pointers */
+
+
 /**
  * @defgroup CO_CANopen CANopen stack
  * @{

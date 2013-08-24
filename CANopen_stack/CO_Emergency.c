@@ -165,7 +165,7 @@ CO_ReturnError_t CO_EM_init(
 /******************************************************************************/
 void CO_EM_process(
         CO_EMpr_t              *emPr,
-        bool                    NMTisPreOrOperational,
+        CO_bool_t               NMTisPreOrOperational,
         uint16_t                timeDifference_100us,
         uint16_t                emInhTime)
 {
@@ -253,21 +253,21 @@ void CO_errorReport(CO_EM_t *em, const uint8_t errorBit, const uint16_t errorCod
     uint8_t index = errorBit >> 3;
     uint8_t bitmask = 1 << (errorBit & 0x7);
     uint8_t *errorStatusBits = 0;
-    bool sendEmergency = true;
+    CO_bool_t sendEmergency = CO_true;
 
     if(em == NULL){
-        sendEmergency = false;
+        sendEmergency = CO_false;
     }
     else if(index >= em->errorStatusBitsSize){
         /* if errorBit value not supported, send emergency 'CO_EM_WRONG_ERROR_REPORT' */
         em->wrongErrorReport = errorBit;
-        sendEmergency = false;
+        sendEmergency = CO_false;
     }
     else{
         errorStatusBits = &em->errorStatusBits[index];
         /* if error was allready reported, do nothing */
         if((*errorStatusBits & bitmask) != 0){
-            sendEmergency = false;
+            sendEmergency = CO_false;
         }
     }
 
@@ -309,21 +309,21 @@ void CO_errorReset(CO_EM_t *em, const uint8_t errorBit, const uint32_t infoCode)
     uint8_t index = errorBit >> 3;
     uint8_t bitmask = 1 << (errorBit & 0x7);
     uint8_t *errorStatusBits = 0;
-    bool sendEmergency = true;
+    CO_bool_t sendEmergency = CO_true;
 
     if(em == NULL){
-        sendEmergency = false;
+        sendEmergency = CO_false;
     }
     else if(index >= em->errorStatusBitsSize){
         /* if errorBit value not supported, send emergency 'CO_EM_WRONG_ERROR_REPORT' */
         em->wrongErrorReport = errorBit;
-        sendEmergency = false;
+        sendEmergency = CO_false;
     }
     else{
         errorStatusBits = &em->errorStatusBits[index];
         /* if error was allready cleared, do nothing */
         if((*errorStatusBits & bitmask) == 0){
-            sendEmergency = false;
+            sendEmergency = CO_false;
         }
     }
 
@@ -359,14 +359,14 @@ void CO_errorReset(CO_EM_t *em, const uint8_t errorBit, const uint32_t infoCode)
 
 
 /******************************************************************************/
-bool CO_isError(CO_EM_t *em, const uint8_t errorBit){
+CO_bool_t CO_isError(CO_EM_t *em, const uint8_t errorBit){
     uint8_t index = errorBit >> 3;
     uint8_t bitmask = 1 << (errorBit & 0x7);
-    bool ret = false;
+    CO_bool_t ret = CO_false;
 
     if(index < em->errorStatusBitsSize){
         if((em->errorStatusBits[index] & bitmask) != 0){
-            ret = true;
+            ret = CO_true;
         }
     }
 

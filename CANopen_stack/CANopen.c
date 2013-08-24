@@ -592,12 +592,12 @@ CO_NMT_reset_cmd_t CO_process(
         CO_t                   *CO,
         uint16_t                timeDifference_ms)
 {
-    bool NMTisPreOrOperational = false;
+    CO_bool_t NMTisPreOrOperational = CO_false;
     CO_NMT_reset_cmd_t reset = CO_RESET_NOT;
     static uint8_t ms50 = 0;
 
     if(CO->NMT->operatingState == CO_NMT_PRE_OPERATIONAL || CO->NMT->operatingState == CO_NMT_OPERATIONAL)
-        NMTisPreOrOperational = true;
+        NMTisPreOrOperational = CO_true;
 
     ms50 += timeDifference_ms;
     if(ms50 >= 50){

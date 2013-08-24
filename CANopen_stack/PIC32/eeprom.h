@@ -69,7 +69,7 @@ typedef struct{
     uint8_t            *OD_ROMAddress;
     uint32_t            OD_ROMSize;
     uint32_t            OD_EEPROMCurrentIndex;
-    bool                OD_EEPROMWriteEnable;
+    CO_bool_t           OD_EEPROMWriteEnable;
 
 }CO_EE_t;
 

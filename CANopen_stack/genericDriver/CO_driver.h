@@ -34,7 +34,6 @@
 
 /* Include processor header file */
 #include <stddef.h>         /* for 'NULL' */
-#include <stdbool.h>        /* for 'bool', 'true' and 'false' */
 #include <stdint.h>         /* for 'int8_t' to 'uint64_t' */
 
 
@@ -142,7 +141,11 @@
  *
  * According to Misra C
  */
-    /* bool, true and false are defined in stdbool.h */
+    typedef unsigned char CO_bool_t;
+    typedef enum{
+        CO_false = 0,
+        CO_true = 1
+    }CO_boolval_t;
     /* int8_t to uint64_t are defined in stdint.h */
     typedef float                   float32_t;  /**< float32_t */
     typedef long double             float64_t;  /**< float64_t */
@@ -204,9 +207,9 @@ typedef struct{
 typedef struct{
     uint32_t            ident;          /**< CAN identifier as aligned in CAN module */
     uint8_t             data[8];        /**< 8 data bytes */
-    volatile bool       bufferFull;     /**< True if previous message is still in buffer */
+    volatile CO_bool_t  bufferFull;     /**< True if previous message is still in buffer */
     /** Synchronous PDO messages has this flag set. It prevents them to be sent outside the synchronous window */
-    volatile bool       syncFlag;
+    volatile CO_bool_t  syncFlag;
 }CO_CANtx_t;
 
 
@@ -223,14 +226,14 @@ typedef struct{
       * are used for CAN reception. If there is not enough hardware filters,
       * they won't be used. In this case will be *all* received CAN messages
       * processed by software. */
-    volatile bool       useCANrxFilters;
+    volatile CO_bool_t  useCANrxFilters;
     /** If flag is true, then message in transmitt buffer is synchronous PDO
       * message, which will be aborted, if CO_clearPendingSyncPDOs() function
       * will be called by application. This may be necessary if Synchronous
       * window time was expired. */
-    volatile bool       bufferInhibitFlag;
+    volatile CO_bool_t  bufferInhibitFlag;
     /** Equal to 1, when the first transmitted message (bootup message) is in CAN TX buffers */
-    volatile bool       firstCANtxMessage;
+    volatile CO_bool_t  firstCANtxMessage;
     /** Number of messages in transmit buffer, which are waiting to be copied to the CAN module */
     volatile uint16_t   CANtxCount;
     uint32_t            errOld;         /**< Previous state of CAN errors */
@@ -335,7 +338,7 @@ CO_ReturnError_t CO_CANrxBufferInit(
         uint16_t                index,
         uint16_t                ident,
         uint16_t                mask,
-        bool                    rtr,
+        CO_bool_t               rtr,
         void                   *object,
         void                  (*pFunct)(void *object, const CO_CANrxMsg_t *message));
 
@@ -362,9 +365,9 @@ CO_CANtx_t *CO_CANtxBufferInit(
         CO_CANmodule_t         *CANmodule,
         uint16_t                index,
         uint16_t                ident,
-        bool                    rtr,
+        CO_bool_t               rtr,
         uint8_t                 noOfBytes,
-        bool                    syncFlag);
+        CO_bool_t               syncFlag);
 
 
 /**

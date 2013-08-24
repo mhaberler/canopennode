@@ -31,7 +31,6 @@
 
 #include <clib.h>           /* processor header file */
 #include <stddef.h>         /* for 'NULL' */
-#include <stdbool.h>        /* for 'bool', 'true' and 'false' */
 #include <stdint.h>         /* for 'int8_t' to 'uint64_t' */
 
 
@@ -52,7 +51,11 @@
 //#define USE_CAN_CALLBACKS                   /* If defined, callbacks will be used for CAN RX and TX instead pooling.
 
 /* Data types */
-    /* bool, true and false are defined in stdbool.h */
+    typedef unsigned char CO_bool_t;
+    typedef enum{
+        CO_false = 0,
+        CO_true = 1
+    }CO_boolval_t;
     /* int8_t to uint64_t are defined in stdint.h */
     typedef float                   float32_t;
     typedef double                  float64_t;
@@ -105,8 +108,8 @@ typedef struct{
     uint32_t            ident;
     uint8_t             DLC;
     uint8_t             data[8];
-    volatile bool       bufferFull;
-    volatile bool       syncFlag;
+    volatile CO_bool_t  bufferFull;
+    volatile CO_bool_t  syncFlag;
 }CO_CANtx_t;
 
 
@@ -120,8 +123,8 @@ typedef struct{
     uint16_t            rxSize;
     CO_CANtx_t         *txArray;
     uint16_t            txSize;
-    volatile bool       bufferInhibitFlag;
-    volatile bool       firstCANtxMessage;
+    volatile CO_bool_t  bufferInhibitFlag;
+    volatile CO_bool_t  firstCANtxMessage;
     volatile uint8_t    error;
     volatile uint16_t   CANtxCount;
     uint32_t            errOld;
@@ -163,7 +166,7 @@ CO_ReturnError_t CO_CANrxBufferInit(
         uint16_t                index,
         uint16_t                ident,
         uint16_t                mask,
-        bool                    rtr,
+        CO_bool_t               rtr,
         void                   *object,
         void                  (*pFunct)(void *object, const CO_CANrxMsg_t *message));
 
@@ -173,9 +176,9 @@ CO_CANtx_t *CO_CANtxBufferInit(
         CO_CANmodule_t         *CANmodule,
         uint16_t                index,
         uint16_t                ident,
-        bool                    rtr,
+        CO_bool_t               rtr,
         uint8_t                 noOfBytes,
-        bool                    syncFlag);
+        CO_bool_t               syncFlag);
 
 
 /* Send CAN message. */

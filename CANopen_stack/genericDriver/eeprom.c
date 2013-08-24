@@ -123,7 +123,7 @@ CO_ReturnError_t CO_EE_init_1(
     ee->OD_ROMAddress = OD_ROMAddress;
     ee->OD_ROMSize = OD_ROMSize;
     ee->OD_EEPROMCurrentIndex = 0U;
-    ee->OD_EEPROMWriteEnable = false;
+    ee->OD_EEPROMWriteEnable = CO_false;
 
     /* read the CO_OD_EEPROM from EEPROM, first verify, if data are OK */
 

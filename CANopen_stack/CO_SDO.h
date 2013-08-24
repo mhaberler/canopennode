@@ -501,14 +501,14 @@ typedef struct{
     /** Subindex of object in Object dictionary (informative, must NOT be changed). */
     uint8_t             subIndex;
     /** True, if SDO upload is in progress, false if SDO download is in progress. */
-    bool                reading;
+    CO_bool_t           reading;
     /** Used by domain data type. Indicates the first segment. Variable is informative. */
-    bool                firstSegment;
+    CO_bool_t           firstSegment;
     /** Used by domain data type. If false by download, then application will
     receive more segments during SDO communication cycle. If uploading,
     application may set variable to false, so SDO server will call
     @ref CO_SDO_OD_function again for filling the next data. */
-    bool                lastSegment;
+    CO_bool_t           lastSegment;
     /** Used by domain data type. By upload @ref CO_SDO_OD_function may write total
     data length, so this information will be send in SDO upload initiate phase. It
     is not necessary to specify this variable. By download this variable contains
@@ -543,7 +543,7 @@ typedef struct{
     /** SDO data buffer of size #CO_SDO_BUFFER_SIZE. */
     uint8_t             databuffer[CO_SDO_BUFFER_SIZE]; /* Take care for correct (word) alignment! */
     /** Internal flag indicates, that this object has own OD */
-    bool                ownOD;
+    CO_bool_t           ownOD;
     /** Pointer to the @ref CO_SDO_objectDictionary (array) */
     const CO_OD_entry_t *OD;
     /** Size of the @ref CO_SDO_objectDictionary */
@@ -569,15 +569,15 @@ typedef struct{
     /** Number of segments per block with 1 <= blksize <= 127 */
     uint8_t             blksize;
     /** True, if CRC calculation by block transfer is enabled */
-    bool                crcEnabled;
+    CO_bool_t           crcEnabled;
     /** Calculated CRC code */
     uint16_t            crc;
     /** Length of data in the last segment in block upload */
     uint8_t             lastLen;
     /** Indication end of block transfer */
-    bool                endOfTransfer;
+    CO_bool_t           endOfTransfer;
     /** Variable indicates, if new SDO message received from CAN bus */
-    bool                CANrxNew;
+    CO_bool_t           CANrxNew;
     /** From CO_SDO_init() */
     CO_CANmodule_t     *CANdevTx;
     /** CAN transmit buffer inside CANdev for CAN tx message */
@@ -721,7 +721,7 @@ int16_t CO_SDO_init(
  */
 int8_t CO_SDO_process(
         CO_SDO_t               *SDO,
-        bool                    NMTisPreOrOperational,
+        CO_bool_t               NMTisPreOrOperational,
         uint16_t                timeDifference_ms,
         uint16_t                SDOtimeoutTime);
 
