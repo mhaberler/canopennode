@@ -210,7 +210,7 @@ CO_ReturnError_t CO_CANmodule_init(
     CAN_REG(CANbaseAddress, C_CTRL1) |= 0x0001;     /* WIN = 1 - use filter registers */
     CAN_REG(CANbaseAddress, C_FEN1) = 0xFFFF;       /* enable all 16 filters */
     CAN_REG(CANbaseAddress, C_FMSKSEL1) = 0x0000;   /* all filters are using mask 0 */
-    CAN_REG(CANbaseAddress, C_FMSKSEL1) = 0x0000;
+    CAN_REG(CANbaseAddress, C_FMSKSEL2) = 0x0000;
     CAN_REG(CANbaseAddress, C_BUFPNT1) = 0xFFFF;    /* use FIFO for all filters */
     CAN_REG(CANbaseAddress, C_BUFPNT2) = 0xFFFF;
     CAN_REG(CANbaseAddress, C_BUFPNT3) = 0xFFFF;
