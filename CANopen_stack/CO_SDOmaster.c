@@ -491,7 +491,7 @@ int8_t CO_SDOclientDownload(
                     /*  check number of segments */
                     if(SDO_C->CANrxData[1] != SDO_C->block_blksize){
                         /*  NOT all segments transfert sucesfuly */
-                        SDO_C->bufferOffsetACK = SDO_C->CANrxData[1] * 7;
+                        SDO_C->bufferOffsetACK += SDO_C->CANrxData[1] * 7;
                         SDO_C->bufferOffset = SDO_C->bufferOffsetACK;
                     }
                     else{
