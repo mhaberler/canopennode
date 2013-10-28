@@ -183,7 +183,7 @@ typedef struct{
     /** Number of messages in transmit buffer, which are waiting to be copied to the CAN module */
     volatile uint16_t   CANtxCount;
     uint32_t            errOld;         /**< Previous state of CAN errors */
-    void               *EM;             /**< Emergency object */
+    void               *em;             /**< Emergency object */
     void               *driverPrivate;
     uint16_t            rxBufferIndexArray[0x800]; ///< Array of pointers to rx buffers
     cyg_io_handle_t     ioHandle;

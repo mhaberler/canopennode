@@ -117,7 +117,7 @@ void CO_eCos_errorReset(CO_EM_t *em, const uint8_t errorBit, const uint32_t info
 static void reportErrorReturnCode(Cyg_ErrNo ErrCode, CO_CANmodule_t *CANmodule,
 	const char* DebugMessage)
 {
-	CO_EM_t* EM = (CO_EM_t*)CANmodule->EM;
+	CO_EM_t* EM = (CO_EM_t*)CANmodule->em;
 	if (ENOERR == ErrCode)
 	{
 		return;
@@ -308,7 +308,7 @@ void can_rx_thread(cyg_addrword_t data)
     cyg_uint32    len;
     cyg_can_event rx_event;
     CO_CANmodule_t* CANmodule = (CO_CANmodule_t*)data;
-    CO_EM_t* EM = (CO_EM_t*)CANmodule->EM;
+    CO_EM_t* EM = (CO_EM_t*)CANmodule->em;
     Cyg_ErrNo Result;
     CO_DBG_PRINT("can_rx_thread started\n");
 
@@ -510,7 +510,7 @@ int16_t CO_CANmodule_init(
     CANmodule->firstCANtxMessage = 1;
     CANmodule->CANtxCount = 0;
     CANmodule->errOld = 0;
-    CANmodule->EM = 0;
+    CANmodule->em = 0;
     memset(CANmodule->rxBufferIndexArray, UNUSED_ENTRY, sizeof(CANmodule->rxBufferIndexArray));
 
     for(i=0; i<rxSize; i++){
@@ -707,7 +707,7 @@ int16_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer)
     // messages with syncFlag set (synchronous PDOs) must be transmited inside preset time window
     if(CANmodule->curentSyncTimeIsInsideWindow && buffer->syncFlag && !(*CANmodule->curentSyncTimeIsInsideWindow))
     {
-        CO_errorReport((CO_EM_t*)CANmodule->EM, CO_EM_TPDO_OUTSIDE_WINDOW, CO_EMC_COMMUNICATION, 0);
+        CO_errorReport((CO_EM_t*)CANmodule->em, CO_EM_TPDO_OUTSIDE_WINDOW, CO_EMC_COMMUNICATION, 0);
         return CO_ERROR_TX_PDO_WINDOW;
     }
 
@@ -728,7 +728,7 @@ int16_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer)
 	}
 	else
 	{
-		CO_eCos_errorReport((CO_EM_t*)CANmodule->EM,
+		CO_eCos_errorReport((CO_EM_t*)CANmodule->em,
 			CO_EM_CAN_TX_OVERFLOW, CO_EMC_CAN_OVERRUN, 0);
 		CO_DBG_PRINT("cyg_io_write() returned error %x\n", Result);
 		Ret = CO_ERROR_TIMEOUT;
@@ -752,7 +752,7 @@ void CO_CANclearPendingSyncPDOs(CO_CANmodule_t *CANmodule)
 void CO_CANverifyErrors(CO_CANmodule_t *CANmodule){
     uint16_t rxErrors = 0;
     uint16_t txErrors = 0;
-    CO_EM_t* EM = (CO_EM_t*)CANmodule->EM;
+    CO_EM_t* EM = (CO_EM_t*)CANmodule->em;
     Cyg_ErrNo Result;
     cyg_uint32 len;
     cyg_can_err_count_info err_info;
