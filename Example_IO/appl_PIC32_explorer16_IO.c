@@ -173,7 +173,7 @@ CO_SDO_abortCode_t ODF_testDomain(CO_ODF_arg_t *ODF_arg){
         /* If domainFileSize is greater than SDObufferSize, this function will */
         /* be called multiple times during one SDO communication cycle */
 
-        const uint32_t domainFileSize = 400;
+        const uint32_t domainFileSize = 0x500;
         static uint32_t offset = 0;
 
         uint16_t i;
@@ -189,7 +189,7 @@ CO_SDO_abortCode_t ODF_testDomain(CO_ODF_arg_t *ODF_arg){
         for(i = 0; offset < domainFileSize; i++, offset++){
             if(i >= SDObufferSize){
                 /* SDO buffer is full */
-                ODF_arg->lastSegment = false;
+                ODF_arg->lastSegment = CO_false;
                 break;
             }
             ODF_arg->data[i] = (uint8_t)(offset+1);
@@ -197,7 +197,7 @@ CO_SDO_abortCode_t ODF_testDomain(CO_ODF_arg_t *ODF_arg){
 
         /* all data was copied */
         if(offset == domainFileSize){
-            ODF_arg->lastSegment = true;
+            ODF_arg->lastSegment = CO_true;
             ODF_arg->dataLength = i;
         }
 

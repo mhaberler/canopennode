@@ -134,48 +134,79 @@ static void huge _pascal CgiCliFunction(rpCgiPtr CgiRequest){
             }
             /* read object dictionary */
             else if(rw == 'r'){
-                int8_t ret;
+                CO_SDOclient_return_t ret;
                 CO_SDOclient_setup(SDO_C, 0, 0, nodeId);
-                CO_SDOclientUploadInitiate(SDO_C, idx, sidx, data, CgiCli->SDOBufSize, 0);
+                CO_SDOclientUploadInitiate(SDO_C, idx, sidx, data, CgiCli->SDOBufSize, 1);
                 do{
-                    RTX_Sleep_Time(10);
-                    ret = CO_SDOclientUpload(SDO_C, 10, 500, &dataLen, &SDOabortCode);
+                    uint16_t dt = 50;
+                    ret = CO_SDOclientUpload(SDO_C, dt, 500, &dataLen, &SDOabortCode);
+                    RTX_Sleep_Time(dt);
                 }while(ret > 0);
+                CO_SDOclientClose(SDO_C);
 
-                if(ret == -11) timeouts++;
-                else           timeouts = 0;
+                if(ret == CO_SDOcli_endedWithTimeout) {
+                    timeouts++;
+                }
+                else {
+                    timeouts = 0;
+                }
 
                 if(SDOabortCode){
                     buf += sprintf(buf, "R %02X%04X%02X%X AB: %08X\n",
-                                     nodeId, idx, sidx, dataLen, (uint32_t)SDOabortCode);
+                                    (unsigned int)nodeId,
+                                    (unsigned int)idx,
+                                    (unsigned int)sidx,
+                                    (unsigned int)dataLen,
+                                    (unsigned int)SDOabortCode);
                 }
                 else{
                     uint32_t i;
-                    buf += sprintf(buf, "R %02X%04X%02X%X OK:", nodeId, idx, sidx, dataLen);
+                    buf += sprintf(buf, "R %02X%04X%02X%X OK:",
+                                    (unsigned int)nodeId,
+                                    (unsigned int)idx,
+                                    (unsigned int)sidx,
+                                    (unsigned int)dataLen);
                     for(i=0; i<dataLen; i++) buf += sprintf(buf, " %02X", data[i]);
                     buf += sprintf(buf, "\n");
                 }
             }
             /* write into object dictionary */
             else if(rw == 'w'){
-                int8_t ret;
+                CO_SDOclient_return_t ret;
                 CO_SDOclient_setup(SDO_C, 0, 0, nodeId);
-                CO_SDOclientDownloadInitiate(SDO_C, idx, sidx, data, dataLen, 0);
+                CO_SDOclientDownloadInitiate(SDO_C, idx, sidx, data, dataLen, 1);
                 do{
-                    RTX_Sleep_Time(10);
-                    ret = CO_SDOclientDownload(SDO_C, 10, 500, &SDOabortCode);
+                    uint16_t dt = 2;
+                    ret = CO_SDOclientDownload(SDO_C, dt, 500, &SDOabortCode);
+                    if(ret == CO_SDOcli_waitingServerResponse) {
+                        dt = 50;
+                    }
+                    RTX_Sleep_Time(dt);
                 }while(ret > 0);
+                CO_SDOclientClose(SDO_C);
 
-                if(ret == -11) timeouts++;
-                else           timeouts = 0;
+                if(ret == CO_SDOcli_endedWithTimeout) {
+                    timeouts++;
+                }
+                else {
+                    timeouts = 0;
+                }
 
                 if(SDOabortCode){
                     buf += sprintf(buf, "W %02X%04X%02X%X AB: %08X\n",
-                                     nodeId, idx, sidx, dataLen, (uint32_t)SDOabortCode);
+                                    (unsigned int)nodeId,
+                                    (unsigned int)idx,
+                                    (unsigned int)sidx,
+                                    (unsigned int)dataLen,
+                                    (unsigned int)SDOabortCode);
                 }
                 else{
                     uint32_t i;
-                    buf += sprintf(buf, "W %02X%04X%02X%X OK:", nodeId, idx, sidx, dataLen);
+                    buf += sprintf(buf, "W %02X%04X%02X%X OK:",
+                                    (unsigned int)nodeId,
+                                    (unsigned int)idx,
+                                    (unsigned int)sidx,
+                                    (unsigned int)dataLen);
                     for(i=0; i<dataLen; i++) buf += sprintf(buf, " %02X", data[i]);
                     buf += sprintf(buf, "\n");
                 }

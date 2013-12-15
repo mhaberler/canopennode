@@ -81,6 +81,11 @@
     } ;
 
 
+/* Wake up task ***************************************************************/
+static void wakeUpTask(uint32_t arg){
+    RTX_Wakeup(arg);
+}
+
 /* main ***********************************************************************/
 int main (void){
     CO_NMT_reset_cmd_t reset = CO_RESET_NOT;
@@ -201,6 +206,11 @@ int main (void){
         timer1msPrevious = CO_timer1ms;
         printf("\nCANopenNode - running ...");
 
+        /* Prepare function, which will wake this task after CAN SDO response is */
+        /* received (inside CAN receive interrupt). */
+        CO->SDO->pFunctSignal = wakeUpTask;    /* will wake from RTX_Sleep_Time() */
+        CO->SDO->functArg = RTX_Get_TaskID();  /* id of this task */
+
 
         while(reset == CO_RESET_NOT){
 /* loop for normal program execution ******************************************/
@@ -236,7 +246,12 @@ int main (void){
                 OD_performance[ODA_performance_mainCycleMaxTime] = ticks;
 
 
-            RTX_Sleep_Time(50);
+            if(CO->SDO->state == CO_SDO_ST_UPLOAD_BL_SUBBLOCK) {
+                RTX_Sleep_Time(2);
+            }
+            else {
+                RTX_Sleep_Time(50);
+            }
 
 
             CO_EE_process(&CO_EEO);

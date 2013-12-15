@@ -31,20 +31,6 @@
 #include "crc16-ccitt.h"
 
 
-/* State machine, values of the SDO->state variable */
-#define STATE_IDLE                     0x00U
-#define STATE_DOWNLOAD_INITIATE        0x11U
-#define STATE_DOWNLOAD_SEGMENTED       0x12U
-#define STATE_DOWNLOAD_BLOCK_INITIATE  0x14U
-#define STATE_DOWNLOAD_BLOCK_SUBBLOCK  0x15U
-#define STATE_DOWNLOAD_BLOCK_END       0x16U
-#define STATE_UPLOAD_INITIATE          0x21U
-#define STATE_UPLOAD_SEGMENTED         0x22U
-#define STATE_UPLOAD_BLOCK_INITIATE    0x24U
-#define STATE_UPLOAD_BLOCK_INITIATE_2  0x25U
-#define STATE_UPLOAD_BLOCK_SUBBLOCK    0x26U
-#define STATE_UPLOAD_BLOCK_END         0x27U
-
 /* Client command specifier, see DS301 */
 #define CCS_DOWNLOAD_INITIATE          1U
 #define CCS_DOWNLOAD_SEGMENT           0U
@@ -141,19 +127,66 @@ static void CO_SDO_receive(void *object, const CO_CANrxMsg_t *msg){
 
     /* verify message length and message overflow (previous message was not processed yet) */
     if((msg->DLC == 8U) && (!SDO->CANrxNew)){
-        /* copy data and set 'new message' flag */
-        SDO->CANrxData[0] = msg->data[0];
-        SDO->CANrxData[1] = msg->data[1];
-        SDO->CANrxData[2] = msg->data[2];
-        SDO->CANrxData[3] = msg->data[3];
-        SDO->CANrxData[4] = msg->data[4];
-        SDO->CANrxData[5] = msg->data[5];
-        SDO->CANrxData[6] = msg->data[6];
-        SDO->CANrxData[7] = msg->data[7];
+        if(SDO->state != CO_SDO_ST_DOWNLOAD_BL_SUBBLOCK) {
+            /* copy data and set 'new message' flag */
+            SDO->CANrxData[0] = msg->data[0];
+            SDO->CANrxData[1] = msg->data[1];
+            SDO->CANrxData[2] = msg->data[2];
+            SDO->CANrxData[3] = msg->data[3];
+            SDO->CANrxData[4] = msg->data[4];
+            SDO->CANrxData[5] = msg->data[5];
+            SDO->CANrxData[6] = msg->data[6];
+            SDO->CANrxData[7] = msg->data[7];
 
-        SDO->CANrxNew = CO_true;
+            SDO->CANrxNew = CO_true;
+        }
+        else {
+            /* block download, copy data directly */
+            uint8_t seqno;
+
+            SDO->CANrxData[0] = msg->data[0];
+            seqno = SDO->CANrxData[0] & 0x7fU;
+            SDO->timeoutTimer = 0;
+
+            /* check correct sequence number. */
+            if(seqno == (SDO->sequence + 1U)) {
+                /* sequence is correct */
+                uint8_t i;
+
+                SDO->sequence++;
+
+                /* copy data */
+                for(i=1; i<8; i++) {
+                    SDO->ODF_arg.data[SDO->bufferOffset++] = msg->data[i]; //SDO->ODF_arg.data is equal as SDO->databuffer
+                    if(SDO->bufferOffset >= CO_SDO_BUFFER_SIZE) {
+                        /* buffer full, break reception */
+                        SDO->state = CO_SDO_ST_DOWNLOAD_BL_SUB_RESP;
+                        SDO->CANrxNew = CO_true;
+                        break;
+                    }
+                }
+
+                /* break reception if last segment or block sequence is too large */
+                if(((SDO->CANrxData[0] & 0x80U) == 0x80U) || (SDO->sequence >= SDO->blksize)) {
+                    SDO->state = CO_SDO_ST_DOWNLOAD_BL_SUB_RESP;
+                    SDO->CANrxNew = CO_true;
+                }
+            }
+            else if((seqno == SDO->sequence) || (SDO->sequence == 0U)){
+                /* Ignore message, if it is duplicate or if sequence didn't started yet. */
+            }
+            else {
+                /* seqno is totally wrong, break reception. */
+                SDO->state = CO_SDO_ST_DOWNLOAD_BL_SUB_RESP;
+                SDO->CANrxNew = CO_true;
+            }
+        }
+
+        /* Optional signal to RTOS, which can resume task, which handles SDO server. */
+        if(SDO->CANrxNew && SDO->pFunctSignal) {
+            SDO->pFunctSignal(SDO->functArg);
+        }
     }
-    /* TODO what if message is lost (or wrong length). Handle this. Use queue? */
 }
 
 
@@ -223,8 +256,11 @@ int16_t CO_SDO_init(
 
     /* Configure object variables */
     SDO->nodeId = nodeId;
-    SDO->state = STATE_IDLE;
+    SDO->state = CO_SDO_ST_IDLE;
     SDO->CANrxNew = CO_false;
+    SDO->pFunctSignal = 0;
+    SDO->functArg = 0;
+
 
     /* Configure Object dictionary entry at index 0x1200 */
     if(ObjDictIndex_SDOServerParameter == OD_H1200_SDO_SERVER_PARAM){
@@ -613,7 +649,7 @@ static void CO_SDO_abort(CO_SDO_t *SDO, uint32_t code){
     SDO->CANtxBuff->data[2] = (SDO->ODF_arg.index>>8) & 0xFF;
     SDO->CANtxBuff->data[3] = SDO->ODF_arg.subIndex;
     CO_memcpySwap4(&SDO->CANtxBuff->data[4], (uint8_t*)&code);
-    SDO->state = STATE_IDLE;
+    SDO->state = CO_SDO_ST_IDLE;
     SDO->CANrxNew = CO_false;
     CO_CANsend(SDO->CANdevTx, SDO->CANtxBuff);
 }
@@ -626,27 +662,28 @@ int8_t CO_SDO_process(
         uint16_t                timeDifference_ms,
         uint16_t                SDOtimeoutTime)
 {
-    uint8_t state = STATE_IDLE;
+    CO_SDO_state_t state = CO_SDO_ST_IDLE;
     CO_bool_t timeoutSubblockDownolad = CO_false;
+    CO_bool_t sendResponse = CO_false;
 
     /* return if idle */
-    if((SDO->state == STATE_IDLE) && (!SDO->CANrxNew)){
+    if((SDO->state == CO_SDO_ST_IDLE) && (!SDO->CANrxNew)){
         return 0;
     }
 
     /* SDO is allowed to work only in operational or pre-operational NMT state */
     if(!NMTisPreOrOperational){
-        SDO->state = STATE_IDLE;
+        SDO->state = CO_SDO_ST_IDLE;
         SDO->CANrxNew = CO_false;
         return 0;
     }
 
     /* Is something new to process? */
-    if((!SDO->CANtxBuff->bufferFull) && ((SDO->CANrxNew) || (SDO->state == STATE_UPLOAD_BLOCK_SUBBLOCK))){
+    if((!SDO->CANtxBuff->bufferFull) && ((SDO->CANrxNew) || (SDO->state == CO_SDO_ST_UPLOAD_BL_SUBBLOCK))){
         uint8_t CCS = SDO->CANrxData[0] >> 5;   /* Client command specifier */
 
         /* reset timeout */
-        if(SDO->state != STATE_UPLOAD_BLOCK_SUBBLOCK)
+        if(SDO->state != CO_SDO_ST_UPLOAD_BL_SUBBLOCK)
             SDO->timeoutTimer = 0;
 
         /* clear response buffer */
@@ -655,13 +692,13 @@ int8_t CO_SDO_process(
 
         /* Is abort from client? */
         if((SDO->CANrxNew) && (SDO->CANrxData[0] == CCS_ABORT)){
-            SDO->state = STATE_IDLE;
+            SDO->state = CO_SDO_ST_IDLE;
             SDO->CANrxNew = CO_false;
             return -1;
         }
 
         /* continue with previous SDO communication or start new */
-        if(SDO->state != STATE_IDLE){
+        if(SDO->state != CO_SDO_ST_IDLE){
             state = SDO->state;
         }
         else{
@@ -690,10 +727,10 @@ int8_t CO_SDO_process(
 
                 /* set state machine to normal or block download */
                 if(CCS == CCS_DOWNLOAD_INITIATE){
-                    state = STATE_DOWNLOAD_INITIATE;
+                    state = CO_SDO_ST_DOWNLOAD_INITIATE;
                 }
                 else{
-                    state = STATE_DOWNLOAD_BLOCK_INITIATE;
+                    state = CO_SDO_ST_DOWNLOAD_BL_INITIATE;
                 }
             }
 
@@ -707,10 +744,10 @@ int8_t CO_SDO_process(
 
                 /* if data size is large enough set state machine to block upload, otherwise set to normal transfer */
                 if((CCS == CCS_UPLOAD_BLOCK) && (SDO->ODF_arg.dataLength > SDO->CANrxData[5])){
-                    state = STATE_UPLOAD_BLOCK_INITIATE;
+                    state = CO_SDO_ST_UPLOAD_BL_INITIATE;
                 }
                 else{
-                    state = STATE_UPLOAD_INITIATE;
+                    state = CO_SDO_ST_UPLOAD_INITIATE;
                 }
             }
         }
@@ -721,9 +758,9 @@ int8_t CO_SDO_process(
         SDO->timeoutTimer += timeDifference_ms;
     }
     if(SDO->timeoutTimer >= SDOtimeoutTime){
-        if((SDO->state == STATE_DOWNLOAD_BLOCK_SUBBLOCK) && (SDO->sequence != 0) && (!SDO->CANtxBuff->bufferFull)){
+        if((SDO->state == CO_SDO_ST_DOWNLOAD_BL_SUBBLOCK) && (SDO->sequence != 0) && (!SDO->CANtxBuff->bufferFull)){
             timeoutSubblockDownolad = CO_true;
-            state = SDO->state;
+            state = CO_SDO_ST_DOWNLOAD_BL_SUB_RESP;
         }
         else{
             CO_SDO_abort(SDO, CO_SDO_AB_TIMEOUT); /* SDO protocol timed out */
@@ -732,7 +769,7 @@ int8_t CO_SDO_process(
     }
 
     /* return immediately if still idle */
-    if(state == STATE_IDLE){
+    if(state == CO_SDO_ST_IDLE){
         return 0;
     }
 
@@ -740,9 +777,9 @@ int8_t CO_SDO_process(
     switch(state){
         uint32_t abortCode;
         uint16_t len, i;
-        CO_bool_t err;
+        CO_bool_t lastSegmentInSubblock;
 
-        case STATE_DOWNLOAD_INITIATE:{
+        case CO_SDO_ST_DOWNLOAD_INITIATE:{
             /* default response */
             SDO->CANtxBuff->data[0] = 0x60;
             SDO->CANtxBuff->data[1] = SDO->CANrxData[1];
@@ -773,8 +810,8 @@ int8_t CO_SDO_process(
                 }
 
                 /* finish the communication */
-                SDO->state = STATE_IDLE;
-                CO_CANsend(SDO->CANdevTx, SDO->CANtxBuff);
+                SDO->state = CO_SDO_ST_IDLE;
+                sendResponse = CO_true;
             }
 
             /* Segmented transfer */
@@ -793,13 +830,13 @@ int8_t CO_SDO_process(
                 }
                 SDO->bufferOffset = 0;
                 SDO->sequence = 0;
-                SDO->state = STATE_DOWNLOAD_SEGMENTED;
-                CO_CANsend(SDO->CANdevTx, SDO->CANtxBuff);
+                SDO->state = CO_SDO_ST_DOWNLOAD_SEGMENTED;
+                sendResponse = CO_true;
             }
             break;
         }
 
-        case STATE_DOWNLOAD_SEGMENTED:{
+        case CO_SDO_ST_DOWNLOAD_SEGMENTED:{
             /* verify client command specifier */
             if((SDO->CANrxData[0]&0xE0) != 0x00U){
                 CO_SDO_abort(SDO, CO_SDO_AB_CMD);/* Client command specifier not valid or unknown. */
@@ -850,17 +887,17 @@ int8_t CO_SDO_process(
                 }
 
                 /* finish */
-                SDO->state = STATE_IDLE;
+                SDO->state = CO_SDO_ST_IDLE;
             }
 
             /* download segment response and alternate toggle bit */
             SDO->CANtxBuff->data[0] = 0x20 | (SDO->sequence ? 0x10 : 0x00);
             SDO->sequence = (SDO->sequence) ? 0 : 1;
-            CO_CANsend(SDO->CANdevTx, SDO->CANtxBuff);
+            sendResponse = CO_true;
             break;
         }
 
-        case STATE_DOWNLOAD_BLOCK_INITIATE:{
+        case CO_SDO_ST_DOWNLOAD_BL_INITIATE:{
             /* verify client command specifier and subcommand */
             if((SDO->CANrxData[0]&0xE1U) != 0xC0U){
                 CO_SDO_abort(SDO, CO_SDO_AB_CMD);/* Client command specifier not valid or unknown. */
@@ -896,87 +933,71 @@ int8_t CO_SDO_process(
 
             SDO->bufferOffset = 0;
             SDO->sequence = 0;
-            SDO->state = STATE_DOWNLOAD_BLOCK_SUBBLOCK;
+            SDO->state = CO_SDO_ST_DOWNLOAD_BL_SUBBLOCK;
 
             /* send response */
-            CO_CANsend(SDO->CANdevTx, SDO->CANtxBuff);
+            sendResponse = CO_true;
             break;
         }
 
-        case STATE_DOWNLOAD_BLOCK_SUBBLOCK:{
-            err = CO_true;
+        case CO_SDO_ST_DOWNLOAD_BL_SUBBLOCK:{
+            /* data are copied directly in receive function */
+            break;
+        }
 
+        case CO_SDO_ST_DOWNLOAD_BL_SUB_RESP:{
             /* no new message received, SDO timeout occured, try to response */
-            if(timeoutSubblockDownolad){
-                SDO->CANrxData[0] = 0U;
-            }
-            else{
-                /* if waiting for first segment and received wrong segment just ignore it */
-                if((SDO->sequence == 0U) && ((SDO->CANrxData[0] & 0x7fU) != 1U)){
-                    break;
+            lastSegmentInSubblock = (!timeoutSubblockDownolad &&
+                        ((SDO->CANrxData[0] & 0x80U) == 0x80U)) ? CO_true : CO_false;
+
+            /* prepare response */
+            SDO->CANtxBuff->data[0] = 0xA2;
+            SDO->CANtxBuff->data[1] = SDO->sequence;
+            SDO->sequence = 0;
+
+            /* empty buffer in domain data type if not last segment */
+            if((SDO->ODF_arg.ODdataStorage == 0) && (SDO->bufferOffset != 0) && !lastSegmentInSubblock){
+                /* calculate CRC on next bytes, if enabled */
+                if(SDO->crcEnabled){
+                    SDO->crc = crc16_ccitt(SDO->ODF_arg.data, SDO->bufferOffset, SDO->crc);
                 }
 
-                /* previous segment is received again, ignore it */
-                else if((SDO->CANrxData[0] & 0x7fU) == SDO->sequence){
-                    break;
+                /* write data to the Object dictionary */
+                SDO->ODF_arg.lastSegment = CO_false;
+                abortCode = CO_SDO_writeOD(SDO, SDO->bufferOffset);
+                if(abortCode != 0U){
+                    CO_SDO_abort(SDO, abortCode);
+                    return -1;
                 }
 
-                /* correct segment is received, copy data */
-                else if((SDO->CANrxData[0] & 0x7fU) == (SDO->sequence+1U)){
-                    SDO->sequence++;
-                    err = CO_false;
-                    for(i=0U; i<7; i++)
-                        SDO->ODF_arg.data[SDO->bufferOffset++] = SDO->CANrxData[i+1];
-                }
-            }
-
-            /* send response if: wrong segment or last segment or end of transfer or timeout */
-            if(err || (SDO->sequence >= SDO->blksize) || (SDO->CANrxData[0] & 0x80) || timeoutSubblockDownolad){
-                /* prepare response */
-                SDO->CANtxBuff->data[0] = 0xA2;
-                SDO->CANtxBuff->data[1] = SDO->sequence;
-                SDO->sequence = 0;
-
-                /* empty buffer in domain data type if not last segment */
-                if((SDO->ODF_arg.ODdataStorage == 0) && (SDO->bufferOffset != 0) && ((SDO->CANrxData[0] & 0x80)) != 0){
-                    /* calculate CRC on next bytes, if enabled */
-                    if(SDO->crcEnabled){
-                        SDO->crc = crc16_ccitt(SDO->ODF_arg.data, SDO->bufferOffset, SDO->crc);
-                    }
-
-                    /* write data to the Object dictionary */
-                    SDO->ODF_arg.lastSegment = CO_false;
-                    abortCode = CO_SDO_writeOD(SDO, SDO->bufferOffset);
-                    if(abortCode != 0U){
-                        CO_SDO_abort(SDO, abortCode);
-                        return -1;
-                    }
-
-                    SDO->ODF_arg.dataLength = CO_SDO_BUFFER_SIZE;
-                    SDO->bufferOffset = 0;
-                }
-
-                /* blksize */
-                len = CO_SDO_BUFFER_SIZE - SDO->bufferOffset;
-                SDO->blksize = (len > (7*127)) ? 127 : (len / 7);
-                SDO->CANtxBuff->data[2] = SDO->blksize;
-
-                /* last segment */
-                if(((SDO->CANrxData[0] & 0x80) != 0) && !err){
-                    SDO->state = STATE_DOWNLOAD_BLOCK_END;
-                }
-
-                /* send response */
-                CO_CANsend(SDO->CANdevTx, SDO->CANtxBuff);
+                SDO->ODF_arg.dataLength = CO_SDO_BUFFER_SIZE;
+                SDO->bufferOffset = 0;
             }
 
-            /* don't clear SDO->CANrxNew flag on timeout */
-            if(timeoutSubblockDownolad) return 1;
+            /* blksize */
+            len = CO_SDO_BUFFER_SIZE - SDO->bufferOffset;
+            SDO->blksize = (len > (7*127)) ? 127 : (len / 7);
+            SDO->CANtxBuff->data[2] = SDO->blksize;
+
+            /* set next state */
+            if(lastSegmentInSubblock) {
+                SDO->state = CO_SDO_ST_DOWNLOAD_BL_END;
+            }
+            else if(SDO->bufferOffset >= CO_SDO_BUFFER_SIZE) {
+                CO_SDO_abort(SDO, CO_SDO_AB_DEVICE_INCOMPAT);
+                return -1;
+            }
+            else {
+                SDO->state = CO_SDO_ST_DOWNLOAD_BL_SUBBLOCK;
+            }
+
+            /* send response */
+            sendResponse = CO_true;
 
             break;
         }
 
-        case STATE_DOWNLOAD_BLOCK_END:{
+        case CO_SDO_ST_DOWNLOAD_BL_END:{
             /* verify client command specifier and subcommand */
             if((SDO->CANrxData[0]&0xE1U) != 0xC1U){
                 CO_SDO_abort(SDO, CO_SDO_AB_CMD);/* Client command specifier not valid or unknown. */
@@ -1010,12 +1031,12 @@ int8_t CO_SDO_process(
 
             /* send response */
             SDO->CANtxBuff->data[0] = 0xA1;
-            CO_CANsend(SDO->CANdevTx, SDO->CANtxBuff);
-            SDO->state = STATE_IDLE;
+            SDO->state = CO_SDO_ST_IDLE;
+            sendResponse = CO_true;
             break;
         }
 
-        case STATE_UPLOAD_INITIATE:{
+        case CO_SDO_ST_UPLOAD_INITIATE:{
             /* default response */
             SDO->CANtxBuff->data[1] = SDO->CANrxData[1];
             SDO->CANtxBuff->data[2] = SDO->CANrxData[2];
@@ -1027,17 +1048,16 @@ int8_t CO_SDO_process(
                     SDO->CANtxBuff->data[4U+i] = SDO->ODF_arg.data[i];
 
                 SDO->CANtxBuff->data[0] = 0x43U | ((4U-SDO->ODF_arg.dataLength) << 2U);
-                CO_CANsend(SDO->CANdevTx, SDO->CANtxBuff);
+                SDO->state = CO_SDO_ST_IDLE;
 
-                /* finish */
-                SDO->state = STATE_IDLE;
+                sendResponse = CO_true;
             }
 
             /* Segmented transfer */
             else{
                 SDO->bufferOffset = 0U;
                 SDO->sequence = 0U;
-                SDO->state = STATE_UPLOAD_SEGMENTED;
+                SDO->state = CO_SDO_ST_UPLOAD_SEGMENTED;
 
                 /* indicate data size, if known */
                 if(SDO->ODF_arg.dataLengthTotal != 0U){
@@ -1050,12 +1070,12 @@ int8_t CO_SDO_process(
                 }
 
                 /* send response */
-                CO_CANsend(SDO->CANdevTx, SDO->CANtxBuff);
+                sendResponse = CO_true;
             }
             break;
         }
 
-        case STATE_UPLOAD_SEGMENTED:{
+        case CO_SDO_ST_UPLOAD_SEGMENTED:{
             /* verify client command specifier */
             if((SDO->CANrxData[0]&0xE0U) != 0x60U){
                 CO_SDO_abort(SDO, CO_SDO_AB_CMD);/* Client command specifier not valid or unknown. */
@@ -1112,15 +1132,15 @@ int8_t CO_SDO_process(
             /* verify end of transfer */
             if((SDO->bufferOffset == SDO->ODF_arg.dataLength) && (SDO->ODF_arg.lastSegment)){
                 SDO->CANtxBuff->data[0] |= 0x01;
-                SDO->state = STATE_IDLE;
+                SDO->state = CO_SDO_ST_IDLE;
             }
 
             /* send response */
-            CO_CANsend(SDO->CANdevTx, SDO->CANtxBuff);
+            sendResponse = CO_true;
             break;
         }
 
-        case STATE_UPLOAD_BLOCK_INITIATE:{
+        case CO_SDO_ST_UPLOAD_BL_INITIATE:{
             /* default response */
             SDO->CANtxBuff->data[1] = SDO->CANrxData[1];
             SDO->CANtxBuff->data[2] = SDO->CANrxData[2];
@@ -1162,12 +1182,12 @@ int8_t CO_SDO_process(
             }
 
             /* send response */
-            SDO->state = STATE_UPLOAD_BLOCK_INITIATE_2;
-            CO_CANsend(SDO->CANdevTx, SDO->CANtxBuff);
+            SDO->state = CO_SDO_ST_UPLOAD_BL_INITIATE_2;
+            sendResponse = CO_true;
             break;
         }
 
-        case STATE_UPLOAD_BLOCK_INITIATE_2:{
+        case CO_SDO_ST_UPLOAD_BL_INITIATE_2:{
             /* verify client command specifier and subcommand */
             if((SDO->CANrxData[0]&0xE3U) != 0xA3U){
                 CO_SDO_abort(SDO, CO_SDO_AB_CMD);/* Client command specifier not valid or unknown. */
@@ -1178,11 +1198,11 @@ int8_t CO_SDO_process(
             SDO->sequence = 0;
             SDO->endOfTransfer = CO_false;
             SDO->CANrxNew = CO_false;
-            SDO->state = STATE_UPLOAD_BLOCK_SUBBLOCK;
+            SDO->state = CO_SDO_ST_UPLOAD_BL_SUBBLOCK;
             /* continue in next case */
         }
 
-        case STATE_UPLOAD_BLOCK_SUBBLOCK:{
+        case CO_SDO_ST_UPLOAD_BL_SUBBLOCK:{
             /* is block confirmation received */
             if(SDO->CANrxNew){
                 uint8_t ackseq;
@@ -1211,10 +1231,10 @@ int8_t CO_SDO_process(
                     if(SDO->crcEnabled)
                         CO_memcpySwap2(&SDO->CANtxBuff->data[1], (uint8_t*)&SDO->crc);
 
-                    SDO->state = STATE_UPLOAD_BLOCK_END;
+                    SDO->state = CO_SDO_ST_UPLOAD_BL_END;
 
                     /* send response */
-                    CO_CANsend(SDO->CANdevTx, SDO->CANtxBuff);
+                    sendResponse = CO_true;
                     break;
                 }
 
@@ -1303,14 +1323,14 @@ int8_t CO_SDO_process(
             return 1;
         }
 
-        case STATE_UPLOAD_BLOCK_END:{
+        case CO_SDO_ST_UPLOAD_BL_END:{
             /* verify client command specifier */
             if((SDO->CANrxData[0]&0xE1U) != 0xA1U){
                 CO_SDO_abort(SDO, CO_SDO_AB_CMD);/* Client command specifier not valid or unknown. */
                 return -1;
             }
 
-            SDO->state = STATE_IDLE;
+            SDO->state = CO_SDO_ST_IDLE;
             break;
         }
 
@@ -1320,11 +1340,13 @@ int8_t CO_SDO_process(
         }
     }
 
-    /* free buffer */
-    /* TODO this must be cleaned before CO_CANsend(). */
+    /* free buffer and send message */
     SDO->CANrxNew = CO_false;
+    if(sendResponse) {
+        CO_CANsend(SDO->CANdevTx, SDO->CANtxBuff);
+    }
 
-    if(SDO->state != STATE_IDLE){
+    if(SDO->state != CO_SDO_ST_IDLE){
         return 1;
     }
 

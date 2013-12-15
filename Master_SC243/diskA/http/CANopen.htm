@@ -149,7 +149,7 @@ textarea{
          CANLog = window.opener.CANLog;
       }
       else{
-         CANLog = new CANLog_t(1000, 500, 0);
+         CANLog = new CANLog_t(5000, 500, 0);
       }
       CANLogCallbackID = CANLog.registerCallbackBoundary(logBoundary);
    }

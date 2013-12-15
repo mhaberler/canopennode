@@ -117,7 +117,7 @@ static void huge _pascal CgiSendFunction(rpCgiPtr CgiRequest){
                                 dataLen,          /* number of data bytes */
                                 0);               /* synchronous message flag bit */
 
-                sprintf(buf, "sent %03X:", cobId);
+                sprintf(buf, "sent %03X:", (unsigned int)cobId);
 
                 for(i=0; i<dataLen; i++){
                     CAN_txBuff->data[i] = data[i];

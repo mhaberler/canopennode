@@ -43,6 +43,31 @@
 
 
 /**
+ * Return values of SDO client functions.
+ */
+typedef enum{
+    /** Transmit buffer is full. Waiting */
+    CO_SDOcli_transmittBufferFull       = 4,
+    /** Block download is in progress. Sending train of messages */
+    CO_SDOcli_blockDownldInProgress     = 3,
+    /** Block upload in progress. Receiving train of messages */
+    CO_SDOcli_blockUploadInProgress     = 2,
+    /** Waiting server response */
+    CO_SDOcli_waitingServerResponse     = 1,
+    /** Success, end of communication */
+    CO_SDOcli_ok_communicationEnd       = 0,
+    /** Error in arguments */
+    CO_SDOcli_wrongArguments            = -2,
+    /** Communication ended with client abort */
+    CO_SDOcli_endedWithClientAbort      = -9,
+    /** Communication ended with server abort */
+    CO_SDOcli_endedWithServerAbort      = -10,
+    /** Communication ended with timeout */
+    CO_SDOcli_endedWithTimeout          = -11
+}CO_SDOclient_return_t;
+
+
+/**
  * SDO Client Parameter. The same as record from Object dictionary (index 0x1280+).
  */
 typedef struct{
@@ -84,7 +109,7 @@ typedef struct{
     uint32_t            bufferOffsetACK;
     /** data length to be uploaded in block transfer */
     uint32_t            dataSize;
-    /** Data length transfered in block transfer */
+    /** Data length transferred in block transfer */
     uint32_t            dataSizeTransfered;
     /** Timeout timer for SDO communication */
     uint16_t            timeoutTimer;
@@ -177,10 +202,9 @@ int16_t CO_SDOclient_init(
  * object is not used. If it is the same as node-ID of this node, then data will
  * be exchanged with this node (without CAN communication).
  *
- * @return 0: Success
- * @return -2: Wrong arguments
+ * @return #CO_SDOclient_return_t
  */
-int8_t CO_SDOclient_setup(
+CO_SDOclient_return_t CO_SDOclient_setup(
         CO_SDOclient_t         *SDO_C,
         uint32_t                COB_IDClientToServer,
         uint32_t                COB_IDServerToClient,
@@ -192,22 +216,21 @@ int8_t CO_SDOclient_setup(
  *
  * Function initiates SDO download communication with server specified in
  * CO_SDOclient_init() function. Data will be written to remote node.
- * Function is nonblocking.
+ * Function is non-blocking.
  *
  * @param SDO_C This object.
  * @param index Index of object in object dictionary in remote node.
  * @param subIndex Subindex of object in object dictionary in remote node.
- * @param dataTx Pointer to data to be written. Data must be valid untill end
+ * @param dataTx Pointer to data to be written. Data must be valid until end
  * of communication. Note that data are aligned in little-endian
  * format, because CANopen itself uses little-endian. Take care,
  * when using processors with big-endian.
  * @param dataSize Size of data in dataTx.
  * @param blockEnable Try to initiate block transfer.
  *
- * @return 0: Success
- * @return -2: Wrong arguments
+ * @return #CO_SDOclient_return_t
  */
-int8_t CO_SDOclientDownloadInitiate(
+CO_SDOclient_return_t CO_SDOclientDownloadInitiate(
         CO_SDOclient_t         *SDO_C,
         uint16_t                index,
         uint8_t                 subIndex,
@@ -219,9 +242,9 @@ int8_t CO_SDOclientDownloadInitiate(
 /**
  * Process SDO download communication.
  *
- * Function must be called cyclically untill it returns <=0. It Proceeds SDO
+ * Function must be called cyclically until it returns <=0. It Proceeds SDO
  * download communication initiated with CO_SDOclientDownloadInitiate().
- * Function is nonblocking.
+ * Function is non-blocking.
  *
  * @param SDO_C This object.
  * @param timeDifference_ms Time difference from previous function call in [milliseconds].
@@ -229,16 +252,9 @@ int8_t CO_SDOclientDownloadInitiate(
  * @param pSDOabortCode Pointer to external variable written by this function
  * in case of error in communication.
  *
- * @return 2: Server responded, new client request was sent.
- * @return 1: Waiting for server response.
- * @return 0: End of communication.
- * @return -1: SDO BLOCK initiate failed, try segmented.
- * @return -3: Error: communication was not properly initiated.
- * @return -9: Error: SDO server busy.
- * @return -10: Error in SDO communication. SDO abort code is in value pointed by pSDOabortCode.
- * @return -11: Error: timeout in SDO communication, SDO abort code is in value pointed by pSDOabortCode.
+ * @return #CO_SDOclient_return_t
  */
-int8_t CO_SDOclientDownload(
+CO_SDOclient_return_t CO_SDOclientDownload(
         CO_SDOclient_t         *SDO_C,
         uint16_t                timeDifference_ms,
         uint16_t                SDOtimeoutTime,
@@ -250,7 +266,7 @@ int8_t CO_SDOclientDownload(
  *
  * Function initiates SDO upload communication with server specified in
  * CO_SDOclient_init() function. Data will be read from remote node.
- * Function is nonblocking.
+ * Function is non-blocking.
  *
  * @param SDO_C This object.
  * @param index Index of object in object dictionary in remote node.
@@ -262,11 +278,9 @@ int8_t CO_SDOclientDownload(
  * @param dataRxSize Size of dataRx.
  * @param blockEnable Try to initiate block transfer.
  *
- * @return 0: Success.
- * @return -2: Wrong arguments.
- * @return -3: Too small buffer size.
+ * @return #CO_SDOclient_return_t
  */
-int8_t CO_SDOclientUploadInitiate(
+CO_SDOclient_return_t CO_SDOclientUploadInitiate(
         CO_SDOclient_t         *SDO_C,
         uint16_t                index,
         uint8_t                 subIndex,
@@ -280,7 +294,7 @@ int8_t CO_SDOclientUploadInitiate(
  *
  * Function must be called cyclically until it returns <=0. It Proceeds SDO
  * upload communication initiated with CO_SDOclientUploadInitiate().
- * Function is nonblocking.
+ * Function is non-blocking.
  *
  * @param SDO_C This object.
  * @param timeDifference_ms Time difference from previous function call in [milliseconds].
@@ -290,21 +304,24 @@ int8_t CO_SDOclientUploadInitiate(
  * @param pSDOabortCode Pointer to external variable written by this function
  * in case of error in communication.
  *
- * @return 3: Block upload in progress.
- * @return 2: Server responded, new client request was sent.
- * @return 1: Waiting for server response.
- * @return 0: End of communication.
- * @return -3: Error: communication was not properly initiated.
- * @return -9: Error: SDO server busy.
- * @return -10: Error in SDO communication. SDO abort code is in value pointed by pSDOabortCode.
- * @return -11: Error: timeout in SDO communication, SDO abort code is in value pointed by pSDOabortCode.
+ * @return #CO_SDOclient_return_t
  */
-int8_t CO_SDOclientUpload(
+CO_SDOclient_return_t CO_SDOclientUpload(
         CO_SDOclient_t         *SDO_C,
         uint16_t                timeDifference_ms,
         uint16_t                SDOtimeoutTime,
         uint32_t               *pDataSize,
         uint32_t               *pSDOabortCode);
+
+
+/**
+ * Close SDO communication temporary.
+ *
+ * Function must be called after finish of each SDO client communication cycle.
+ * It disables reception of SDO client CAN messages. It is necessary, because
+ * CO_SDOclient_receive function may otherwise write into undefined SDO buffer.
+ */
+void CO_SDOclientClose(CO_SDOclient_t *SDO_C);
 
 
 /** @} */

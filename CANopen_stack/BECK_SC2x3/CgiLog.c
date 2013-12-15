@@ -404,7 +404,7 @@ void CgiLogEmcyProcess(CgiLog_t *CgiLog){
 
         SramOfs += sprintf((CgiLog->emcyBuf+SramOfs),
                 "%s - %02X - %04X %02X %02X %08X\n",
-                sTime, nodeId, errorCode, errorRegister, errorIndex, (uint32_t)info);
+                sTime, nodeId, errorCode, errorRegister, errorIndex, (unsigned int)info);
 
         start += 16;
     }

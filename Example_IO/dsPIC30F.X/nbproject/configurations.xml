@@ -152,8 +152,8 @@
       </C30-LD>
       <C30Global>
       </C30Global>
-      <ICD3PlatformTool>
-      </ICD3PlatformTool>
+      <RealICEPlatformTool>
+      </RealICEPlatformTool>
     </conf>
   </confs>
 </configurationDescriptor>

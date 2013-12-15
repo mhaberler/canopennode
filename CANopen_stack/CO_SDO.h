@@ -145,39 +145,39 @@
  * The abort codes not listed here are reserved.
  */
 typedef enum{
-    CO_SDO_AB_NONE                  = 0x00000000U, /**< 0x00000000, No abort */
-    CO_SDO_AB_TOGGLE_BIT            = 0x05030000U, /**< 0x05030000, Toggle bit not altered */
-    CO_SDO_AB_TIMEOUT               = 0x05040000U, /**< 0x05040000, SDO protocol timed out */
-    CO_SDO_AB_CMD                   = 0x05040001U, /**< 0x05040001, Command specifier not valid or unknown */
-    CO_SDO_AB_BLOCK_SIZE            = 0x05040002U, /**< 0x05040002, Invalid block size in block mode */
-    CO_SDO_AB_SEQ_NUM               = 0x05040003U, /**< 0x05040003, Invalid sequence number in block mode */
-    CO_SDO_AB_CRC                   = 0x05040004U, /**< 0x05040004, CRC error (block mode only) */
-    CO_SDO_AB_OUT_OF_MEM            = 0x05040005U, /**< 0x05040005, Out of memory */
-    CO_SDO_AB_UNSUPPORTED_ACCESS    = 0x06010000U, /**< 0x06010000, Unsupported access to an object */
-    CO_SDO_AB_WRITEONLY             = 0x06010001U, /**< 0x06010001, Atempt to read a write only object */
-    CO_SDO_AB_READONLY              = 0x06010002U, /**< 0x06010002, Atempt to write a read only object */
-    CO_SDO_AB_NOT_EXIST             = 0x06020000U, /**< 0x06020000, Object does not exist */
-    CO_SDO_AB_NO_MAP                = 0x06040041U, /**< 0x06040041, Object cannot be mapped to the PDO */
-    CO_SDO_AB_MAP_LEN               = 0x06040042U, /**< 0x06040042, Number and length of object to be mapped exceeds PDO length */
-    CO_SDO_AB_PRAM_INCOMPAT         = 0x06040043U, /**< 0x06040043, General pparameter incompatibility reasons */
-    CO_SDO_AB_DEVICE_INCOMPAT       = 0x06040047U, /**< 0x06040047, General internal incompatibility in device */
-    CO_SDO_AB_HW                    = 0x06060000U, /**< 0x06060000, Access failed due to hardware error */
-    CO_SDO_AB_TYPE_MISMATCH         = 0x06070010U, /**< 0x06070010, Data type does not match, length of service parameter does not match */
-    CO_SDO_AB_DATA_LONG             = 0x06070012U, /**< 0x06070012, Data type does not match, length of service parameter too high */
-    CO_SDO_AB_DATA_SHORT            = 0x06070013U, /**< 0x06070013, Data type does not match, length of service parameter too short */
-    CO_SDO_AB_SUB_UNKNOWN           = 0x06090011U, /**< 0x06090011, Sub index does not exist */
-    CO_SDO_AB_INVALID_VALUE         = 0x06090030U, /**< 0x06090030, Invalid value for parameter (download only). */
-    CO_SDO_AB_VALUE_HIGH            = 0x06090031U, /**< 0x06090031, Value range of parammeter written too high */
-    CO_SDO_AB_VALUE_LOW             = 0x06090032U, /**< 0x06090032, Value range of parammeter written too low */
-    CO_SDO_AB_MAX_LESS_MIN          = 0x06090036U, /**< 0x06090036, Maximum value is less than minimum value. */
-    CO_SDO_AB_NO_RESOURCE           = 0x060A0023U, /**< 0x060A0023, Resource not available: SDO connection */
-    CO_SDO_AB_GENERAL               = 0x08000000U, /**< 0x08000000, General error */
-    CO_SDO_AB_DATA_TRANSF           = 0x08000020U, /**< 0x08000020, Data cannot be transfered or stored to application */
-    CO_SDO_AB_DATA_LOC_CTRL         = 0x08000021U, /**< 0x08000021, Data cannot be transfered or stored to application because of local control */
-    CO_SDO_AB_DATA_DEV_STATE        = 0x08000022U, /**< 0x08000022, Data cannot be transfered or stored to application because of present device state */
-    CO_SDO_AB_DATA_OD               = 0x08000023U, /**< 0x08000023, Object dictionary not present or dynamic generation fails */
-    CO_SDO_AB_NO_DATA               = 0x08000024U  /**< 0x08000024, No data available */
-}CO_SDO_abortCode_t;  
+    CO_SDO_AB_NONE                  = 0x00000000UL, /**< 0x00000000, No abort */
+    CO_SDO_AB_TOGGLE_BIT            = 0x05030000UL, /**< 0x05030000, Toggle bit not altered */
+    CO_SDO_AB_TIMEOUT               = 0x05040000UL, /**< 0x05040000, SDO protocol timed out */
+    CO_SDO_AB_CMD                   = 0x05040001UL, /**< 0x05040001, Command specifier not valid or unknown */
+    CO_SDO_AB_BLOCK_SIZE            = 0x05040002UL, /**< 0x05040002, Invalid block size in block mode */
+    CO_SDO_AB_SEQ_NUM               = 0x05040003UL, /**< 0x05040003, Invalid sequence number in block mode */
+    CO_SDO_AB_CRC                   = 0x05040004UL, /**< 0x05040004, CRC error (block mode only) */
+    CO_SDO_AB_OUT_OF_MEM            = 0x05040005UL, /**< 0x05040005, Out of memory */
+    CO_SDO_AB_UNSUPPORTED_ACCESS    = 0x06010000UL, /**< 0x06010000, Unsupported access to an object */
+    CO_SDO_AB_WRITEONLY             = 0x06010001UL, /**< 0x06010001, Attempt to read a write only object */
+    CO_SDO_AB_READONLY              = 0x06010002UL, /**< 0x06010002, Attempt to write a read only object */
+    CO_SDO_AB_NOT_EXIST             = 0x06020000UL, /**< 0x06020000, Object does not exist */
+    CO_SDO_AB_NO_MAP                = 0x06040041UL, /**< 0x06040041, Object cannot be mapped to the PDO */
+    CO_SDO_AB_MAP_LEN               = 0x06040042UL, /**< 0x06040042, Number and length of object to be mapped exceeds PDO length */
+    CO_SDO_AB_PRAM_INCOMPAT         = 0x06040043UL, /**< 0x06040043, General parameter incompatibility reasons */
+    CO_SDO_AB_DEVICE_INCOMPAT       = 0x06040047UL, /**< 0x06040047, General internal incompatibility in device */
+    CO_SDO_AB_HW                    = 0x06060000UL, /**< 0x06060000, Access failed due to hardware error */
+    CO_SDO_AB_TYPE_MISMATCH         = 0x06070010UL, /**< 0x06070010, Data type does not match, length of service parameter does not match */
+    CO_SDO_AB_DATA_LONG             = 0x06070012UL, /**< 0x06070012, Data type does not match, length of service parameter too high */
+    CO_SDO_AB_DATA_SHORT            = 0x06070013UL, /**< 0x06070013, Data type does not match, length of service parameter too short */
+    CO_SDO_AB_SUB_UNKNOWN           = 0x06090011UL, /**< 0x06090011, Sub index does not exist */
+    CO_SDO_AB_INVALID_VALUE         = 0x06090030UL, /**< 0x06090030, Invalid value for parameter (download only). */
+    CO_SDO_AB_VALUE_HIGH            = 0x06090031UL, /**< 0x06090031, Value range of parameter written too high */
+    CO_SDO_AB_VALUE_LOW             = 0x06090032UL, /**< 0x06090032, Value range of parameter written too low */
+    CO_SDO_AB_MAX_LESS_MIN          = 0x06090036UL, /**< 0x06090036, Maximum value is less than minimum value. */
+    CO_SDO_AB_NO_RESOURCE           = 0x060A0023UL, /**< 0x060A0023, Resource not available: SDO connection */
+    CO_SDO_AB_GENERAL               = 0x08000000UL, /**< 0x08000000, General error */
+    CO_SDO_AB_DATA_TRANSF           = 0x08000020UL, /**< 0x08000020, Data cannot be transferred or stored to application */
+    CO_SDO_AB_DATA_LOC_CTRL         = 0x08000021UL, /**< 0x08000021, Data cannot be transferred or stored to application because of local control */
+    CO_SDO_AB_DATA_DEV_STATE        = 0x08000022UL, /**< 0x08000022, Data cannot be transferred or stored to application because of present device state */
+    CO_SDO_AB_DATA_OD               = 0x08000023UL, /**< 0x08000023, Object dictionary not present or dynamic generation fails */
+    CO_SDO_AB_NO_DATA               = 0x08000024UL  /**< 0x08000024, No data available */
+}CO_SDO_abortCode_t;
 
 
 /**
@@ -220,14 +220,14 @@ typedef enum{
  *
  *
  * ####Implementation in CANopenNode
- * Object dictionary in CANopenNode is implemeted in CO_OD.h and CO_OD.c files.
+ * Object dictionary in CANopenNode is implemented in CO_OD.h and CO_OD.c files.
  * These files are application specific and must be generated by Object
  * dictionary editor (application is included by the stack).
  *
  * CO_OD.h and CO_OD.c files include:
  *  - Structure definitions for records.
  *  - Global declaration and initialization of all variables, arrays and records
- *    mapped to Object dictionary. Variables are distrbuted in multiple objects,
+ *    mapped to Object dictionary. Variables are distributed in multiple objects,
  *    depending on memory location. This eases storage to different memories in
  *    microcontroller, like eeprom or flash.
  *  - Constant array of multiple Object dictionary entries of type
@@ -277,7 +277,7 @@ typedef enum{
  *     internal buffer. If necessary, bytes are swapped.
  *     Object dictionary function is called if registered. Data may be
  *     manipulated inside that function. After function exits, data are
- *     transfered via SDO server.
+ *     transferred via SDO server.
  *
  * ####Domain data type
  *     If data type is domain, then length is not specified by Object dictionary.
@@ -304,7 +304,7 @@ typedef enum{
  *
  * Size must be at least equal to size of largest variable in @ref CO_SDO_objectDictionary.
  * If data type is domain, data length is not limited to SDO buffer size. If
- * block transfer is implemeted, value should be set to 889.
+ * block transfer is implemented, value should be set to 889.
  *
  * Value can be in range from 7 to 889 bytes.
  */
@@ -340,7 +340,7 @@ typedef enum{
     OD_H1002_MANUF_STATUS_REG     = 0x1002U,/**< Manufacturer status register */
     OD_H1003_PREDEF_ERR_FIELD     = 0x1003U,/**< Predefined error field */
     OD_H1004_RSV                  = 0x1004U,/**< Reserved */
-    OD_H1005_COBID_SYNC           = 0x1005U,/**< Sync message cobid */
+    OD_H1005_COBID_SYNC           = 0x1005U,/**< Sync message cob-id */
     OD_H1006_COMM_CYCL_PERIOD     = 0x1006U,/**< Communication cycle period */
     OD_H1007_SYNC_WINDOW_LEN      = 0x1007U,/**< Sync windows length */
     OD_H1008_MANUF_DEV_NAME       = 0x1008U,/**< Manufacturer device name */
@@ -351,11 +351,11 @@ typedef enum{
     OD_H100D_LIFETIME_FACTOR      = 0x100DU,/**< Life time factor */
     OD_H100E_RSV                  = 0x100EU,/**< Reserved */
     OD_H100F_RSV                  = 0x100FU,/**< Reserved */
-    OD_H1010_STORE_PARAM_FUNC     = 0x1010U,/**< Store parametter in persistent memory function */
+    OD_H1010_STORE_PARAM_FUNC     = 0x1010U,/**< Store parameter in persistent memory function */
     OD_H1011_REST_PARAM_FUNC      = 0x1011U,/**< Restore default parameter function */
-    OD_H1012_COBID_TIME           = 0x1012U,/**< Timestamp message cobid */
+    OD_H1012_COBID_TIME           = 0x1012U,/**< Timestamp message cob-id */
     OD_H1013_HIGH_RES_TIMESTAMP   = 0x1013U,/**< High resolution timestamp */
-    OD_H1014_COBID_EMERGENCY      = 0x1014U,/**< Emergency message cobid */
+    OD_H1014_COBID_EMERGENCY      = 0x1014U,/**< Emergency message cob-id */
     OD_H1015_INHIBIT_TIME_MSG     = 0x1015U,/**< Inhibit time message */
     OD_H1016_CONSUMER_HB_TIME     = 0x1016U,/**< Consumer heartbeat time */
     OD_H1017_PRODUCER_HB_TIME     = 0x1017U,/**< Producer heartbeat time */
@@ -370,17 +370,17 @@ typedef enum{
     OD_H1026_OS_PROMPT            = 0x1026U,/**< OS prompt */
     OD_H1027_MODULE_LIST          = 0x1027U,/**< Module list */
     OD_H1028_EMCY_CONSUMER        = 0x1028U,/**< Emergency consumer object */
-    OD_H1029_ERR_BEHAVIOR         = 0x1029U,/**< Error behavior */
-    OD_H1200_SDO_SERVER_PARAM     = 0x1200U,/**< SDO server paraeters */
+    OD_H1029_ERR_BEHAVIOR         = 0x1029U,/**< Error behaviour */
+    OD_H1200_SDO_SERVER_PARAM     = 0x1200U,/**< SDO server parameters */
     OD_H1280_SDO_CLIENT_PARAM     = 0x1280U,/**< SDO client parameters */
     OD_H1400_RXPDO_1_PARAM        = 0x1400U,/**< RXPDO communication parameter */
     OD_H1401_RXPDO_2_PARAM        = 0x1401U,/**< RXPDO communication parameter */
     OD_H1402_RXPDO_3_PARAM        = 0x1402U,/**< RXPDO communication parameter */
     OD_H1403_RXPDO_4_PARAM        = 0x1403U,/**< RXPDO communication parameter */
-    OD_H1600_RXPDO_1_MAPPING      = 0x1600U,/**< RXPDO mapping paramaters */
-    OD_H1601_RXPDO_2_MAPPING      = 0x1601U,/**< RXPDO mapping paramaters */
-    OD_H1602_RXPDO_3_MAPPING      = 0x1602U,/**< RXPDO mapping paramaters */
-    OD_H1603_RXPDO_4_MAPPING      = 0x1603U,/**< RXPDO mapping paramaters */
+    OD_H1600_RXPDO_1_MAPPING      = 0x1600U,/**< RXPDO mapping parameters */
+    OD_H1601_RXPDO_2_MAPPING      = 0x1601U,/**< RXPDO mapping parameters */
+    OD_H1602_RXPDO_3_MAPPING      = 0x1602U,/**< RXPDO mapping parameters */
+    OD_H1603_RXPDO_4_MAPPING      = 0x1603U,/**< RXPDO mapping parameters */
     OD_H1800_TXPDO_1_PARAM        = 0x1800U,/**< TXPDO communication parameter */
     OD_H1801_TXPDO_2_PARAM        = 0x1801U,/**< TXPDO communication parameter */
     OD_H1802_TXPDO_3_PARAM        = 0x1802U,/**< TXPDO communication parameter */
@@ -420,6 +420,26 @@ typedef enum{
     /** Reserved */
     CO_ODFL_BIT_7               = 0x80U
 }CO_SDO_OD_flags_t;
+
+
+/**
+ * Internal states of the SDO server state machine
+ */
+typedef enum {
+    CO_SDO_ST_IDLE                  = 0x00U,
+    CO_SDO_ST_DOWNLOAD_INITIATE     = 0x11U,
+    CO_SDO_ST_DOWNLOAD_SEGMENTED    = 0x12U,
+    CO_SDO_ST_DOWNLOAD_BL_INITIATE  = 0x14U,
+    CO_SDO_ST_DOWNLOAD_BL_SUBBLOCK  = 0x15U,
+    CO_SDO_ST_DOWNLOAD_BL_SUB_RESP  = 0x16U,
+    CO_SDO_ST_DOWNLOAD_BL_END       = 0x17U,
+    CO_SDO_ST_UPLOAD_INITIATE       = 0x21U,
+    CO_SDO_ST_UPLOAD_SEGMENTED      = 0x22U,
+    CO_SDO_ST_UPLOAD_BL_INITIATE    = 0x24U,
+    CO_SDO_ST_UPLOAD_BL_INITIATE_2  = 0x25U,
+    CO_SDO_ST_UPLOAD_BL_SUBBLOCK    = 0x26U,
+    CO_SDO_ST_UPLOAD_BL_END         = 0x27U
+} CO_SDO_state_t;
 
 
 /**
@@ -469,7 +489,7 @@ typedef struct{
 
 
 /**
- * Object contains all information about the object being transfered by SDO server.
+ * Object contains all information about the object being transferred by SDO server.
  *
  * Object is used as an argument to @ref CO_SDO_OD_function. It is also
  * part of the CO_SDO_t object.
@@ -480,13 +500,13 @@ typedef struct{
     if it was registered by CO_OD_configure() function before. */
     void               *object;
     /** SDO data buffer contains data, which are exchanged in SDO transfer.
-    @ref CO_SDO_OD_function may verify or manupulate that data before (after)
+    @ref CO_SDO_OD_function may verify or manipulate that data before (after)
     they are written to (read from) Object dictionary. Data have the same
     endianes as processor. Pointer must NOT be changed. (Data up to length
     can be changed.) */
     uint8_t            *data;
     /** Pointer to location in object dictionary, where data are stored.
-    (informative refference to old data, read only). Data have the same
+    (informative reference to old data, read only). Data have the same
     endianes as processor. If data type is Domain, this variable is null. */
     const void         *ODdataStorage;
     /** Length of data in the above buffer. Read only, except for domain. If
@@ -560,8 +580,8 @@ typedef struct{
     CO_ODF_arg_t        ODF_arg;
     /** From CO_SDO_init() */
     uint8_t             nodeId;
-    /** Current internal state of the SDO server state machine */
-    uint8_t             state;
+    /** Current internal state of the SDO server state machine #CO_SDO_state_t */
+    CO_SDO_state_t      state;
     /** Toggle bit in segmented transfer or block sequence in block transfer */
     uint8_t             sequence;
     /** Timeout timer for SDO communication */
@@ -578,6 +598,12 @@ typedef struct{
     CO_bool_t           endOfTransfer;
     /** Variable indicates, if new SDO message received from CAN bus */
     CO_bool_t           CANrxNew;
+    /** Pointer to optional external function. If defined, it is called from high
+    priority interrupt after new CAN SDO response message is received. Function
+    may wake up external task, which processes SDO client functions */
+    void              (*pFunctSignal)(uint32_t arg);
+    /** Optional argument, which is passed to above function */
+    uint32_t            functArg;
     /** From CO_SDO_init() */
     CO_CANmodule_t     *CANdevTx;
     /** CAN transmit buffer inside CANdev for CAN tx message */
@@ -628,7 +654,7 @@ uint32_t CO_getUint32(const uint8_t data[]);
 /**
  * Helper function writes uint16 to byte array.
  *
- * @param data Location of destionation data.
+ * @param data Location of destination data.
  * @param value Variable of type uint16_t to be written into data.
  */
 void CO_setUint16(uint8_t data[], const uint16_t value);
@@ -637,7 +663,7 @@ void CO_setUint16(uint8_t data[], const uint16_t value);
 /**
  * Helper function writes uint32 to byte array.
  *
- * @param data Location of destionation data.
+ * @param data Location of destination data.
  * @param value Variable of type uint32_t to be written into data.
  */
 void CO_setUint32(uint8_t data[], const uint32_t value);
@@ -678,7 +704,7 @@ void CO_memcpySwap4(uint8_t dest[], const uint8_t src[]);
  * are ignored.
  * @param OD Pointer to @ref CO_SDO_objectDictionary array defined externally.
  * @param ODSize Size of the above array.
- * @param ODExtensions Pointer to the externaly defined array of the same size
+ * @param ODExtensions Pointer to the externally defined array of the same size
  * as ODSize.
  * @param nodeId CANopen Node ID of this device. Value will be added to COB_IDs.
  * @param CANdevRx CAN device for SDO server reception.
@@ -715,9 +741,9 @@ int16_t CO_SDO_init(
  * @param timeDifference_ms Time difference from previous function call in [milliseconds].
  * @param SDOtimeoutTime Timeout time for SDO communication in milliseconds.
  *
- * @return 0: SDO server is iddle.
+ * @return 0: SDO server is idle.
  * @return 1: SDO server is in transfer state.
- * @return -1: SDO abort just occured.
+ * @return -1: SDO abort just occurred.
  */
 int8_t CO_SDO_process(
         CO_SDO_t               *SDO,
@@ -779,7 +805,7 @@ uint16_t CO_OD_getLength(CO_SDO_t *SDO, uint16_t entryNo, uint8_t subIndex);
 /**
  * Get attribute of the given object with specific subIndex. See #CO_SDO_OD_attributes_t.
  *
- * If Object Type is array and subIndex is zero, functon always returns
+ * If Object Type is array and subIndex is zero, function always returns
  * 'read-only' attribute.
  *
  * @param SDO This object.
@@ -794,7 +820,7 @@ uint16_t CO_OD_getAttribute(CO_SDO_t *SDO, uint16_t entryNo, uint8_t subIndex);
 /**
  * Get pointer to data of the given object with specific subIndex.
  *
- * If Object Type is array and subIndex is zero, functon returns pointer to
+ * If Object Type is array and subIndex is zero, function returns pointer to
  * object->maxSubIndex variable.
  *
  * @param SDO This object.
