@@ -1,11 +1,13 @@
 /*
- * CAN module object for Microchip STM32F4xx microcontroller.
+ * CAN module object for Microchip STM32F103 microcontroller.
  *
  * @file        CO_driver.h
- * @version     SVN: \$Id: CO_driver.h 278 2013-03-04 17:11:47Z jani $
+ * @version     SVN: \$Id: CO_driver.h 42 2013-07-09 11:14:12Z jani22 $
  * @author      Janez Paternoster
  * @author      Ondrej Netik
- * @copyright   2004 - 2013 Janez Paternoster, Ondrej Netik
+ * @author      Vijayendra
+ * @author      Jan van Lienden
+ * @copyright   2013 Janez Paternoster
  *
  * This file is part of CANopenNode, an opensource CANopen Stack.
  * Project home page is <http://canopennode.sourceforge.net>.
@@ -25,40 +27,74 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #ifndef CO_DRIVER_H
 #define CO_DRIVER_H
 
-#include "stm32f4xx_conf.h"
+/* Includes ------------------------------------------------------------------*/
+#include "common.h"
+#include "stm32f10x_conf.h"
 
+/* Exported define -----------------------------------------------------------*/
 #define PACKED_STRUCT               __attribute__((packed))
 #define ALIGN_STRUCT_DWORD          __attribute__((aligned(4)))
 
-
 /* Peripheral addresses */
 #define ADDR_CAN1    CAN1
-
+#define TMIDxR_TXRQ  ((uint32_t)0x00000001) /* Transmit mailbox request */
 
 /* Disabling interrupts */
 #define CO_DISABLE_INTERRUPTS()     __set_PRIMASK(1);
 #define CO_ENABLE_INTERRUPTS()      __set_PRIMASK(0);
 
+#define CLOCK_CAN                   RCC_APB1Periph_CAN1
 
+#define CAN_REMAP_2                 /* Select CAN1 remap 2 */
+#ifdef CAN1_NO_REMAP                /* CAN1 not remapped */
+#define CLOCK_GPIO_CAN              RCC_APB2Periph_GPIOA
+#define GPIO_Remapping_CAN          (0)
+#define GPIO_CAN                    GPIOA
+#define GPIO_Pin_CAN_RX             GPIO_Pin_11
+#define GPIO_Pin_CAN_TX             GPIO_Pin_12
+#define GPIO_CAN_Remap_State        DISABLE
+#endif
+#ifdef CAN_REMAP1                  /* CAN1 remap 1 */
+#define CLOCK_GPIO_CAN              RCC_APB2Periph_GPIOB
+#define GPIO_Remapping_CAN          GPIO_Remap1_CAN1
+#define GPIO_CAN                    GPIOB
+#define GPIO_Pin_CAN_RX             GPIO_Pin_8
+#define GPIO_Pin_CAN_TX             GPIO_Pin_9
+#define GPIO_CAN_Remap_State        ENABLE
+#endif
+#ifdef CAN_REMAP_2                 /* CAN1 remap 2 */
+#define CLOCK_GPIO_CAN              RCC_APB2Periph_GPIOD
+#define GPIO_Remapping_CAN          GPIO_Remap2_CAN1
+#define GPIO_CAN                    GPIOD
+#define GPIO_Pin_CAN_RX             GPIO_Pin_0
+#define GPIO_Pin_CAN_TX             GPIO_Pin_1
+#define GPIO_CAN_Remap_State        ENABLE
+#endif
+
+#ifdef STM32F10X_CL
+#define CAN1_TX_INTERRUPTS          CAN1_TX_IRQn
+#define CAN1_RX0_INTERRUPTS         CAN1_RX0_IRQn
+#else
+#define CAN1_TX_INTERRUPTS          USB_HP_CAN1_TX_IRQn
+#define CAN1_RX0_INTERRUPTS         USB_LP_CAN1_RX0_IRQn
+#endif
+
+#define CAN_TXMAILBOX_0   ((uint8_t)0x00)
+#define CAN_TXMAILBOX_1   ((uint8_t)0x01)
+#define CAN_TXMAILBOX_2   ((uint8_t)0x02)
+
+/* Timeout for initialization */
+
+#define INAK_TIMEOUT        ((uint32_t)0x0000FFFF)
 /* Data types */
-    typedef unsigned char           uint8_t;
-    typedef unsigned short int      uint16_t;
-    typedef unsigned long int       uint32_t;
-    typedef unsigned long long int  uint64_t;
-    typedef signed char             int8_t;
-    typedef signed short int        int16_t;
-    typedef signed long int         int32_t;
-    typedef signed long long int    int64_t;
     typedef float                   float32_t;
     typedef long double             float64_t;
     typedef char                    char_t;
     typedef unsigned char           oChar_t;
     typedef unsigned char           domain_t;
-
 
 /* Return values */
 typedef enum{
@@ -79,7 +115,6 @@ typedef enum{
     CO_ERROR_CRC                = -14
 }CO_ReturnError_t;
 
-
 /* CAN receive message structure as aligned in CAN module.
  * prevzato z stm32f10_can.h - velikostne polozky a poradi odpovidaji. */
 typedef struct{
@@ -94,15 +129,14 @@ typedef struct{
                                    stored in the mailbox passes through */
 }CO_CANrxMsg_t;
 
-
 /* Received message object */
 typedef struct{
     uint16_t            ident;
     uint16_t            mask;
     void               *object;
-    void              (*pFunct)(void *object, CO_CANrxMsg_t *message);
+//    void              (*pFunct)(void *object, CO_CANrxMsg_t *message); // Changed by JvL
+    void              (*pFunct)(void *object, CanRxMsg *message); // Changed by VJ
 }CO_CANrx_t;
-
 
 /* Transmit message object. */
 typedef struct{
@@ -112,7 +146,6 @@ typedef struct{
     volatile uint8_t    bufferFull;
     volatile uint8_t    syncFlag;
 }CO_CANtx_t;/* ALIGN_STRUCT_DWORD; */
-
 
 /* CAN module object. */
 typedef struct{
@@ -129,7 +162,6 @@ typedef struct{
     void               *em;
 }CO_CANmodule_t;
 
-
 /* Init CAN Led Interface */
 typedef enum {
     eCoLed_None = 0,
@@ -137,24 +169,18 @@ typedef enum {
     eCoLed_Red = 2,
 } eCoLeds;
 
-void InitCanLeds();
+/* Exported variables -----------------------------------------------------------*/
+
+/* Exported functions -----------------------------------------------------------*/
+void InitCanLeds(void);
 void CanLedsOn(eCoLeds led);
 void CanLedsOff(eCoLeds led);
 void CanLedsSet(eCoLeds led);
 
 
-/* Endianes */
-#ifdef __BIG_ENDIAN__
-    #define BIG_ENDIAN
-#endif
-void CO_memcpySwap2(uint8_t dest[], const uint8_t src[]);
-void CO_memcpySwap4(uint8_t dest[], const uint8_t src[]);
-
-
 /* Request CAN configuration or normal mode */
-void CO_CANsetConfigurationMode(CAN_TypeDef *CANbaseAddress);
-void CO_CANsetNormalMode(CAN_TypeDef *CANbaseAddress);
-
+//void CO_CANsetConfigurationMode(CAN_TypeDef *CANbaseAddress);
+//void CO_CANsetNormalMode(CAN_TypeDef *CANbaseAddress);
 
 /* Initialize CAN module object. */
 CO_ReturnError_t CO_CANmodule_init(
@@ -172,7 +198,7 @@ void CO_CANmodule_disable(CO_CANmodule_t *CANmodule);
 
 
 /* Read CAN identifier */
-uint16_t CO_CANrxMsg_readIdent(const CO_CANrxMsg_t *rxMsg);
+//uint16_t CO_CANrxMsg_readIdent(const CO_CANrxMsg_t *rxMsg);
 
 
 /* Configure CAN message receive buffer. */
@@ -195,7 +221,6 @@ CO_CANtx_t *CO_CANtxBufferInit(
         uint8_t                 noOfBytes,
         int8_t                  syncFlag);
 
-
 /* Send CAN message. */
 CO_ReturnError_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer);
 
@@ -210,14 +235,8 @@ void CO_CANverifyErrors(CO_CANmodule_t *CANmodule);
 
 /* CAN interrupts receives and transmits CAN messages. */
 void CO_CANinterrupt_Rx(CO_CANmodule_t *CANmodule);
-
 void CO_CANinterrupt_Tx(CO_CANmodule_t *CANmodule);
-
 void CO_CANinterrupt_Status(CO_CANmodule_t *CANmodule);
 
-void CO_CANsendToModule(CO_CANmodule_t *CANmodule, CO_CANtx *buffer, uint8_t transmit_mailbox);
 
-int CO_CANrecFromModule(CO_CANmodule_t *CANmodule, uint8_t FIFONumber, CO_CANrxMsg_t* RxMessage);
-
-
-#endif
+#endif    /* CO_DRIVER_H */
