@@ -33,9 +33,6 @@
 #include "crc16-ccitt.h"
 
 
-#include <stdlib.h> /*  for malloc, free */
-
-
 /* Client command specifier */
 #define CCS_DOWNLOAD_INITIATE           1
 #define CCS_DOWNLOAD_SEGMENT            0

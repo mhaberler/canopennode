@@ -583,6 +583,7 @@ void CO_delete(){
     free(CO_CANmodule_rxArray1);
     free(CO->CANmodule[1]);
   #endif
+    CO = NULL;
 #endif
 }
 
