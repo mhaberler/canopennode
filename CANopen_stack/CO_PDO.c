@@ -32,6 +32,7 @@
 #include "CO_NMT_Heartbeat.h"
 #include "CO_SYNC.h"
 #include "CO_PDO.h"
+#include <string.h>
 
 /*
  * Read received message from CAN module.
@@ -798,13 +799,40 @@ uint8_t CO_TPDOisCOS(CO_TPDO_t *TPDO){
     return 0;
 }
 
-
+//#define TPDO_CALLS_EXTENSION
 /******************************************************************************/
 int16_t CO_TPDOsend(CO_TPDO_t *TPDO){
     int16_t i;
     uint8_t* pPDOdataByte;
     uint8_t** ppODdataByte;
 
+#ifdef TPDO_CALLS_EXTENSION
+    if(TPDO->SDO->ODExtensions){
+        /* for each mapped OD, check mapping to see if an OD extension is available, and call it if it is */
+        const uint32_t* pMap = &TPDO->TPDOMapPar->mappedObject1;
+        CO_SDO_t *pSDO = TPDO->SDO;
+
+        for(i=TPDO->TPDOMapPar->numberOfMappedObjects; i>0; i--){
+            uint32_t map = *(pMap++);
+            uint16_t index = (uint16_t)(map>>16);
+            uint8_t subIndex = (uint8_t)(map>>8);
+            uint16_t entryNo = CO_OD_find(pSDO, index);
+            CO_OD_extension_t *ext = &pSDO->ODExtensions[entryNo];
+            if( ext->pODFunc == NULL) continue;
+            CO_ODF_arg_t ODF_arg;
+            memset((void*)&ODF_arg, 0, sizeof(CO_ODF_arg_t));
+            ODF_arg.reading = true;
+            ODF_arg.index = index;
+            ODF_arg.subIndex = subIndex;
+            ODF_arg.object = ext->object;
+            ODF_arg.attribute = CO_OD_getAttribute(pSDO, entryNo, subIndex);
+            ODF_arg.pFlags = CO_OD_getFlagsPointer(pSDO, entryNo, subIndex);
+            ODF_arg.data = pSDO->OD[entryNo].pData;
+            ODF_arg.dataLength = CO_OD_getLength(pSDO, entryNo, subIndex);
+            ext->pODFunc(&ODF_arg);
+        }
+    }
+#endif
     pPDOdataByte = &TPDO->CANtxBuff->data[0];
     ppODdataByte = &TPDO->mapPointer[0];
 
@@ -816,7 +844,7 @@ int16_t CO_TPDOsend(CO_TPDO_t *TPDO){
     return CO_CANsend(TPDO->CANdevTx, TPDO->CANtxBuff);
 }
 
-
+//#define RPDO_CALLS_EXTENSION
 /******************************************************************************/
 void CO_RPDO_process(CO_RPDO_t *RPDO){
 
@@ -829,6 +857,34 @@ void CO_RPDO_process(CO_RPDO_t *RPDO){
         ppODdataByte = &RPDO->mapPointer[0];
         for(i=RPDO->dataLength; i>0; i--)
             **(ppODdataByte++) = *(pPDOdataByte++);
+
+#ifdef RPDO_CALLS_EXTENSION
+        if(RPDO->SDO->ODExtensions){
+            /* for each mapped OD, check mapping to see if an OD extension is available, and call it if it is */
+            const uint32_t* pMap = &RPDO->RPDOMapPar->mappedObject1;
+            CO_SDO_t *pSDO = RPDO->SDO;
+
+            for(i=RPDO->RPDOMapPar->numberOfMappedObjects; i>0; i--){
+                uint32_t map = *(pMap++);
+                uint16_t index = (uint16_t)(map>>16);
+                uint8_t subIndex = (uint8_t)(map>>8);
+                uint16_t entryNo = CO_OD_find(pSDO, index);
+                CO_OD_extension_t *ext = &pSDO->ODExtensions[entryNo];
+                if( ext->pODFunc == NULL) continue;
+                CO_ODF_arg_t ODF_arg;
+                memset((void*)&ODF_arg, 0, sizeof(CO_ODF_arg_t));
+                ODF_arg.reading = false;
+                ODF_arg.index = index;
+                ODF_arg.subIndex = subIndex;
+                ODF_arg.object = ext->object;
+                ODF_arg.attribute = CO_OD_getAttribute(pSDO, entryNo, subIndex);
+                ODF_arg.pFlags = CO_OD_getFlagsPointer(pSDO, entryNo, subIndex);
+                ODF_arg.data = pSDO->OD[entryNo].pData;
+                ODF_arg.dataLength = CO_OD_getLength(pSDO, entryNo, subIndex);
+                ext->pODFunc(&ODF_arg);
+            }
+        }
+#endif
     }
 
     RPDO->CANrxNew = 0;
@@ -888,7 +944,6 @@ void CO_TPDO_process(
                     }
                 }
             }
-            TPDO->SYNCtimerPrevious = SYNC->timer;
         }
 
     }
@@ -906,4 +961,6 @@ void CO_TPDO_process(
     i = TPDO->eventTimer;
     i -= timeDifference_ms;
     TPDO->eventTimer = (i<=0) ? 0 : (uint16_t)i;
+
+    TPDO->SYNCtimerPrevious = SYNC->timer;
 }
