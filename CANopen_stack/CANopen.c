@@ -51,9 +51,9 @@
     /* CAN message buffer for one TX and seven RX messages. */
     #define CO_CANmsgBuffSize   8
 #ifdef __HAS_EDS__
-    __eds__ CO_CANrxMsg_t CO_CANmsg[CO_CANmsgBuffSize] __attribute__((eds,space(dma)));
+    __eds__ CO_CANrxMsg_t CO_CANmsg[CO_CANmsgBuffSize] __attribute__((eds,space(dma),aligned(128)));
 #else
-    CO_CANrxMsg_t CO_CANmsg[CO_CANmsgBuffSize] __attribute__((space(dma)));
+    CO_CANrxMsg_t CO_CANmsg[CO_CANmsgBuffSize] __attribute__((space(dma),aligned(128)));
 #endif
 #endif
 
