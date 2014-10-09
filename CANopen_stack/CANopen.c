@@ -52,8 +52,14 @@
     #define CO_CANmsgBuffSize   8
 #ifdef __HAS_EDS__
     __eds__ CO_CANrxMsg_t CO_CANmsg[CO_CANmsgBuffSize] __attribute__((eds,space(dma),aligned(128)));
+ #if CO_NO_CAN_MODULES >= 2
+    __eds__ CO_CANrxMsg_t CO_CAN2msg[CO_CANmsgBuffSize] __attribute__((eds,space(dma),aligned(128)));
+ #endif
 #else
     CO_CANrxMsg_t CO_CANmsg[CO_CANmsgBuffSize] __attribute__((space(dma),aligned(128)));
+ #if CO_NO_CAN_MODULES >= 2
+    CO_CANrxMsg_t CO_CAN2msg[CO_CANmsgBuffSize] __attribute__((space(dma),aligned(128)));
+ #endif
 #endif
 #endif
 
@@ -373,6 +379,17 @@ CO_ReturnError_t CO_init(){
     err = CO_CANmodule_init(
             CO->CANmodule[1],
             ADDR_CAN2,
+#if defined(__dsPIC33F__) || defined(__PIC24H__) \
+    || defined(__dsPIC33E__) || defined(__PIC24E__)
+            ADDR_DMA2,
+            ADDR_DMA3,
+            &CO_CAN2msg[0],
+            CO_CANmsgBuffSize,
+            __builtin_dmaoffset(&CO_CAN2msg[0]),
+#if defined(__HAS_EDS__)
+            __builtin__dmapage(&CO_CANmsg2[0]),
+#endif
+#endif
             CO_CANmodule_rxArray1,
             2,
             CO_CANmodule_txArray1,
