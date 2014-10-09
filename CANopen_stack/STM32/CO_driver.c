@@ -313,7 +313,7 @@ CO_ReturnError_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer)
     //if CAN TB buffer0 is free, copy message to it
      txBuff = getFreeTxBuff(CANmodule);
    // #error change this - use only one buffer for transmission - see generic driver
-    if(txBuff != -1)
+    if(txBuff != -1 && CANmodule->CANtxCount == 0)
     {
         CANmodule->bufferInhibitFlag = buffer->syncFlag;
         CO_CANsendToModule(CANmodule, buffer, txBuff);

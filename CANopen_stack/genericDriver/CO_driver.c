@@ -199,7 +199,7 @@ CO_ReturnError_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer){
 
     CO_DISABLE_INTERRUPTS();
     /* if CAN TX buffer is free, copy message to it */
-    if(1){
+    if(1 && CANmodule->CANtxCount == 0){
         CANmodule->bufferInhibitFlag = buffer->syncFlag;
         /* copy message and txRequest */
     }

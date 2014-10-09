@@ -500,7 +500,7 @@ CO_ReturnError_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer){
     CAN_REG(addr, C_CTRL1) = C_CTRL1old;
 
     /* if CAN TX buffer is free, copy message to it */
-    if((C_TR01CONcopy & 0x8) == 0){
+    if((C_TR01CONcopy & 0x8) == 0 && CANmodule->CANtxCount == 0){
         CANmodule->bufferInhibitFlag = buffer->syncFlag;
         CO_CANsendToModule(addr, CANmodule->CANmsgBuff, buffer);
     }

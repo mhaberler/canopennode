@@ -355,7 +355,7 @@ CO_ReturnError_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer){
     CO_DISABLE_INTERRUPTS();
     TX_FIFOconCopy = *TX_FIFOcon;
     /* if CAN TX buffer is free, copy message to it */
-    if((TX_FIFOconCopy & 0x8) == 0){
+    if((TX_FIFOconCopy & 0x8) == 0 && CANmodule->CANtxCount == 0){
         CANmodule->bufferInhibitFlag = buffer->syncFlag;
         *(TXmsgBuffer++) = *(message++);
         *(TXmsgBuffer++) = *(message++);

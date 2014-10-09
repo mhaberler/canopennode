@@ -1,5 +1,5 @@
 /*
- * CAN module object for generic microcontroller.
+ * CAN module object for NXP LPC177x (Cortex M3) and FreeRTOS.
  *
  * This file is a template for other microcontrollers.
  *
@@ -7,7 +7,8 @@
  * @ingroup     CO_driver
  * @version     SVN: \$Id: CO_driver.c 46 2013-08-24 09:18:16Z jani22 $
  * @author      Janez Paternoster
- * @copyright   2004 - 2013 Janez Paternoster
+ * @author      Amit H
+ * @copyright   2004 - 2014 Janez Paternoster
  *
  * This file is part of CANopenNode, an opensource CANopen Stack.
  * Project home page is <http://canopennode.sourceforge.net>.
@@ -369,7 +370,7 @@ CO_ReturnError_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer){
     
     /* if CAN TX buffer is free, copy message to it */
     TxBuf = Chip_CAN_GetFreeTxBuf(LPC_CAN);
-    if( TxBuf < CAN_BUFFER_LAST){
+    if( TxBuf < CAN_BUFFER_LAST && CANmodule->CANtxCount == 0){
         CANmodule->bufferInhibitFlag = buffer->syncFlag;
         /* copy message and txRequest */
         Chip_CAN_Send(LPC_CAN, TxBuf,(CAN_MSG_T*)buffer);

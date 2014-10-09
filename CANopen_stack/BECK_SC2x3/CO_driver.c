@@ -208,7 +208,7 @@ CO_ReturnError_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer){
 
     CO_DISABLE_INTERRUPTS();
     /* if CAN TX buffer is free, copy message to it */
-    if(CANmodule->bufferInhibitFlag == CO_false){
+    if(CANmodule->bufferInhibitFlag == CO_false && CANmodule->CANtxCount == 0){
         canErr = canSend(CANmodule->CANbaseAddress, (const CanMsg*) buffer, FALSE);
         CANmodule->bufferInhibitFlag = CO_true;   /* indicate, that message is on CAN module */
 #ifdef CO_LOG_CAN_MESSAGES
