@@ -1312,7 +1312,7 @@ function generateCO_OD_H(){
 		"/*\n"+
 		"   This program is free software: you can redistribute it and/or modify\n"+
 		"   it under the terms of the GNU Lesser General Public License as published by\n"+
-		"   the Free Software Foundation, either version 3 of the License, or\n"+
+		"   the Free Software Foundation, either version 2.1 of the License, or\n"+
 		"   (at your option) any later version.\n"+
 		"\n"+
 		"   This program is distributed in the hope that it will be useful,\n"+
@@ -1458,7 +1458,7 @@ function generateCO_OD_C(){
 		"/*\n"+
 		"   This program is free software: you can redistribute it and/or modify\n"+
 		"   it under the terms of the GNU Lesser General Public License as published by\n"+
-		"   the Free Software Foundation, either version 3 of the License, or\n"+
+		"   the Free Software Foundation, either version 2.1 of the License, or\n"+
 		"   (at your option) any later version.\n"+
 		"\n"+
 		"   This program is distributed in the hope that it will be useful,\n"+
