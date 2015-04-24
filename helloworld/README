@@ -1,0 +1,5 @@
+to operate over a virtual CAN interface:
+
+modprobe vcan
+ip link add dev vcan0 type vcan
+ip link set up vcan0
